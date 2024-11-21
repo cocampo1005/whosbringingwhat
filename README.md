@@ -50,13 +50,17 @@ Make sure you have the following installed on your machine:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/whos-bringing-what.git
-   cd whos-bringing-what
+   git clone https://github.com/cocampo1005/whosbringingwhat.git
+   ```
+   ```bash
+   cd whosbringingwhat
    ```
 2. Install Dependencies:
    ```bash
    npm install
-   # or
+   ```
+   or
+   ```bash
    yarn install
    ```
 3. Create a Firebase project and configure it:
