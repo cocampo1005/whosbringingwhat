@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
           const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
+            console.log({ ...firebaseUser, ...userData });
             setCurrentUser({ ...firebaseUser, ...userData });
           } else {
             console.log("No user object found for this user.");

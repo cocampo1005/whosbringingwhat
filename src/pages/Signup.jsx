@@ -1,8 +1,13 @@
 import React, { useState } from "react";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc";
 import { Link, useNavigate } from "react-router-dom";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import {
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import logo from "../assets/logoBorderless.png";
 
@@ -121,6 +126,36 @@ export default function Signup() {
     }
   };
 
+  const provider = new GoogleAuthProvider();
+  const handleGoogleAuth = async (e) => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Check if the user document exists in Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        // If the document doesn't exist, create it with the user data
+        await setDoc(userDocRef, {
+          name: user.displayName || "New User",
+          email: user.email,
+          avatar: user.photoURL || "",
+          dietaryRestrictions: [],
+          contributions: {},
+          createdAt: new Date(),
+        });
+      }
+
+      console.log("User Info: ", user);
+
+      navigate("/");
+    } catch (error) {
+      console.error("Error during Google sign-in:", error.message);
+    }
+  };
+
   return (
     <>
       <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
@@ -154,7 +189,7 @@ export default function Signup() {
                   value={formData.name}
                   onChange={handleChange}
                   autoComplete="name"
-                  className={`text-primaryDark focus:ring-primaryRed block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ${errors.name ? "ring-red-500" : "ring-gray-300"} placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm/6`}
+                  className={`${errors.name ? "ring-red-500" : "ring-gray-300"} focus:ring-inset sm:text-sm/6`}
                 />
                 {errors.name && (
                   <p className="mt-1 text-sm text-red-500">{errors.name}</p>
@@ -229,15 +264,23 @@ export default function Signup() {
               </div>
             )}
 
-            <div>
+            <div className="flex flex-col">
               <button
                 type="submit"
                 className="bg-primaryRed hover:bg-secondaryRed focus-visible:outline-primaryRed flex w-full justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 Sign Up
               </button>
+              <p className="p-2 text-center">or</p>
             </div>
           </form>
+          <button
+            onClick={handleGoogleAuth}
+            className="focus-visible:outline-primaryRed text-primaryDark flex w-full items-center justify-center rounded-md bg-white px-3 py-1.5 text-sm/6 font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            <FcGoogle className="mr-3" />
+            Sign Up with Google
+          </button>
 
           <p className="mt-10 text-center text-sm/6 text-gray-500">
             Already a member?{" "}
