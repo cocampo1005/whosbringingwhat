@@ -10,7 +10,7 @@ const ConfirmDeleteModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="rounded-lg bg-yellow-50 p-6 shadow-lg">
+      <div className="mx-4 w-full rounded-lg bg-yellow-50 p-6 shadow-lg">
         <h2 className="text-center text-xl font-bold">Confirm Deletion</h2>
         <p className="mt-4 text-center">
           Are you sure you want to delete{" "}
