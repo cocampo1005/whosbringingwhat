@@ -76,13 +76,23 @@ function EventDetails() {
   };
 
   const groupItemsByCategory = (items) => {
-    return items.reduce((acc, item) => {
-      if (!acc[item.category]) {
-        acc[item.category] = [];
+    // Define custom category order
+    const categoryOrder = ["Main", "Side", "Dessert", "Beverage"];
+
+    // Sort the items based on the custom category order
+    const sortedItems = items.sort((a, b) => {
+      const categoryIndexA = categoryOrder.indexOf(a.category);
+      const categoryIndexB = categoryOrder.indexOf(b.category);
+
+      // Compare by category index, if the categories are the same, then compare by title
+      if (categoryIndexA === categoryIndexB) {
+        return a.title.localeCompare(b.title); // Sort by title within the same category
       }
-      acc[item.category].push(item);
-      return acc;
-    }, {});
+
+      return categoryIndexA - categoryIndexB; // Sort by custom category order
+    });
+
+    return sortedItems;
   };
 
   const getCategoryCounts = (items) => {
@@ -259,7 +269,7 @@ function EventDetails() {
         </div>
       </div>
       <ItemCard
-        items={event.items}
+        items={groupItemsByCategory(event.items)}
         edit={handleEditItem}
         openDeleteModal={openDeleteModalForItem}
         onDelete={handleDeleteItem}

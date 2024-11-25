@@ -64,7 +64,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   };
 
   return (
-    <div className="absolute left-0 top-0 z-10 flex h-full w-full flex-col overflow-scroll bg-yellow-50 p-4">
+    <div className="fixed left-0 top-0 z-10 flex h-full w-full flex-grow flex-col overflow-scroll bg-yellow-50 p-4">
       <div className="flex justify-center">
         <h2 className="text-lg font-semibold">
           {initialData.title ? "Edit Event" : "Add New Event"}
@@ -74,7 +74,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           onClick={closeModal}
         />
       </div>
-      <form onSubmit={handleSubmit} className="mt-4 flex h-full flex-col">
+      <form onSubmit={handleSubmit} className="mt-4 flex flex-col">
         {/* Event Name */}
         <label className="mb-2 block text-sm">Event Name</label>
         <input
@@ -83,7 +83,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           value={eventData.title}
           onChange={handleChange}
           placeholder="Enter event name"
-          className="mb-4"
+          className="mb-4 min-h-9"
           required
         />
 
@@ -94,7 +94,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           value={eventData.description}
           onChange={handleChange}
           placeholder="Enter event description"
-          className="mb-4 block w-full rounded-md border-0 py-1.5 shadow-sm"
+          className="mb-4 block min-h-16 w-full rounded-md border-0 py-1.5 shadow-sm"
         />
 
         {/* Event Date */}
@@ -117,7 +117,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           name="time"
           value={eventData.time}
           onChange={handleChange}
-          className="mb-4 block w-full rounded-md border-0 py-1.5 text-primaryDark shadow-sm ring-1 ring-inset focus:ring-primaryRed"
+          className="mb-4 block min-h-9 w-full rounded-md border-0 py-1.5 text-primaryDark shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-primaryRed"
         />
 
         {/* Event Location */}
@@ -129,6 +129,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           value={eventData.location}
           onChange={handleChange}
           placeholder="Enter location"
+          className="min-h-9"
         />
 
         {/* Submit Button */}

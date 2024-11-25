@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { useAuth } from "../contexts/AuthContext";
 
 function ItemModal({
   closeModal,
@@ -7,14 +8,15 @@ function ItemModal({
   initialData = {},
   mode = "add", // "add" or "edit"
 }) {
+  const { currentUser } = useAuth();
+
   const [itemData, setItemData] = useState({
     id: initialData?.id || (mode === "add" && uuidv4()),
     title: initialData?.title || "",
-    assignee: initialData?.assignee || "",
+    assignee: initialData?.assignee || currentUser.name,
     category: initialData?.category || "Main",
     dietary: initialData?.dietary || [],
   });
-  console.log(itemData.dietary);
 
   const dietaryOptions = [
     "Vegetarian",

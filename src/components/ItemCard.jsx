@@ -4,23 +4,23 @@ import { MdDelete } from "react-icons/md";
 
 export default function ItemCard({ items, edit, onDelete, openDeleteModal }) {
   const categoryColors = {
-    Main: "text-red-900", // Red for Main
-    Side: "text-yellow-600", // Yellow for Side
-    Dessert: "text-rose-500", // Rose for Dessert
-    Beverage: "text-blue-600", // Blue for Drink
+    Main: "text-red-900",
+    Side: "text-yellow-600",
+    Dessert: "text-rose-500",
+    Beverage: "text-blue-600",
   };
   return (
     <div>
       {items?.map((item) => (
         <div key={item.id} className="flex justify-between border-t py-4">
-          <p>
-            <span
+          <div className="flex flex-col">
+            <p
               className={`font-bold ${categoryColors[item.category] || "text-black"}`}
             >
               {item.title}
-            </span>{" "}
-            - <span className="text-gray-400">{item.assignee}</span>
-          </p>
+            </p>
+            <p className="text-xs text-gray-400">{item.assignee}</p>
+          </div>
           <div className="flex items-center">
             <MdEdit
               onClick={() => edit(item)}
