@@ -19,15 +19,13 @@ function ItemModal({
   });
 
   const dietaryOptions = [
-    "Vegetarian",
-    "Vegan",
-    "Gluten-Free",
-    "Has Dairy",
-    "Has Nuts",
-    "Has Pork",
+    { label: "Vegetarian", value: "vegetarian" },
+    { label: "Vegan", value: "vegan" },
+    { label: "Gluten-Free", value: "gluten" },
+    { label: "Has Dairy", value: "dairy" },
+    { label: "Has Nuts", value: "nuts" },
+    { label: "Has Pork", value: "pork" },
   ];
-
-  const [dietaryTag, setDietaryTag] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -102,14 +100,14 @@ function ItemModal({
             <label className="mb-1 block font-bold">Dietary Tags</label>
             <div className="grid grid-cols-2 gap-2">
               {dietaryOptions.map((option) => (
-                <label key={option} className="flex items-center">
+                <label key={option.value} className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={itemData.dietary.includes(option)}
-                    onChange={() => handleDietaryChange(option)}
+                    checked={itemData.dietary.includes(option.value)}
+                    onChange={() => handleDietaryChange(option.value)}
                     className="mr-2 h-4 w-4 rounded border-gray-300 text-primaryRed focus:ring-primaryRed"
                   />
-                  {option}
+                  {option.label}
                 </label>
               ))}
             </div>

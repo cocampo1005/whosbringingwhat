@@ -204,7 +204,7 @@ function EventDetails() {
   if (!event) return <p>Loading event details...</p>;
 
   return (
-    <div className="m-4 rounded-lg bg-white p-4 shadow-md">
+    <div className="m-4 mb-10 rounded-lg bg-white p-4 shadow-md">
       <div className="flex items-start justify-between">
         <h1 className="pb-6 text-2xl font-bold">{event.title}</h1>
         <MdDelete

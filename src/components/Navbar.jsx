@@ -9,7 +9,7 @@ export default function Navbar() {
     }`;
 
   return (
-    <nav className="fixed bottom-0 flex w-full justify-around bg-yellow-50 py-4 shadow-md">
+    <nav className="fixed bottom-0 flex w-full justify-around border-t-gray-300 bg-yellow-50 py-4 shadow-md">
       {/* Events Nav */}
       <NavLink to="/events" className={navLinkStyles}>
         <FaCalendarAlt size={24} />
