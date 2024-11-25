@@ -26,6 +26,13 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
     }).format(date);
   };
 
+  // Check if the date is already formatted (as a string)
+  const isFormattedDate = (date) => {
+    // Adjust the regex to match your formatted date structure
+    const formattedDateRegex = /^[a-zA-Z]{3},?\s[a-zA-Z]+\s\d{1,2},\s\d{4}$/;
+    return typeof date === "string" && formattedDateRegex.test(date);
+  };
+
   // Handle calendar date selection
   const handleDateChange = (selectedDate) => {
     setEventData((prev) => ({ ...prev, date: selectedDate }));
@@ -43,7 +50,9 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
 
     const formattedData = {
       ...eventData,
-      date: formatDate(eventData.date),
+      date: isFormattedDate(eventData.date)
+        ? eventData.date // Use the date as-is if already formatted
+        : formatDate(eventData.date), // Format if it's not already formatted
     };
 
     if (!eventData.date) {
@@ -99,7 +108,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           prev2Label={null}
         />
 
-        <label className="text-primaryDark block text-sm/6 font-medium">
+        <label className="block text-sm/6 font-medium text-primaryDark">
           Time
         </label>
         <input
@@ -108,7 +117,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           name="time"
           value={eventData.time}
           onChange={handleChange}
-          className="text-primaryDark focus:ring-primaryRed mb-4 block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset"
+          className="mb-4 block w-full rounded-md border-0 py-1.5 text-primaryDark shadow-sm ring-1 ring-inset focus:ring-primaryRed"
         />
 
         {/* Event Location */}
@@ -125,7 +134,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
         {/* Submit Button */}
         <button
           type="submit"
-          className="bg-primaryRed mt-4 w-full rounded-md py-2 text-center text-white"
+          className="mt-4 w-full rounded-md bg-primaryRed py-2 text-center text-white"
         >
           {initialData.title ? "Save Changes" : "Add Event"}
         </button>
