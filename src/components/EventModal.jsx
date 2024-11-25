@@ -4,16 +4,16 @@ import Calendar from "react-calendar";
 import "../styles/Calendar.css";
 import { useAuth } from "../contexts/AuthContext";
 
-export default function AddNewEventModal({ closeModal, addEvent }) {
+export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   const { currentUser } = useAuth();
 
   const [eventData, setEventData] = useState({
-    title: "",
-    description: "",
-    date: null,
-    time: "",
-    location: "",
-    createdBy: currentUser.name,
+    title: initialData.title || "",
+    description: initialData.description || "",
+    date: initialData.date || null,
+    time: initialData.time || "",
+    location: initialData.location || "",
+    createdBy: initialData.createdBy || currentUser.name,
   });
 
   // Format the selected date to "Month Day, Year"
@@ -26,15 +26,6 @@ export default function AddNewEventModal({ closeModal, addEvent }) {
     }).format(date);
   };
 
-  function formatTime(time) {
-    const [hour, minute] = time.split(":");
-    const hourInt = parseInt(hour, 10);
-    const isPM = hourInt >= 12;
-    const formattedHour = hourInt % 12 || 12; // Convert "0" to "12"
-    const amPm = isPM ? "PM" : "AM";
-    return `${formattedHour}:${minute} ${amPm}`;
-  }
-
   // Handle calendar date selection
   const handleDateChange = (selectedDate) => {
     setEventData((prev) => ({ ...prev, date: selectedDate }));
@@ -44,7 +35,6 @@ export default function AddNewEventModal({ closeModal, addEvent }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setEventData((prev) => ({ ...prev, [name]: value }));
-    console.log(eventData);
   };
 
   // Handle form submission
@@ -54,22 +44,22 @@ export default function AddNewEventModal({ closeModal, addEvent }) {
     const formattedData = {
       ...eventData,
       date: formatDate(eventData.date),
-      time: formatTime(eventData.time),
     };
 
-    console.log(formattedData);
     if (!eventData.date) {
       alert("Please select a date for the event.");
       return;
     }
-    addEvent(formattedData);
+    onSubmit(formattedData);
     closeModal();
   };
 
   return (
     <div className="absolute left-0 top-0 z-10 flex h-full w-full flex-col overflow-scroll bg-yellow-50 p-4">
       <div className="flex justify-center">
-        <h2 className="text-lg font-semibold">Add New Event</h2>
+        <h2 className="text-lg font-semibold">
+          {initialData.title ? "Edit Event" : "Add New Event"}
+        </h2>
         <IoClose
           className="absolute right-4 top-4 cursor-pointer text-3xl"
           onClick={closeModal}
@@ -137,7 +127,7 @@ export default function AddNewEventModal({ closeModal, addEvent }) {
           type="submit"
           className="bg-primaryRed mt-4 w-full rounded-md py-2 text-center text-white"
         >
-          Add Event
+          {initialData.title ? "Save Changes" : "Add Event"}
         </button>
       </form>
     </div>

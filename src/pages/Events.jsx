@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../firebase";
-import AddNewEventModal from "../components/AddNewEventModal";
+import EventModal from "../components/EventModal";
 import { FaPlus } from "react-icons/fa6";
 import {
   addDoc,
@@ -56,15 +56,15 @@ export default function Events() {
       )}
 
       {showAddEventModal && (
-        <AddNewEventModal
+        <EventModal
           closeModal={() => setShowAddEventModal(false)}
-          addEvent={addEventToFirestore}
+          onSubmit={addEventToFirestore}
         />
       )}
 
       <button
         onClick={handleAddEvent}
-        className="bg-primaryRed absolute bottom-4 right-4 rounded-full p-4 text-white"
+        className="bg-primaryRed fixed bottom-24 right-4 rounded-full p-4 text-white"
       >
         <FaPlus />
       </button>

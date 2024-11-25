@@ -22,16 +22,16 @@ export default function Home() {
   return (
     <>
       <div className="flex min-h-screen flex-col">
-        <header className="bg-primaryRed">
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            <h1 className="text-center text-3xl font-bold tracking-tight text-white">
+        <header className="bg-primaryRed fixed top-0 w-full">
+          <div className="mx-auto max-w-7xl px-4 py-2 sm:px-6 lg:px-8">
+            <h1 className="text-center text-2xl font-bold tracking-tight text-white">
               {getPageName()}
             </h1>
           </div>
         </header>
 
         {/* Nested Route Content */}
-        <main className="relative mb-[76px] flex-1">
+        <main className="mb-[76px] mt-12 flex-1">
           <Outlet />
         </main>
 
