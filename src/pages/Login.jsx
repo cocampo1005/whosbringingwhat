@@ -207,7 +207,7 @@ export default function Login() {
                 </label>
                 <p
                   onClick={handleResetPassword}
-                  className="text-xs font-bold text-primaryRed"
+                  className="cursor-pointer text-xs font-bold text-primaryRed"
                 >
                   Forgot Password?
                 </p>

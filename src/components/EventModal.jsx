@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IoClose } from "react-icons/io5";
 import Calendar from "react-calendar";
 import "../styles/Calendar.css";
@@ -6,7 +6,6 @@ import { useAuth } from "../contexts/AuthContext";
 
 export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   const { currentUser } = useAuth();
-
   const [eventData, setEventData] = useState({
     title: initialData.title || "",
     description: initialData.description || "",
@@ -15,6 +14,25 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
     location: initialData.location || "",
     createdBy: initialData.createdBy || currentUser.name,
   });
+  const [modalHeight, setModalHeight] = useState("100vh");
+
+  useEffect(() => {
+    const updateModalHeight = () => {
+      const viewportHeight =
+        window.visualViewport?.height || window.innerHeight;
+      setModalHeight(`${viewportHeight - 32}px`); // 32px for 1rem padding top and bottom
+    };
+
+    // Set initial height
+    updateModalHeight();
+
+    // Update height on resize
+    window.addEventListener("resize", updateModalHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateModalHeight);
+    };
+  }, []);
 
   // Format the selected date to "Month Day, Year"
   const formatDate = (date) => {
@@ -65,7 +83,10 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="relative mx-4 max-h-[calc(100vh-2rem)] w-full overflow-y-auto rounded-2xl bg-yellow-50 p-6 shadow-lg">
+      <div
+        className="relative mx-4 w-full overflow-y-auto rounded-2xl bg-yellow-50 p-6 shadow-lg"
+        style={{ maxHeight: modalHeight }}
+      >
         <div className="flex justify-center">
           <h2 className="text-lg font-semibold">
             {initialData.title ? "Edit Event" : "Add New Event"}
