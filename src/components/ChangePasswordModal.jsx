@@ -89,7 +89,7 @@ export default function ChangePasswordModal({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-      <div className="relative mx-4 w-full rounded-lg bg-yellow-50 p-6 shadow-lg">
+      <div className="relative mx-4 w-full rounded-2xl bg-yellow-50 p-6 shadow-lg">
         <h2 className="mb-4 text-center text-lg font-semibold">
           Change Password
         </h2>

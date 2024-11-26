@@ -55,7 +55,7 @@ function ItemModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="relative mx-4 w-full rounded-lg bg-yellow-50 p-6 shadow-lg">
+      <div className="relative mx-4 w-full rounded-2xl bg-yellow-50 p-6 shadow-lg">
         <h2 className="mb-4 text-xl font-bold">
           {mode === "add" ? "Add Item" : "Edit Item"}
         </h2>
@@ -71,7 +71,7 @@ function ItemModal({
               name="title"
               value={itemData.title}
               onChange={handleChange}
-              className="w-full rounded border p-2"
+              className="w-full rounded border p-2 focus:border-primaryRed"
               required
             />
           </div>
@@ -82,7 +82,7 @@ function ItemModal({
               name="assignee"
               value={itemData.assignee}
               onChange={handleChange}
-              className="w-full rounded border p-2"
+              className="w-full rounded border p-2 focus:border-primaryRed"
               required
             />
           </div>
@@ -92,7 +92,7 @@ function ItemModal({
               name="category"
               value={itemData.category}
               onChange={handleChange}
-              className="w-full rounded-lg border border-gray-300 p-2"
+              className="w-full rounded-lg border border-gray-300 p-2 focus:border-primaryRed focus:ring-0"
               required
             >
               <option value="Main">Main</option>
@@ -102,10 +102,13 @@ function ItemModal({
             </select>
           </div>
           <div className="mb-8">
-            <label className="mb-1 block font-bold">Dietary Tags</label>
+            <label className="mb-2 block font-bold">Dietary Tags</label>
             <div className="grid grid-cols-2 gap-2">
               {dietaryOptions.map((option) => (
-                <label key={option.value} className="flex items-center">
+                <label
+                  key={option.value}
+                  className="flex items-center text-sm font-semibold"
+                >
                   <input
                     type="checkbox"
                     checked={itemData.dietary.includes(option.value)}

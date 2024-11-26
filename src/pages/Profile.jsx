@@ -42,11 +42,13 @@ export default function Profile() {
       <div className="w-full rounded-2xl bg-white px-4 shadow-md">
         <div className="flex items-center border-b border-b-gray-200 py-4">
           <IoMail className="mr-4 text-xl text-primaryRed" />
-          <p className="text-sm text-gray-500">{currentUser.email}</p>
+          <p className="text-sm text-gray-500 no-underline">
+            {currentUser.email}
+          </p>
         </div>
         <div
           onClick={() => setIsChangePasswordModalOpen(true)}
-          className="flex items-center border-b border-b-gray-300 py-4"
+          className="flex items-center border-b border-b-gray-200 py-4"
         >
           <FaUnlockKeyhole className="mr-4 text-xl text-primaryRed" />
           <p className="text-sm text-gray-500">Change Password</p>

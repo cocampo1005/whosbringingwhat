@@ -14,7 +14,7 @@ export default function ParticipantsModal({ isOpen, onClose, participants }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-      <div className="relative h-[410px] w-64 overflow-scroll rounded-lg bg-yellow-50 p-6 shadow-lg">
+      <div className="relative h-[410px] w-64 overflow-scroll rounded-2xl bg-yellow-50 p-6 shadow-lg">
         <h2 className="mb-4 text-center text-lg font-semibold">Participants</h2>
 
         {/* List of participants */}

@@ -23,6 +23,6 @@
   }
   input[type="text"],
   textarea {
-    @apply block w-full rounded-lg border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-primaryRed;
+    @apply block w-full rounded-lg border-gray-300 py-1.5 shadow-sm ring-0 placeholder:text-gray-400 focus:border-primaryRed focus:ring-0;
   }
 }
