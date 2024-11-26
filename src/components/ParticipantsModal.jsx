@@ -1,4 +1,5 @@
 import React from "react";
+import { IoClose } from "react-icons/io5";
 
 export default function ParticipantsModal({ isOpen, onClose, participants }) {
   // If the modal isn't open, return null (don't render anything)
@@ -15,7 +16,9 @@ export default function ParticipantsModal({ isOpen, onClose, participants }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
       <div className="relative h-[410px] w-64 overflow-scroll rounded-2xl bg-yellow-50 p-6 shadow-lg">
-        <h2 className="mb-4 text-center text-lg font-semibold">Participants</h2>
+        <h2 className="mb-4 border-b-2 border-primaryRed text-center text-lg font-semibold">
+          Contributors
+        </h2>
 
         {/* List of participants */}
         <ul className="space-y-2">
@@ -31,12 +34,10 @@ export default function ParticipantsModal({ isOpen, onClose, participants }) {
         </ul>
 
         {/* Close button */}
-        <button
+        <IoClose
+          className="absolute right-4 top-4 cursor-pointer text-2xl"
           onClick={onClose}
-          className="absolute right-4 top-4 text-3xl text-gray-500"
-        >
-          &times;
-        </button>
+        />
       </div>
     </div>
   );

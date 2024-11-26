@@ -10,7 +10,6 @@ import EventDetails from "./pages/EventDetails";
 
 function App() {
   const { currentUser } = useAuth();
-  console.log(currentUser);
 
   const RequireAuth = ({ children }) => {
     return currentUser ? children : <Navigate to="/login" />;

@@ -5,11 +5,11 @@ import { NavLink } from "react-router-dom";
 export default function Navbar() {
   const navLinkStyles = ({ isActive }) =>
     `flex flex-col items-center justify-center text-sm ${
-      isActive ? "text-primaryRed" : "text-gray-500"
+      isActive ? "text-white" : "text-rose-300"
     }`;
 
   return (
-    <nav className="fixed bottom-0 flex w-full justify-around border-t-gray-300 bg-yellow-50 py-4 shadow-md">
+    <nav className="fixed bottom-0 flex w-full justify-around bg-primaryRed py-4 shadow-md">
       {/* Events Nav */}
       <NavLink to="/events" className={navLinkStyles}>
         <FaCalendarAlt size={24} />
