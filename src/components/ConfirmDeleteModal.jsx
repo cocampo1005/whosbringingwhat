@@ -19,13 +19,13 @@ const ConfirmDeleteModal = ({
         <div className="mt-6 flex justify-center space-x-4">
           <button
             onClick={onConfirmDelete}
-            className="rounded-md bg-primaryRed px-6 py-2 text-white active:bg-rose-500"
+            className="rounded-lg bg-primaryRed px-6 py-2 text-white active:bg-rose-500"
           >
             Delete
           </button>
           <button
             onClick={closeModal}
-            className="rounded-md bg-gray-400 px-6 py-2 text-white hover:bg-gray-500"
+            className="rounded-lg bg-gray-400 px-6 py-2 text-white hover:bg-gray-500"
           >
             Cancel
           </button>

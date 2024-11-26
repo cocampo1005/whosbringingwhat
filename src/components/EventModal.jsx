@@ -94,7 +94,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           value={eventData.description}
           onChange={handleChange}
           placeholder="Enter event description"
-          className="mb-4 block min-h-16 w-full rounded-md border-0 py-1.5 shadow-sm"
+          className="mb-4 block min-h-16 w-full rounded-lg border-0 py-1.5 shadow-sm"
         />
 
         {/* Event Date */}
@@ -108,16 +108,14 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           prev2Label={null}
         />
 
-        <label className="block text-sm/6 font-medium text-primaryDark">
-          Time
-        </label>
+        <label className="block text-sm/6 text-primaryDark">Time</label>
         <input
           required
           type="time"
           name="time"
           value={eventData.time}
           onChange={handleChange}
-          className="mb-4 block min-h-9 w-full rounded-md border-0 py-1.5 text-primaryDark shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-primaryRed"
+          className="mb-4 block min-h-9 w-full rounded-lg border-0 py-1.5 text-primaryDark shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-primaryRed"
         />
 
         {/* Event Location */}
@@ -135,7 +133,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
         {/* Submit Button */}
         <button
           type="submit"
-          className="mt-4 w-full rounded-md bg-primaryRed py-2 text-center text-white"
+          className="mt-4 w-full rounded-lg bg-primaryRed py-2 text-center text-white"
         >
           {initialData.title ? "Save Changes" : "Add Event"}
         </button>

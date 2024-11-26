@@ -31,7 +31,7 @@ export default function Home() {
         </header>
 
         {/* Nested Route Content */}
-        <main className="mb-[76px] mt-12 flex-grow">
+        <main className="mb-[76px] mt-12 flex-1">
           <Outlet />
         </main>
 

@@ -44,11 +44,14 @@
 .react-calendar__navigation {
   display: flex;
   height: 44px;
+  background: #f94a5a;
+  color: white;
+  border-radius: 10px 10px 0 0;
+  font-weight: 700;
 }
 
 .react-calendar__navigation button {
   min-width: 44px;
-  background: none;
 }
 
 .react-calendar__navigation button:disabled {
@@ -57,7 +60,7 @@
 
 .react-calendar__navigation button:enabled:hover,
 .react-calendar__navigation button:enabled:focus {
-  background-color: #ffebed;
+  background-color: #f94a5a;
 }
 
 .react-calendar__month-view__weekdays {

@@ -1,12 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { BsPersonFill } from "react-icons/bs";
-import { FiLogOut } from "react-icons/fi";
+import { IoMail } from "react-icons/io5";
+import { FaUnlockKeyhole } from "react-icons/fa6";
+import { IoLogOut } from "react-icons/io5";
+import ChangePasswordModal from "../components/ChangePasswordModal";
 
 export default function Profile() {
   const { currentUser } = useAuth();
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
+    useState(false);
 
   const handleLogout = async () => {
     try {
@@ -17,8 +22,7 @@ export default function Profile() {
     }
   };
   return (
-    <div className="flex h-full flex-col items-center p-6">
-      {/* Profile Picture (Icon if no avatar) */}
+    <div className="flex flex-col items-center p-6">
       <div className="mb-4">
         {currentUser?.avatar ? (
           <img
@@ -31,20 +35,32 @@ export default function Profile() {
         )}
       </div>
 
-      {/* User Name */}
       <h2 className="mb-2 text-xl font-semibold">
         {currentUser?.name || "User Name"}{" "}
-        {/* Display current user's name or fallback */}
       </h2>
 
-      {/* Logout Button */}
-      <button
-        onClick={handleLogout}
-        className="flex w-full max-w-xs items-center justify-center rounded-md bg-primaryRed px-4 py-2 text-white"
-      >
-        <FiLogOut className="text-xl text-white" />
-        <p className="pl-3">Logout</p>
-      </button>
+      <div className="w-full rounded-2xl bg-white px-4 shadow-md">
+        <div className="flex items-center border-b border-b-gray-200 py-4">
+          <IoMail className="mr-4 text-xl text-primaryRed" />
+          <p className="text-sm text-gray-500">{currentUser.email}</p>
+        </div>
+        <div
+          onClick={() => setIsChangePasswordModalOpen(true)}
+          className="flex items-center border-b border-b-gray-300 py-4"
+        >
+          <FaUnlockKeyhole className="mr-4 text-xl text-primaryRed" />
+          <p className="text-sm text-gray-500">Change Password</p>
+        </div>
+        <div onClick={handleLogout} className="flex items-center py-4">
+          <IoLogOut className="mr-4 text-xl text-primaryRed" />
+          <p className="text-sm text-gray-500">Log Out</p>
+        </div>
+      </div>
+      {isChangePasswordModalOpen && (
+        <ChangePasswordModal
+          onClose={() => setIsChangePasswordModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

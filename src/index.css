@@ -19,10 +19,10 @@
   h5,
   h6,
   label {
-    @apply text-primaryDark font-bold;
+    @apply font-bold text-primaryDark;
   }
   input[type="text"],
   textarea {
-    @apply focus:ring-primaryRed block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400;
+    @apply block w-full rounded-lg border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-primaryRed;
   }
 }

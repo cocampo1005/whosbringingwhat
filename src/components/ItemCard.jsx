@@ -1,29 +1,46 @@
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { MdEdit } from "react-icons/md";
 import { MdDelete } from "react-icons/md";
 import { LuVegan } from "react-icons/lu";
 import { FaLeaf } from "react-icons/fa6";
-import { GiPig } from "react-icons/gi";
+import { PorkIconComponent } from "../styles/svgs";
 import { GiPeanut } from "react-icons/gi";
 import { GiMilkCarton } from "react-icons/gi";
 import { FaGlideG } from "react-icons/fa";
 
-export default function ItemCard({ items, edit, onDelete, openDeleteModal }) {
+export default function ItemCard({
+  items,
+  edit,
+  openDeleteModal,
+  updateParticipants,
+}) {
   const categoryColors = {
     Main: "text-red-900",
     Side: "text-yellow-600",
-    Dessert: "text-rose-500",
-    Beverage: "text-blue-600",
+    Dessert: "text-rose-600",
+    Beverage: "text-fuchsia-900",
   };
 
   const dietaryIcons = {
     vegan: { icon: <LuVegan />, color: "text-green-600" },
     vegetarian: { icon: <FaLeaf />, color: "text-emerald-500" },
-    pork: { icon: <GiPig />, color: "text-pink-400" },
+    pork: { icon: <PorkIconComponent />, color: "text-pink-400" },
     nuts: { icon: <GiPeanut />, color: "text-yellow-600" },
     dairy: { icon: <GiMilkCarton />, color: "text-blue-500" },
     gluten: { icon: <FaGlideG />, color: "text-purple-600" },
   };
+
+  const assignees = useMemo(() => {
+    return Array.from(
+      new Set(items.map((item) => item.assignee).filter(Boolean)),
+    );
+  }, [items]);
+
+  useEffect(() => {
+    if (assignees.length > 0) {
+      updateParticipants(assignees);
+    }
+  }, [assignees]);
 
   return (
     <div>

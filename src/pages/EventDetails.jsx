@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   arrayRemove,
   arrayUnion,
@@ -22,12 +22,12 @@ import { FaPlus } from "react-icons/fa6";
 import { GiChickenOven } from "react-icons/gi";
 import { FaBowlFood } from "react-icons/fa6";
 import { GiCakeSlice } from "react-icons/gi";
-import { RiDrinks2Fill } from "react-icons/ri";
+import { FaWineGlassAlt } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
-
 import ItemModal from "../components/ItemModal";
 import ItemCard from "../components/ItemCard";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
+import ParticipantsModal from "../components/ParticipantsModal";
 
 function EventDetails() {
   const { eventId } = useParams();
@@ -38,6 +38,8 @@ function EventDetails() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [itemToDeleteName, setItemToDeleteName] = useState("");
+  const [participants, setParticipants] = useState([]);
+  const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -70,26 +72,31 @@ function EventDetails() {
     }
   };
 
-  const getUniqueParticipants = (items) => {
-    const participants = items.map((item) => item.assignee);
-    return [...new Set(participants)];
+  const updateParticipants = (itemAssignees) => {
+    const cleanAssignees = itemAssignees
+      .map((assignee) => assignee.replace(/\s+/g, " ").trim().toLowerCase())
+      .filter(Boolean);
+
+    setParticipants((prev) => {
+      const allAssignees = new Set([...prev, ...cleanAssignees]);
+      return Array.from(allAssignees);
+    });
+  };
+
+  const handleParticipantsModal = () => {
+    setIsParticipantModalOpen(!isParticipantModalOpen);
   };
 
   const groupItemsByCategory = (items) => {
-    // Define custom category order
     const categoryOrder = ["Main", "Side", "Dessert", "Beverage"];
-
-    // Sort the items based on the custom category order
     const sortedItems = items.sort((a, b) => {
       const categoryIndexA = categoryOrder.indexOf(a.category);
       const categoryIndexB = categoryOrder.indexOf(b.category);
 
-      // Compare by category index, if the categories are the same, then compare by title
       if (categoryIndexA === categoryIndexB) {
-        return a.title.localeCompare(b.title); // Sort by title within the same category
+        return a.title.localeCompare(b.title);
       }
-
-      return categoryIndexA - categoryIndexB; // Sort by custom category order
+      return categoryIndexA - categoryIndexB;
     });
 
     return sortedItems;
@@ -201,10 +208,19 @@ function EventDetails() {
     setIsDeleteModalOpen(true);
   };
 
-  if (!event) return <p>Loading event details...</p>;
+  if (!event) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center text-center">
+        <div className="mb-4 h-16 w-16 animate-spin rounded-full border-t-4 border-primaryRed"></div>
+        <p className="text-lg font-medium text-primaryDark">
+          Logging event, please wait...
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="m-4 mb-10 rounded-lg bg-white p-4 shadow-md">
+    <div className="m-4 mb-10 rounded-2xl bg-white p-4 shadow-md">
       <div className="flex items-start justify-between">
         <h1 className="pb-6 text-2xl font-bold">{event.title}</h1>
         <MdDelete
@@ -236,7 +252,7 @@ function EventDetails() {
           <FiEdit className="text-lg text-white" />
         </button>
         <button
-          // onClick={}
+          onClick={handleParticipantsModal}
           className="flex rounded-full bg-primaryRed p-3"
         >
           <BsPeople className="text-lg text-white" />
@@ -256,14 +272,14 @@ function EventDetails() {
           </p>
         </div>
         <div className="flex flex-col items-center justify-end">
-          <GiCakeSlice className="text-2xl text-rose-500" />
-          <p className="text-sm font-bold text-rose-500">
+          <GiCakeSlice className="text-2xl text-rose-600" />
+          <p className="text-sm font-bold text-rose-600">
             Desserts: {categoryCounts.Dessert || 0}
           </p>
         </div>
         <div className="flex flex-col items-center justify-end">
-          <RiDrinks2Fill className="text-2xl text-blue-600" />
-          <p className="text-sm font-bold text-blue-600">
+          <FaWineGlassAlt className="h-[23px] text-2xl text-fuchsia-900" />
+          <p className="text-sm font-bold text-fuchsia-900">
             Drinks: {categoryCounts.Beverage || 0}
           </p>
         </div>
@@ -272,7 +288,7 @@ function EventDetails() {
         items={groupItemsByCategory(event.items)}
         edit={handleEditItem}
         openDeleteModal={openDeleteModalForItem}
-        onDelete={handleDeleteItem}
+        updateParticipants={updateParticipants}
       />
       <button
         onClick={handleAddItem}
@@ -291,6 +307,14 @@ function EventDetails() {
         }
         deleteItemName={itemToDeleteName}
       />
+
+      {isParticipantModalOpen && (
+        <ParticipantsModal
+          isOpen={isParticipantModalOpen}
+          onClose={handleParticipantsModal}
+          participants={participants}
+        />
+      )}
 
       {editingEvent && (
         <EventModal

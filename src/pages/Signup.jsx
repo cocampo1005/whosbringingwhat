@@ -165,7 +165,7 @@ export default function Signup() {
             src={logo}
             className="mx-auto h-60 w-auto"
           />
-          <h2 className="text-primaryDark mt-10 text-center text-2xl/9 font-bold tracking-tight">
+          <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-primaryDark">
             Register an account
           </h2>
         </div>
@@ -176,7 +176,7 @@ export default function Signup() {
               <div className="flex items-center justify-between">
                 <label
                   htmlFor="name"
-                  className="text-primaryDark block text-sm/6 font-medium"
+                  className="block text-sm/6 font-medium text-primaryDark"
                 >
                   Full Name
                 </label>
@@ -200,7 +200,7 @@ export default function Signup() {
             <div>
               <label
                 htmlFor="email"
-                className="text-primaryDark block text-sm/6 font-medium"
+                className="block text-sm/6 font-medium text-primaryDark"
               >
                 Email
               </label>
@@ -212,7 +212,7 @@ export default function Signup() {
                   value={formData.email}
                   onChange={handleChange}
                   autoComplete="email"
-                  className={`text-primaryDark focus:ring-primaryRed block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ${errors.email ? "ring-red-500" : "ring-gray-300"} placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm/6`}
+                  className={`block w-full rounded-lg border-0 py-1.5 text-primaryDark shadow-sm ring-1 ring-inset focus:ring-primaryRed ${errors.email ? "ring-red-500" : "ring-gray-300"} placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm/6`}
                 />
                 {errors.email && (
                   <p className="mt-1 text-sm text-red-500">{errors.email}</p>
@@ -224,7 +224,7 @@ export default function Signup() {
               <div className="flex items-center justify-between">
                 <label
                   htmlFor="password"
-                  className="text-primaryDark block text-sm/6 font-medium"
+                  className="block text-sm/6 font-medium text-primaryDark"
                 >
                   Password
                 </label>
@@ -238,7 +238,7 @@ export default function Signup() {
                     value={formData.password}
                     onChange={handleChange}
                     autoComplete="new-password"
-                    className={`text-primaryDark focus:ring-primaryRed block w-full rounded-md border-0 py-1.5 pr-10 shadow-sm ring-1 ring-inset ${errors.password ? "ring-red-500" : "ring-gray-300"} placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm/6`}
+                    className={`block w-full rounded-lg border-0 py-1.5 pr-10 text-primaryDark shadow-sm ring-1 ring-inset focus:ring-primaryRed ${errors.password ? "ring-red-500" : "ring-gray-300"} placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm/6`}
                   />
                   <button
                     type="button"
@@ -267,7 +267,7 @@ export default function Signup() {
             <div className="flex flex-col">
               <button
                 type="submit"
-                className="bg-primaryRed hover:bg-secondaryRed focus-visible:outline-primaryRed flex w-full justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="flex w-full justify-center rounded-lg bg-primaryRed px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-secondaryRed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaryRed"
               >
                 Sign Up
               </button>
@@ -276,7 +276,7 @@ export default function Signup() {
           </form>
           <button
             onClick={handleGoogleAuth}
-            className="focus-visible:outline-primaryRed text-primaryDark flex w-full items-center justify-center rounded-md bg-white px-3 py-1.5 text-sm/6 font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="flex w-full items-center justify-center rounded-lg bg-white px-3 py-1.5 text-sm/6 font-semibold text-primaryDark shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaryRed"
           >
             <FcGoogle className="mr-3" />
             Sign Up with Google
@@ -286,7 +286,7 @@ export default function Signup() {
             Already a member?{" "}
             <Link
               to={"/login"}
-              className="text-primaryRed hover:text-secondaryRed font-semibold"
+              className="font-semibold text-primaryRed hover:text-secondaryRed"
             >
               Login
             </Link>

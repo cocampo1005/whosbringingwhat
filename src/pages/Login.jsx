@@ -11,6 +11,7 @@ import {
 import { auth, db } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useAuth } from "../contexts/AuthContext";
+import ForgotPasswordModal from "../components/ForgotPasswordModal";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,6 +22,8 @@ export default function Login() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [redirectHome, setRedirectHome] = useState(false);
+  const [isForgotPasswordModalOpen, setForgotPasswordModalOpen] =
+    useState(false);
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
@@ -135,6 +138,10 @@ export default function Login() {
     }
   };
 
+  const handleResetPassword = () => {
+    setForgotPasswordModalOpen(true);
+  };
+
   useEffect(() => {
     if (redirectHome && currentUser) {
       navigate("/");
@@ -145,8 +152,8 @@ export default function Login() {
   if (loading) {
     return (
       <div className="flex h-screen flex-col items-center justify-center text-center">
-        <div className="border-primaryRed mb-4 h-16 w-16 animate-spin rounded-full border-t-4"></div>
-        <p className="text-primaryDark text-lg font-medium">
+        <div className="mb-4 h-16 w-16 animate-spin rounded-full border-t-4 border-primaryRed"></div>
+        <p className="text-lg font-medium text-primaryDark">
           Logging you in, please wait...
         </p>
       </div>
@@ -162,7 +169,7 @@ export default function Login() {
             src={logo}
             className="mx-auto h-60 w-auto"
           />
-          <h2 className="text-primaryDark mt-10 text-center text-2xl/9 font-bold tracking-tight">
+          <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-primaryDark">
             Login into your account
           </h2>
         </div>
@@ -172,7 +179,7 @@ export default function Login() {
             <div>
               <label
                 htmlFor="email"
-                className="text-primaryDark block text-sm/6 font-medium"
+                className="block text-sm/6 text-primaryDark"
               >
                 Email
               </label>
@@ -184,7 +191,7 @@ export default function Login() {
                   autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="text-primaryDark focus:ring-primaryRed block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm/6"
+                  className="block w-full rounded-lg border-0 py-1.5 text-primaryDark shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primaryRed sm:text-sm/6"
                 />
                 {errors.email && <p className="text-red-500">{errors.email}</p>}
               </div>
@@ -194,10 +201,16 @@ export default function Login() {
               <div className="flex items-center justify-between">
                 <label
                   htmlFor="password"
-                  className="text-primaryDark block text-sm/6 font-medium"
+                  className="block text-sm/6 text-primaryDark"
                 >
                   Password
                 </label>
+                <p
+                  onClick={handleResetPassword}
+                  className="text-xs font-bold text-primaryRed"
+                >
+                  Forgot Password?
+                </p>
               </div>
               <div>
                 <div className="relative mt-2">
@@ -208,7 +221,7 @@ export default function Login() {
                     autoComplete="current-password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="text-primaryDark focus:ring-primaryRed block w-full rounded-md border-0 py-1.5 pr-10 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm/6"
+                    className="block w-full rounded-lg border-0 py-1.5 pr-10 text-primaryDark shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primaryRed sm:text-sm/6"
                   />
                   <button
                     type="button"
@@ -231,7 +244,7 @@ export default function Login() {
             <div>
               <button
                 type="submit"
-                className="bg-primaryRed hover:bg-secondaryRed focus-visible:outline-primaryRed flex w-full justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="flex w-full justify-center rounded-lg bg-primaryRed px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-secondaryRed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaryRed"
               >
                 Login
               </button>
@@ -240,7 +253,7 @@ export default function Login() {
           </form>
           <button
             onClick={handleGoogleAuth}
-            className="focus-visible:outline-primaryRed text-primaryDark flex w-full items-center justify-center rounded-md bg-white px-3 py-1.5 text-sm/6 font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="flex w-full items-center justify-center rounded-lg bg-white px-3 py-1.5 text-sm/6 font-semibold text-primaryDark shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaryRed"
           >
             <FcGoogle className="mr-3" />
             Login with Google
@@ -250,13 +263,18 @@ export default function Login() {
             Not a member?{" "}
             <Link
               to={"/signup"}
-              className="text-primaryRed hover:text-secondaryRed font-semibold"
+              className="font-semibold text-primaryRed hover:text-secondaryRed"
             >
               Register now
             </Link>
           </p>
         </div>
       </div>
+      {isForgotPasswordModalOpen && (
+        <ForgotPasswordModal
+          onClose={() => setForgotPasswordModalOpen(false)}
+        />
+      )}
     </>
   );
 }
