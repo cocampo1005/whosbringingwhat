@@ -42,8 +42,8 @@ Try out the deployed app [here](https://whos-bringing-what.web.app/).
 ### Prerequisites
 
 Make sure you have the following installed on your machine:
-
-- [Node.js](https://nodejs.org/) (v16+ recommended)
+- [nvm](https://github.com/nvm-sh/nvm)
+- [Node.js](https://nodejs.org/)
 - [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
 
 ### Installation
@@ -55,6 +55,10 @@ Make sure you have the following installed on your machine:
    ```bash
    cd whosbringingwhat
    ```
+   ```bash
+   nvm use
+   ```
+   Using `nvm`, will ensure the proper Node version is used
 2. Install Dependencies:
    ```bash
    npm install
@@ -63,11 +67,14 @@ Make sure you have the following installed on your machine:
    ```bash
    yarn install
    ```
-3. Create a Firebase project and configure it:
-
-   - Go to Firebase Console.
-   - Create a new project and enable Authentication and Firestore.
-   - Add a new web app and copy the Firebase configuration.
+3. Running / Development
+   ```bash
+   npm run dev
+   ```
+   or
+   ```bash
+   npx vite
+   ```
 
 ## Acknowledgments 💡
 
