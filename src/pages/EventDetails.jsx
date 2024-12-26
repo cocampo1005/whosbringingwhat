@@ -288,7 +288,7 @@ function EventDetails() {
           </div>
         </div>
         <ItemCard
-          items={groupItemsByCategory(event.items)}
+          items={groupItemsByCategory(event?.items)}
           edit={handleEditItem}
           openDeleteModal={openDeleteModalForItem}
           updateParticipants={updateParticipants}

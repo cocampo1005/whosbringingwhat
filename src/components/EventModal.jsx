@@ -10,6 +10,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
     title: initialData.title || "",
     description: initialData.description || "",
     date: initialData.date || null,
+    items: [],
     time: initialData.time || "",
     location: initialData.location || "",
     createdBy: initialData.createdBy || currentUser.name,
