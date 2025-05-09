@@ -6,6 +6,8 @@ import {
   addDoc,
   collection,
   onSnapshot,
+  orderBy,
+  query,
   serverTimestamp,
 } from "firebase/firestore";
 
@@ -16,7 +18,9 @@ export default function Events() {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "events"), (snapshot) => {
+    const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const eventsData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -64,7 +68,7 @@ export default function Events() {
 
       <button
         onClick={handleAddEvent}
-        className="bg-primaryRed fixed bottom-24 right-4 rounded-full p-4 text-white"
+        className="fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white"
       >
         <FaPlus />
       </button>
