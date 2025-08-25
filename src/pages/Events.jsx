@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { db } from "../firebase";
 import EventModal from "../components/EventModal";
 import { FaPlus } from "react-icons/fa6";
@@ -10,12 +10,35 @@ import {
   query,
   serverTimestamp,
 } from "firebase/firestore";
-
+import { useAuth } from "../contexts/AuthContext";
 import EventCard from "../components/EventCard";
 
 export default function Events() {
+  const { currentUser } = useAuth();
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [events, setEvents] = useState([]);
+  const [filter, setFilter] = useState("all");
+
+  const normalize = (s = "") => s.trim().replace(/\s+/g, " ").toLowerCase();
+
+  const myName = normalize(currentUser?.name || "");
+
+  const filteredEvents = useMemo(() => {
+    if (filter === "all") return events;
+    if (!currentUser) return [];
+
+    return events.filter((ev) => {
+      const items = Array.isArray(ev.items) ? ev.items : [];
+      // “Contributed to” = at least one item that’s mine
+      return items.some((it) => {
+        const hasId = !!it?.assigneeId;
+        const idMatches = it?.assigneeId === currentUser.uid;
+        const nameMatches =
+          !hasId && myName && normalize(it?.assignee || "") === myName;
+        return idMatches || nameMatches;
+      });
+    });
+  }, [events, filter, currentUser, myName]);
 
   useEffect(() => {
     const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
@@ -51,12 +74,50 @@ export default function Events() {
     <div className="w-screen flex-grow p-4">
       {/* Placeholder for event content */}
 
-      {events.length === 0 ? (
+      {(
+        filter === "all" ? events.length === 0 : filteredEvents.length === 0
+      ) ? (
         <p className="text-center text-gray-600">
-          Your events will appear here.
+          {filter === "all"
+            ? "Your events will appear here."
+            : "No events with your contributions yet."}
         </p>
       ) : (
-        <EventCard events={events} />
+        <>
+          <div className="mb-3 flex items-center justify-between">
+            <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
+              <button
+                type="button"
+                onClick={() => setFilter("all")}
+                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                  filter === "all"
+                    ? "bg-primaryRed text-white"
+                    : "text-primaryDark hover:bg-gray-50"
+                }`}
+                aria-pressed={filter === "all"}
+              >
+                All Events
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter("mine")}
+                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                  filter === "mine"
+                    ? "bg-primaryRed text-white"
+                    : "text-primaryDark hover:bg-gray-50"
+                }`}
+                aria-pressed={filter === "mine"}
+              >
+                Contibuted Events
+              </button>
+            </div>
+            <span className="text-xs text-gray-500">
+              {filter === "all" ? events.length : filteredEvents.length} events
+            </span>
+          </div>
+
+          <EventCard events={filteredEvents} />
+        </>
       )}
 
       {showAddEventModal && (
