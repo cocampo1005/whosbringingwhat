@@ -26,4 +26,17 @@
   textarea:not(.combo-input) {
     @apply block w-full rounded-lg border-gray-300 py-1.5 shadow-sm ring-0 placeholder:text-gray-400 focus:border-primaryRed focus:ring-0;
   }
+  .event-grid {
+    display: grid;
+    justify-content: space-around;
+  }
+  /* .event-card {
+    width: 400px;
+  }  */
+  .event-details {
+    display: flex;
+    flex-direction: column;
+    width: 600px;
+    margin: auto;
+  }
 }
