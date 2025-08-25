@@ -14,6 +14,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
     time: initialData.time || "",
     location: initialData.location || "",
     createdBy: initialData.createdBy || currentUser.name,
+    createdById: initialData.createdById || currentUser?.uid || null,
   });
   const [modalHeight, setModalHeight] = useState("100vh");
 

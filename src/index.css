@@ -21,8 +21,9 @@
   label {
     @apply font-bold text-primaryDark;
   }
-  input[type="text"],
-  textarea {
+  /* apply to all text inputs/textarea ... EXCEPT ones marked .combo-input */
+  input[type="text"]:not(.combo-input),
+  textarea:not(.combo-input) {
     @apply block w-full rounded-lg border-gray-300 py-1.5 shadow-sm ring-0 placeholder:text-gray-400 focus:border-primaryRed focus:ring-0;
   }
 }

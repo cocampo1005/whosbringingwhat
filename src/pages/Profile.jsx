@@ -117,9 +117,9 @@ export default function Profile() {
   return (
     <div className="flex flex-col items-center p-6">
       <div className="relative mb-4">
-        {realTimeUser?.avatar ? (
+        {realTimeUser?.avatar || realTimeUser?.photoURL ? (
           <img
-            src={realTimeUser.avatar}
+            src={realTimeUser.avatar || realTimeUser.photoURL}
             alt="Profile"
             className="h-24 w-24 rounded-full border-4 border-primaryRed object-cover"
           />
