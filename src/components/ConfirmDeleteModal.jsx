@@ -27,7 +27,7 @@ const ConfirmDeleteModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div
-        className="mx-4 w-full rounded-lg bg-yellow-50 p-6 shadow-lg"
+        className="mx-4 w-full rounded-lg bg-yellow-50 p-6 shadow-lg md:w-[400px]"
         role="dialog"
         aria-modal="true"
         aria-busy={isDeleting ? "true" : "false"}
