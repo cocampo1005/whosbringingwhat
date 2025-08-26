@@ -465,7 +465,6 @@ function EventDetails() {
                   >
                     <MdDelete className="text-lg text-white" />
                   </button>
-                  <ShareButton eventId={eventId} eventTitle={event.title} />
                   <button
                     onClick={() => setEditingEvent(true)}
                     className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
@@ -478,6 +477,7 @@ function EventDetails() {
                   >
                     <BsPeople className="text-lg text-white" />
                   </button>
+                  <ShareButton eventId={eventId} eventTitle={event.title} />
                 </div>
               </div>
 
@@ -614,7 +614,6 @@ function EventDetails() {
                 >
                   <MdDelete className="text-lg text-white" />
                 </button>
-                <ShareButton eventId={eventId} eventTitle={event.title} />
                 <button
                   onClick={() => setEditingEvent(true)}
                   className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
@@ -627,6 +626,7 @@ function EventDetails() {
                 >
                   <BsPeople className="text-lg text-white" />
                 </button>
+                <ShareButton eventId={eventId} eventTitle={event.title} />
               </div>
             </div>
 
