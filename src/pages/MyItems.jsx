@@ -113,7 +113,7 @@ export default function MyItems() {
 
               {/* Card body: Your items for this event */}
               <div className="px-4 pb-4 pt-2">
-                <div className="rounded-xl bg-rose-50 p-3">
+                <div className="rounded-xl bg-rose-50 p-3 shadow-md">
                   <p className="mb-2 text-sm font-bold text-rose-700">
                     Your Contributions
                   </p>
@@ -121,7 +121,7 @@ export default function MyItems() {
                     {ev.items.map((it) => (
                       <li
                         key={it.id}
-                        className="flex items-start justify-between rounded-lg bg-white p-2"
+                        className="flex items-start justify-between rounded-lg bg-white p-2 shadow-sm"
                       >
                         <div className="pr-3">
                           <p className="text-sm font-semibold">{it.title}</p>
