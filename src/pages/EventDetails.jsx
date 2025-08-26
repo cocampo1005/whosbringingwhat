@@ -37,6 +37,7 @@ import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import ParticipantsModal from "../components/ParticipantsModal";
 import PieChart from "../components/PieChart";
 import CategoryList from "../components/CategoryList";
+import { deleteAllEventItemImages } from "../utils/storageCleanup";
 
 function EventDetails() {
   const { eventId } = useParams();
@@ -49,11 +50,6 @@ function EventDetails() {
   const [itemToDeleteName, setItemToDeleteName] = useState("");
   const [participants, setParticipants] = useState([]);
   const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
-  const [expandedItems, setExpandedItems] = useState(new Set());
-  const [expandedCategories, setExpandedCategories] = useState(
-    new Set(["Main", "Side", "Dessert", "Beverage", "Miscellaneous"]),
-  ); // All expanded by default
-
   const navigate = useNavigate();
 
   // Dietary icons configuration
@@ -265,36 +261,14 @@ function EventDetails() {
     setIsItemModalOpen(false);
   };
 
-  const toggleItemExpansion = (itemId) => {
-    setExpandedItems((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
-      }
-      return newSet;
-    });
-  };
-
-  const toggleCategoryExpansion = (categoryName) => {
-    setExpandedCategories((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(categoryName)) {
-        newSet.delete(categoryName);
-      } else {
-        newSet.add(categoryName);
-      }
-      return newSet;
-    });
-  };
-
   // Functions for Confirming Deleting Modal
   const handleDeleteEvent = async () => {
     try {
+      // Run through the items and clean up any images from items first
+      await deleteAllEventItemImages(eventId);
       const eventRef = doc(db, "events", eventId);
+      // Delete Event document
       await deleteDoc(eventRef);
-      console.log("Event deleted:", eventId);
       navigate("/events");
     } catch (error) {
       console.error("Error deleting event:", error);

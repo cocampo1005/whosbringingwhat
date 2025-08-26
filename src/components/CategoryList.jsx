@@ -22,7 +22,7 @@ function CategoryList({
     });
 
   // Mirror original behavior: sort items by title
-  const sorted = useMemo(
+  const sortedItems = useMemo(
     () => [...items].sort((a, b) => a.title.localeCompare(b.title)),
     [items],
   );
@@ -48,9 +48,9 @@ function CategoryList({
       </div>
 
       {/* Items */}
-      {isExpanded && sorted.length > 0 && (
+      {isExpanded && sortedItems.length > 0 && (
         <div className="space-y-2">
-          {sorted.map((item) => {
+          {sortedItems.map((item) => {
             const open = expandedItems.has(item.id);
             return (
               <div key={item.id} className="rounded-lg bg-rose-50 shadow-md">

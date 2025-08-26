@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { useAuth } from "../contexts/AuthContext";
 import EventCard from "../components/EventCard";
+import { useNavigate } from "react-router-dom";
 
 export default function Events() {
   const { currentUser } = useAuth();
@@ -19,6 +20,7 @@ export default function Events() {
   const [events, setEvents] = useState([]);
   const [filter, setFilter] = useState("all");
 
+  const navigate = useNavigate();
   const normalize = (s = "") => s.trim().replace(/\s+/g, " ").toLowerCase();
 
   const myName = normalize(currentUser?.name || "");
@@ -60,11 +62,14 @@ export default function Events() {
 
   const addEventToFirestore = async (eventData) => {
     try {
-      await addDoc(collection(db, "events"), {
+      const docRef = await addDoc(collection(db, "events"), {
         ...eventData,
         createdAt: serverTimestamp(),
       });
       setShowAddEventModal(false);
+
+      // Navigate to the newly created event
+      navigate(`/events/${docRef.id}`);
     } catch (error) {
       console.error("Error adding event to Firestore: ", error);
     }
