@@ -409,7 +409,13 @@ function EventDetails() {
                 <div className="flex items-center gap-4">
                   <div className="shrink-0">
                     <div className="origin-center scale-90">
-                      <PieChart data={pieData} />
+                      <PieChart
+                        data={pieData}
+                        size={160}
+                        animate
+                        duration={700}
+                        delayStep={140}
+                      />
                     </div>
                   </div>
 
@@ -525,7 +531,13 @@ function EventDetails() {
               <h3 className="font-bold text-primaryDark">Item Distribution</h3>
               {pieData.length > 0 ? (
                 <div className="flex items-center gap-8">
-                  <PieChart data={pieData} />
+                  <PieChart
+                    data={pieData}
+                    size={160}
+                    animate
+                    duration={700}
+                    delayStep={140}
+                  />
 
                   {/* Legend */}
                   <div className="grid grid-cols-1 gap-3 text-sm">
