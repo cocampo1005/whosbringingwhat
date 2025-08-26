@@ -75,13 +75,13 @@ export default function MyItems() {
   }
 
   return (
-    <div className="w-screen flex-grow p-4">
+    <div className="max-w-5xl mx-auto px-4 pt-4">
       {groupedByEvent.length === 0 ? (
         <p className="text-center text-gray-600">
           Items you bring will show up here.
         </p>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {groupedByEvent.map((ev) => (
             <Link
               key={ev.eventId}
