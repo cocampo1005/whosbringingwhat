@@ -11,7 +11,7 @@ export default function Navbar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <nav className="hidden md:flex fixed top-0 left-0 h-screen w-56 bg-primaryRed flex-col justify-between py-6 px-4 shadow-md z-20">
+      <nav className="hidden md:flex fixed top-0 left-0 h-screen w-56 bg-primaryRed flex-col justify-between py-6 px-4 z-40 shadow-[6px_0_12px_-2px_rgba(0,0,0,0.2)]">
       {/* Logo */}
       <div>
         <div className="mb-10 text-white text-2xl font-bold tracking-wide">

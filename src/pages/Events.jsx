@@ -76,7 +76,7 @@ export default function Events() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 pt-20">
+    <div className="max-w-6xl mx-auto px-4 pt-9">
       {/* Placeholder for event content */}
 
       {(

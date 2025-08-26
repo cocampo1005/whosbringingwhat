@@ -25,7 +25,7 @@ export default function Home() {
 
       <div className="flex-1 flex flex-col md:ml-56">
         {/* Top header */}
-        <header className="bg-rose-100 shadow px-4 py-3 fixed top-0 left-0 md:left-56 right-0 z-10">
+        <header className="bg-rose-100 shadow px-6 md:pl-12 py-3 fixed top-0 left-0 md:left-56 right-0 z-10">
           <h1 className="text-center md:text-left text-lg sm:text-xl md:text-2xl font-bold text-primaryRed tracking-wide">
             {getPageName()}
           </h1>
