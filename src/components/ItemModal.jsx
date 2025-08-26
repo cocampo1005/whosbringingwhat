@@ -285,6 +285,7 @@ function ItemModal({
               <option value="Side">Side</option>
               <option value="Dessert">Dessert</option>
               <option value="Beverage">Beverage</option>
+              <option value="Miscellaneous">Miscellaneous</option>
             </select>
           </div>
 
