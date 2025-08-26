@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useEffect, useState } from "react";
 import {
   arrayRemove,
   arrayUnion,
@@ -13,7 +13,7 @@ import { db } from "../firebase";
 import { formatTime } from "../utils/formatters";
 import EventModal from "../components/EventModal";
 import ShareButton from "../components/ShareButton";
-import { FiEdit, FiChevronDown, FiChevronRight } from "react-icons/fi";
+import { FiEdit } from "react-icons/fi";
 import { BsPeople } from "react-icons/bs";
 import { MdOutlineAccessTimeFilled } from "react-icons/md";
 import { FaCalendarAlt } from "react-icons/fa";
@@ -24,6 +24,7 @@ import { FaBowlFood } from "react-icons/fa6";
 import { GiCakeSlice } from "react-icons/gi";
 import { FaWineGlassAlt } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
+import { BsThreeDots } from "react-icons/bs";
 // Dietary restriction icons
 import { LuVegan } from "react-icons/lu";
 import { FaLeaf } from "react-icons/fa6";
@@ -34,6 +35,8 @@ import { PorkIconComponent } from "../styles/svgs";
 import ItemModal from "../components/ItemModal";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import ParticipantsModal from "../components/ParticipantsModal";
+import PieChart from "../components/PieChart";
+import CategoryList from "../components/CategoryList";
 
 function EventDetails() {
   const { eventId } = useParams();
@@ -47,6 +50,9 @@ function EventDetails() {
   const [participants, setParticipants] = useState([]);
   const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState(new Set());
+  const [expandedCategories, setExpandedCategories] = useState(
+    new Set(["Main", "Side", "Dessert", "Beverage", "Miscellaneous"]),
+  ); // All expanded by default
 
   const navigate = useNavigate();
 
@@ -65,7 +71,25 @@ function EventDetails() {
       doc(db, "events", eventId),
       (docSnapshot) => {
         if (docSnapshot.exists()) {
-          setEvent({ id: docSnapshot.id, ...docSnapshot.data() });
+          const eventData = { id: docSnapshot.id, ...docSnapshot.data() };
+          setEvent(eventData);
+
+          // Extract participants from items
+          if (eventData.items) {
+            const participantSet = new Set();
+            eventData.items.forEach((item) => {
+              if (item.assignee && typeof item.assignee === "string") {
+                const cleanAssignee = item.assignee
+                  .replace(/\s+/g, " ")
+                  .trim()
+                  .toLowerCase();
+                if (cleanAssignee) {
+                  participantSet.add(cleanAssignee);
+                }
+              }
+            });
+            setParticipants(Array.from(participantSet));
+          }
         } else {
           console.error("Event not found!");
         }
@@ -89,26 +113,12 @@ function EventDetails() {
     }
   };
 
-  const updateParticipants = (itemAssignee) => {
-    if (itemAssignee && typeof itemAssignee === "string") {
-      const cleanAssignee = itemAssignee
-        .replace(/\s+/g, " ")
-        .trim()
-        .toLowerCase();
-
-      setParticipants((prev) => {
-        const allAssignees = new Set([...prev, cleanAssignee]);
-        return Array.from(allAssignees);
-      });
-    }
-  };
-
   const handleParticipantsModal = () => {
     setIsParticipantModalOpen(!isParticipantModalOpen);
   };
 
   const groupItemsByCategory = (items) => {
-    const categories = ["Main", "Side", "Dessert", "Beverage"];
+    const categories = ["Main", "Side", "Dessert", "Beverage", "Miscellaneous"];
     const grouped = {};
 
     categories.forEach((category) => {
@@ -121,7 +131,13 @@ function EventDetails() {
   };
 
   const getCategoryCounts = (items) => {
-    const categoryCounts = { Main: 0, Side: 0, Dessert: 0, Beverage: 0 };
+    const categoryCounts = {
+      Main: 0,
+      Side: 0,
+      Dessert: 0,
+      Beverage: 0,
+      Miscellaneous: 0,
+    };
 
     items.forEach((item) => {
       if (categoryCounts[item.category] !== undefined) {
@@ -132,7 +148,7 @@ function EventDetails() {
     return categoryCounts;
   };
 
-  const getProgressBarData = (items) => {
+  const getPieChartData = (items) => {
     const counts = getCategoryCounts(items);
     const total = items.length;
 
@@ -142,48 +158,69 @@ function EventDetails() {
       {
         name: "Main",
         count: counts.Main,
-        color: "bg-red-600",
+        color: "#dc2626",
         textColor: "text-red-600",
         icon: GiChickenOven,
       },
       {
         name: "Side",
         count: counts.Side,
-        color: "bg-yellow-500",
+        color: "#eab308",
         textColor: "text-yellow-500",
         icon: FaBowlFood,
       },
       {
         name: "Dessert",
         count: counts.Dessert,
-        color: "bg-fuchsia-600",
+        color: "#c026d3",
         textColor: "text-fuchsia-600",
         icon: GiCakeSlice,
       },
       {
         name: "Beverage",
         count: counts.Beverage,
-        color: "bg-blue-600",
+        color: "#2563eb",
         textColor: "text-blue-600",
         icon: FaWineGlassAlt,
       },
+      {
+        name: "Miscellaneous",
+        count: counts.Miscellaneous,
+        color: "#009689",
+        textColor: "text-teal-600",
+        icon: BsThreeDots,
+      },
     ];
 
-    return categories
-      .map((cat) => ({
-        ...cat,
-        percentage: (cat.count / total) * 100,
-      }))
-      .filter((cat) => cat.count > 0);
+    return categories.filter((cat) => cat.count > 0);
   };
 
-  const categoryCounts = event ? getCategoryCounts(event.items || []) : {};
-  const groupedItems = event ? groupItemsByCategory(event.items || []) : {};
-  const progressData = event ? getProgressBarData(event.items || []) : [];
+  // Keep grouped/category counts stable across unrelated re-renders
+  const categoryCounts = useMemo(() => {
+    const items = event?.items || [];
+    return getCategoryCounts(items);
+  }, [event?.items]);
+
+  const groupedItems = useMemo(() => {
+    const items = event?.items || [];
+    return groupItemsByCategory(items);
+  }, [event?.items]);
+
+  // Signature changes only when any category’s count changes
+  const pieSignature = useMemo(() => {
+    const c = categoryCounts;
+    return `Main:${c.Main}|Side:${c.Side}|Dessert:${c.Dessert}|Beverage:${c.Beverage}|Misc:${c.Miscellaneous}`;
+  }, [categoryCounts]);
+
+  // Recompute pieData only when the signature changes
+  const pieData = useMemo(() => {
+    const items = event?.items || [];
+    return getPieChartData(items);
+  }, [pieSignature]);
 
   // Helper function to get text color for a category
   const getCategoryTextColor = (categoryName) => {
-    const categoryData = progressData.find((cat) => cat.name === categoryName);
+    const categoryData = pieData.find((cat) => cat.name === categoryName);
     return categoryData ? categoryData.textColor : "text-gray-800";
   };
 
@@ -235,6 +272,18 @@ function EventDetails() {
         newSet.delete(itemId);
       } else {
         newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleCategoryExpansion = (categoryName) => {
+    setExpandedCategories((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryName)) {
+        newSet.delete(categoryName);
+      } else {
+        newSet.add(categoryName);
       }
       return newSet;
     });
@@ -309,129 +358,6 @@ function EventDetails() {
     setIsDeleteModalOpen(true);
   };
 
-  const renderCategoryList = (categoryName, items, categoryColor) => {
-    if (items.length === 0) return null;
-
-    return (
-      <div className="mb-6">
-        <h3 className={`mb-3 text-lg font-bold ${categoryColor}`}>
-          {categoryName}s ({items.length})
-        </h3>
-        <div className="space-y-2">
-          {items.map((item) => {
-            const isExpanded = expandedItems.has(item.id);
-            return (
-              <div key={item.id} className="rounded-lg bg-rose-50 shadow-md">
-                <div
-                  className="flex cursor-pointer items-center justify-between p-4"
-                  onClick={() => toggleItemExpansion(item.id)}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-primaryDark">
-                        {item.title}
-                      </h4>
-                      {isExpanded ? (
-                        <FiChevronDown className="text-primaryDark" />
-                      ) : (
-                        <FiChevronRight className="text-primaryDark" />
-                      )}
-                    </div>
-                    <p className="mt-1 text-sm text-gray-500">
-                      {item.assignee || "Unassigned"}
-                    </p>
-                    {item.dietary && item.dietary.length > 0 && (
-                      <div className="mt-2 flex gap-2">
-                        {item.dietary.map((restriction, index) => {
-                          const dietaryData =
-                            dietaryIcons[restriction.toLowerCase()];
-                          return (
-                            dietaryData && (
-                              <span
-                                key={index}
-                                className={`flex items-center text-lg ${dietaryData.color}`}
-                                title={restriction}
-                              >
-                                {dietaryData.icon}
-                              </span>
-                            )
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <div className="border-t border-rose-200 px-4 pb-4">
-                    <div className="mt-3 flex flex-col items-start justify-between">
-                      <div className="flex-1">
-                        {/* Placeholder for item description */}
-                        {item.description && (
-                          <div className="mb-3">
-                            <h5 className="mb-1 font-medium text-gray-700">
-                              Description:
-                            </h5>
-                            <p className="text-sm text-gray-600">
-                              {item.description}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Placeholder for item image */}
-                        {item.imageUrl && (
-                          <div className="mb-3">
-                            <h5 className="mb-1 font-medium text-gray-700">
-                              Photo:
-                            </h5>
-                            <img
-                              src={item.imageUrl}
-                              alt={item.title}
-                              className="h-32 w-32 rounded-lg object-cover"
-                            />
-                          </div>
-                        )}
-
-                        {/* Additional details can go here */}
-                        {item.servings && (
-                          <p className="mb-2 text-sm text-gray-600">
-                            <span className="font-medium">Servings:</span>{" "}
-                            {item.servings}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex w-full justify-end gap-2 p-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditItem(item);
-                          }}
-                          className="rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed"
-                        >
-                          <FiEdit />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDeleteModalForItem(item);
-                          }}
-                          className="rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed"
-                        >
-                          <MdDelete />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
   if (!event) {
     return (
       <div className="flex h-screen flex-col items-center justify-center text-center">
@@ -501,46 +427,35 @@ function EventDetails() {
               </div>
             </div>
 
-            {/* Progress bar */}
+            {/* Pie chart for mobile */}
             <div className="mt-6">
-              <h3 className="mb-3 font-bold text-gray-800">
-                Item Distribution
-              </h3>
-              {progressData.length > 0 ? (
-                <>
-                  <div className="mb-4 h-6 w-full rounded-full bg-gray-200">
-                    <div className="flex h-6 rounded-full">
-                      {progressData.map((cat, index) => (
-                        <div
-                          key={cat.name}
-                          className={`${cat.color} ${index === 0 ? "rounded-l-full" : ""} ${index === progressData.length - 1 ? "rounded-r-full" : ""} flex items-center justify-center text-xs font-bold text-white`}
-                          style={{ width: `${cat.percentage}%` }}
-                        >
-                          {cat.count > 0 && cat.percentage > 10
-                            ? cat.count
-                            : ""}
-                        </div>
-                      ))}
+              <h3 className="font-bold text-gray-800">Item Distribution</h3>
+
+              {pieData.length > 0 ? (
+                <div className="flex items-center gap-4">
+                  <div className="shrink-0">
+                    <div className="origin-center scale-90">
+                      <PieChart data={pieData} />
                     </div>
                   </div>
 
-                  {/* Legend */}
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    {progressData.map((cat) => {
+                  {/* Legend (right) */}
+                  <ul className="flex-1 space-y-2">
+                    {pieData.map((cat) => {
                       const IconComponent = cat.icon;
                       return (
-                        <div key={cat.name} className="flex items-center">
+                        <li key={cat.name} className="flex items-center">
                           <IconComponent
-                            className={`mr-2 text-lg ${cat.textColor}`}
+                            className={`mr-2 text-xl ${cat.textColor}`}
                           />
-                          <span className="font-bold">
+                          <span className="text-sm font-bold">
                             {cat.name}: {cat.count}
                           </span>
-                        </div>
+                        </li>
                       );
                     })}
-                  </div>
-                </>
+                  </ul>
+                </div>
               ) : (
                 <p className="text-sm text-gray-500">No items added yet</p>
               )}
@@ -549,26 +464,51 @@ function EventDetails() {
 
           {/* Mobile items layout */}
           <div>
-            {renderCategoryList(
-              "Main",
-              groupedItems.Main || [],
-              getCategoryTextColor("Main"),
-            )}
-            {renderCategoryList(
-              "Side",
-              groupedItems.Side || [],
-              getCategoryTextColor("Side"),
-            )}
-            {renderCategoryList(
-              "Dessert",
-              groupedItems.Dessert || [],
-              getCategoryTextColor("Dessert"),
-            )}
-            {renderCategoryList(
-              "Beverage",
-              groupedItems.Beverage || [],
-              getCategoryTextColor("Beverage"),
-            )}
+            <CategoryList
+              categoryName="Main"
+              items={groupedItems.Main || []}
+              categoryColor={getCategoryTextColor("Main")}
+              dietaryIcons={dietaryIcons}
+              onEditItem={handleEditItem}
+              onDeleteItem={openDeleteModalForItem}
+              defaultExpanded
+            />
+            <CategoryList
+              categoryName="Side"
+              items={groupedItems.Side || []}
+              categoryColor={getCategoryTextColor("Side")}
+              dietaryIcons={dietaryIcons}
+              onEditItem={handleEditItem}
+              onDeleteItem={openDeleteModalForItem}
+              defaultExpanded
+            />
+            <CategoryList
+              categoryName="Dessert"
+              items={groupedItems.Dessert || []}
+              categoryColor={getCategoryTextColor("Dessert")}
+              dietaryIcons={dietaryIcons}
+              onEditItem={handleEditItem}
+              onDeleteItem={openDeleteModalForItem}
+              defaultExpanded
+            />
+            <CategoryList
+              categoryName="Beverage"
+              items={groupedItems.Beverage || []}
+              categoryColor={getCategoryTextColor("Beverage")}
+              dietaryIcons={dietaryIcons}
+              onEditItem={handleEditItem}
+              onDeleteItem={openDeleteModalForItem}
+              defaultExpanded
+            />
+            <CategoryList
+              categoryName="Miscellaneous"
+              items={groupedItems.Miscellaneous || []}
+              categoryColor={getCategoryTextColor("Miscellaneous")}
+              dietaryIcons={dietaryIcons}
+              onEditItem={handleEditItem}
+              onDeleteItem={openDeleteModalForItem}
+              defaultExpanded
+            />
 
             {/* Empty state */}
             {(!event.items || event.items.length === 0) && (
@@ -584,83 +524,43 @@ function EventDetails() {
 
         {/* Desktop layout */}
         <div className="hidden md:block">
-          {/* Event details and buttons section */}
-          <div className="mb-8">
-            {/* Event details with horizontal buttons */}
-            <div className="mb-6 flex items-start justify-between">
-              <div className="flex-1">
-                <div className="mb-4 space-y-2">
-                  <div className="flex items-center">
-                    <FaCalendarAlt className="mr-2 text-primaryRed" />
-                    <p className="font-bold">{event.date}</p>
-                  </div>
-                  <div className="flex items-center">
-                    <MdOutlineAccessTimeFilled className="mr-2 text-primaryRed" />
-                    <p className="font-bold">{formatTime(event.time)}</p>
-                  </div>
-                  <div className="flex items-center">
-                    <TiLocation className="mr-2 text-primaryRed" />
-                    <p className="font-bold">{event.location}</p>
-                  </div>
+          <div className="flex items-start justify-between gap-8">
+            {/* Event details section */}
+            <div className="mb-6">
+              <div className="mb-4 space-y-2">
+                <div className="flex items-center">
+                  <FaCalendarAlt className="mr-2 text-primaryRed" />
+                  <p className="font-bold">{event.date}</p>
                 </div>
-                <p className="text-gray-700">{event.description}</p>
+                <div className="flex items-center">
+                  <MdOutlineAccessTimeFilled className="mr-2 text-primaryRed" />
+                  <p className="font-bold">{formatTime(event.time)}</p>
+                </div>
+                <div className="flex items-center">
+                  <TiLocation className="mr-2 text-primaryRed" />
+                  <p className="font-bold">{event.location}</p>
+                </div>
               </div>
-
-              {/* Action buttons - horizontal on desktop */}
-              <div className="ml-6 flex gap-2">
-                <button
-                  onClick={openDeleteModalForEvent}
-                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                >
-                  <MdDelete className="text-lg text-white" />
-                </button>
-                <button
-                  onClick={() => setEditingEvent(true)}
-                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                >
-                  <FiEdit className="text-lg text-white" />
-                </button>
-                <button
-                  onClick={handleParticipantsModal}
-                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                >
-                  <BsPeople className="text-lg text-white" />
-                </button>
-                <ShareButton eventId={eventId} eventTitle={event.title} />
-              </div>
+              <p className="text-gray-700">{event.description}</p>
             </div>
 
-            {/* Progress bar */}
-            <div>
-              <h3 className="mb-3 font-bold text-gray-800">
-                Item Distribution
-              </h3>
-              {progressData.length > 0 ? (
-                <>
-                  <div className="mb-4 h-6 w-full rounded-full bg-gray-200">
-                    <div className="flex h-6 rounded-full">
-                      {progressData.map((cat, index) => (
-                        <div
-                          key={cat.name}
-                          className={`${cat.color} ${index === 0 ? "rounded-l-full" : ""} ${index === progressData.length - 1 ? "rounded-r-full" : ""} flex items-center justify-center text-xs font-bold text-white`}
-                          style={{ width: `${cat.percentage}%` }}
-                        >
-                          {cat.count > 0 && cat.percentage > 10
-                            ? cat.count
-                            : ""}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+            {/* Pie chart and Action buttons section */}
+
+            {/* Pie chart */}
+            <div className="flex-1">
+              <h3 className="font-bold text-primaryDark">Item Distribution</h3>
+              {pieData.length > 0 ? (
+                <div className="flex items-center gap-8">
+                  <PieChart data={pieData} />
 
                   {/* Legend */}
-                  <div className="grid grid-cols-4 gap-4 text-sm">
-                    {progressData.map((cat) => {
+                  <div className="grid grid-cols-1 gap-3 text-sm">
+                    {pieData.map((cat) => {
                       const IconComponent = cat.icon;
                       return (
                         <div key={cat.name} className="flex items-center">
                           <IconComponent
-                            className={`mr-2 text-lg ${cat.textColor}`}
+                            className={`mr-3 text-xl ${cat.textColor}`}
                           />
                           <span className="font-bold">
                             {cat.name}: {cat.count}
@@ -669,43 +569,83 @@ function EventDetails() {
                       );
                     })}
                   </div>
-                </>
+                </div>
               ) : (
-                <p className="text-sm text-gray-500">No items added yet</p>
+                <p className="text-sm text-primaryDark">No items added yet</p>
               )}
+            </div>
+
+            {/* Action buttons - horizontal on desktop */}
+            <div className="ml-6 flex gap-2">
+              <button
+                onClick={openDeleteModalForEvent}
+                className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+              >
+                <MdDelete className="text-lg text-white" />
+              </button>
+              <button
+                onClick={() => setEditingEvent(true)}
+                className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+              >
+                <FiEdit className="text-lg text-white" />
+              </button>
+              <button
+                onClick={handleParticipantsModal}
+                className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+              >
+                <BsPeople className="text-lg text-white" />
+              </button>
+              <ShareButton eventId={eventId} eventTitle={event.title} />
             </div>
           </div>
 
-          {/* Four column layout for categories */}
-          <div className="grid grid-cols-4 gap-6">
-            <div>
-              {renderCategoryList(
-                "Main",
-                groupedItems.Main || [],
-                getCategoryTextColor("Main"),
-              )}
-            </div>
-            <div>
-              {renderCategoryList(
-                "Side",
-                groupedItems.Side || [],
-                getCategoryTextColor("Side"),
-              )}
-            </div>
-            <div>
-              {renderCategoryList(
-                "Dessert",
-                groupedItems.Dessert || [],
-                getCategoryTextColor("Dessert"),
-              )}
-            </div>
-            <div>
-              {renderCategoryList(
-                "Beverage",
-                groupedItems.Beverage || [],
-                getCategoryTextColor("Beverage"),
-              )}
-            </div>
+          {/* Five column layout for categories */}
+          <div className="grid grid-cols-5 gap-4">
+            <CategoryList
+              categoryName="Main"
+              items={groupedItems.Main || []}
+              categoryColor={getCategoryTextColor("Main")}
+              dietaryIcons={dietaryIcons}
+              onEditItem={handleEditItem}
+              onDeleteItem={openDeleteModalForItem}
+              defaultExpanded
+            />
+            <CategoryList
+              categoryName="Side"
+              items={groupedItems.Side || []}
+              categoryColor={getCategoryTextColor("Side")}
+              dietaryIcons={dietaryIcons}
+              onEditItem={handleEditItem}
+              onDeleteItem={openDeleteModalForItem}
+              defaultExpanded
+            />
+            <CategoryList
+              categoryName="Dessert"
+              items={groupedItems.Dessert || []}
+              categoryColor={getCategoryTextColor("Dessert")}
+              dietaryIcons={dietaryIcons}
+              onEditItem={handleEditItem}
+              onDeleteItem={openDeleteModalForItem}
+              defaultExpanded
+            />
+            <CategoryList
+              categoryName="Beverage"
+              items={groupedItems.Beverage || []}
+              categoryColor={getCategoryTextColor("Beverage")}
+              dietaryIcons={dietaryIcons}
+              onEditItem={handleEditItem}
+              onDeleteItem={openDeleteModalForItem}
+              defaultExpanded
+            />
+            <CategoryList
+              categoryName="Miscellaneous"
+              items={groupedItems.Miscellaneous || []}
+              categoryColor={getCategoryTextColor("Miscellaneous")}
+              dietaryIcons={dietaryIcons}
+              onEditItem={handleEditItem}
+              onDeleteItem={openDeleteModalForItem}
+              defaultExpanded
+            />
           </div>
 
           {/* Empty state for desktop */}
