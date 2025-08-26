@@ -185,7 +185,7 @@ function ItemModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="relative mx-4 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-yellow-50 p-6 shadow-lg">
+      <div className="relative mx-4 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-yellow-50 p-6 shadow-lg md:ml-[14rem]">
         <h2 className="mb-4 text-center text-xl font-bold">
           {mode === "add" ? "Add Item" : "Edit Item"}
         </h2>
