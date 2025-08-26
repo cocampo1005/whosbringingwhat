@@ -108,7 +108,7 @@ export default function Events() {
                 }`}
                 aria-pressed={filter === "mine"}
               >
-                Contibuted Events
+                Contributed Events
               </button>
             </div>
             <span className="text-xs text-gray-500">

@@ -27,7 +27,7 @@ function ShareButton({ eventId, eventTitle }) {
   return (
     <button
       onClick={handleShare}
-      className="flex items-center rounded-full bg-primaryRed p-3 text-white"
+      className="flex items-center rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed"
     >
       <MdOutlineIosShare className="text-lg" />
     </button>

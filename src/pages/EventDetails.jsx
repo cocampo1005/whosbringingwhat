@@ -13,7 +13,7 @@ import { db } from "../firebase";
 import { formatTime } from "../utils/formatters";
 import EventModal from "../components/EventModal";
 import ShareButton from "../components/ShareButton";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiChevronDown, FiChevronRight } from "react-icons/fi";
 import { BsPeople } from "react-icons/bs";
 import { MdOutlineAccessTimeFilled } from "react-icons/md";
 import { FaCalendarAlt } from "react-icons/fa";
@@ -24,8 +24,14 @@ import { FaBowlFood } from "react-icons/fa6";
 import { GiCakeSlice } from "react-icons/gi";
 import { FaWineGlassAlt } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
+// Dietary restriction icons
+import { LuVegan } from "react-icons/lu";
+import { FaLeaf } from "react-icons/fa6";
+import { GiPeanut } from "react-icons/gi";
+import { GiMilkCarton } from "react-icons/gi";
+import { FaGlideG } from "react-icons/fa";
+import { PorkIconComponent } from "../styles/svgs";
 import ItemModal from "../components/ItemModal";
-import ItemCard from "../components/ItemCard";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import ParticipantsModal from "../components/ParticipantsModal";
 
@@ -40,8 +46,19 @@ function EventDetails() {
   const [itemToDeleteName, setItemToDeleteName] = useState("");
   const [participants, setParticipants] = useState([]);
   const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState(new Set());
 
   const navigate = useNavigate();
+
+  // Dietary icons configuration
+  const dietaryIcons = {
+    vegan: { icon: <LuVegan />, color: "text-green-600" },
+    vegetarian: { icon: <FaLeaf />, color: "text-emerald-500" },
+    pork: { icon: <PorkIconComponent />, color: "text-pink-400" },
+    nuts: { icon: <GiPeanut />, color: "text-yellow-600" },
+    dairy: { icon: <GiMilkCarton />, color: "text-blue-500" },
+    gluten: { icon: <FaGlideG />, color: "text-purple-600" },
+  };
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -72,15 +89,18 @@ function EventDetails() {
     }
   };
 
-  const updateParticipants = (itemAssignees) => {
-    const cleanAssignees = itemAssignees
-      .map((assignee) => assignee.replace(/\s+/g, " ").trim().toLowerCase())
-      .filter(Boolean);
+  const updateParticipants = (itemAssignee) => {
+    if (itemAssignee && typeof itemAssignee === "string") {
+      const cleanAssignee = itemAssignee
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
 
-    setParticipants((prev) => {
-      const allAssignees = new Set([...prev, ...cleanAssignees]);
-      return Array.from(allAssignees);
-    });
+      setParticipants((prev) => {
+        const allAssignees = new Set([...prev, cleanAssignee]);
+        return Array.from(allAssignees);
+      });
+    }
   };
 
   const handleParticipantsModal = () => {
@@ -88,18 +108,16 @@ function EventDetails() {
   };
 
   const groupItemsByCategory = (items) => {
-    const categoryOrder = ["Main", "Side", "Dessert", "Beverage"];
-    const sortedItems = items.sort((a, b) => {
-      const categoryIndexA = categoryOrder.indexOf(a.category);
-      const categoryIndexB = categoryOrder.indexOf(b.category);
+    const categories = ["Main", "Side", "Dessert", "Beverage"];
+    const grouped = {};
 
-      if (categoryIndexA === categoryIndexB) {
-        return a.title.localeCompare(b.title);
-      }
-      return categoryIndexA - categoryIndexB;
+    categories.forEach((category) => {
+      grouped[category] = items
+        .filter((item) => item.category === category)
+        .sort((a, b) => a.title.localeCompare(b.title));
     });
 
-    return sortedItems;
+    return grouped;
   };
 
   const getCategoryCounts = (items) => {
@@ -113,10 +131,63 @@ function EventDetails() {
 
     return categoryCounts;
   };
+
+  const getProgressBarData = (items) => {
+    const counts = getCategoryCounts(items);
+    const total = items.length;
+
+    if (total === 0) return [];
+
+    const categories = [
+      {
+        name: "Main",
+        count: counts.Main,
+        color: "bg-red-600",
+        textColor: "text-red-600",
+        icon: GiChickenOven,
+      },
+      {
+        name: "Side",
+        count: counts.Side,
+        color: "bg-yellow-500",
+        textColor: "text-yellow-500",
+        icon: FaBowlFood,
+      },
+      {
+        name: "Dessert",
+        count: counts.Dessert,
+        color: "bg-fuchsia-600",
+        textColor: "text-fuchsia-600",
+        icon: GiCakeSlice,
+      },
+      {
+        name: "Beverage",
+        count: counts.Beverage,
+        color: "bg-blue-600",
+        textColor: "text-blue-600",
+        icon: FaWineGlassAlt,
+      },
+    ];
+
+    return categories
+      .map((cat) => ({
+        ...cat,
+        percentage: (cat.count / total) * 100,
+      }))
+      .filter((cat) => cat.count > 0);
+  };
+
   const categoryCounts = event ? getCategoryCounts(event.items || []) : {};
+  const groupedItems = event ? groupItemsByCategory(event.items || []) : {};
+  const progressData = event ? getProgressBarData(event.items || []) : [];
+
+  // Helper function to get text color for a category
+  const getCategoryTextColor = (categoryName) => {
+    const categoryData = progressData.find((cat) => cat.name === categoryName);
+    return categoryData ? categoryData.textColor : "text-gray-800";
+  };
 
   // Functions for item CRUD operations
-
   const addItemToEvent = async (eventId, newItem) => {
     const eventRef = doc(db, "events", eventId);
     await updateDoc(eventRef, {
@@ -157,8 +228,19 @@ function EventDetails() {
     setIsItemModalOpen(false);
   };
 
-  // Functions for Confirming Deleting Modal
+  const toggleItemExpansion = (itemId) => {
+    setExpandedItems((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
 
+  // Functions for Confirming Deleting Modal
   const handleDeleteEvent = async () => {
     try {
       const eventRef = doc(db, "events", eventId);
@@ -181,6 +263,26 @@ function EventDetails() {
         const { items } = eventDoc.data();
         const itemToRemove = items.find((item) => item.id === itemId);
         if (itemToRemove) {
+          // Delete associated image from storage if it exists
+          if (
+            itemToRemove.imageUrl &&
+            itemToRemove.imageUrl.includes("firebase")
+          ) {
+            try {
+              const { getStorage, ref, deleteObject } = await import(
+                "firebase/storage"
+              );
+              const storage = getStorage();
+              const imageRef = ref(storage, itemToRemove.imageUrl);
+              await deleteObject(imageRef);
+              console.log("Associated image deleted from storage");
+            } catch (imageError) {
+              console.error("Error deleting image from storage:", imageError);
+              // Continue with item deletion even if image deletion fails
+            }
+          }
+
+          // Remove item from event
           await updateDoc(eventRef, {
             items: arrayRemove(itemToRemove),
           });
@@ -199,7 +301,6 @@ function EventDetails() {
     setItemToDeleteName(event.title);
     setItemToDelete(eventId);
     setIsDeleteModalOpen(true);
-    console.log(itemToDelete);
   };
 
   const openDeleteModalForItem = (item) => {
@@ -208,134 +309,461 @@ function EventDetails() {
     setIsDeleteModalOpen(true);
   };
 
+  const renderCategoryList = (categoryName, items, categoryColor) => {
+    if (items.length === 0) return null;
+
+    return (
+      <div className="mb-6">
+        <h3 className={`mb-3 text-lg font-bold ${categoryColor}`}>
+          {categoryName}s ({items.length})
+        </h3>
+        <div className="space-y-2">
+          {items.map((item) => {
+            const isExpanded = expandedItems.has(item.id);
+            return (
+              <div key={item.id} className="rounded-lg bg-rose-50 shadow-md">
+                <div
+                  className="flex cursor-pointer items-center justify-between p-4"
+                  onClick={() => toggleItemExpansion(item.id)}
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-primaryDark">
+                        {item.title}
+                      </h4>
+                      {isExpanded ? (
+                        <FiChevronDown className="text-primaryDark" />
+                      ) : (
+                        <FiChevronRight className="text-primaryDark" />
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500">
+                      {item.assignee || "Unassigned"}
+                    </p>
+                    {item.dietary && item.dietary.length > 0 && (
+                      <div className="mt-2 flex gap-2">
+                        {item.dietary.map((restriction, index) => {
+                          const dietaryData =
+                            dietaryIcons[restriction.toLowerCase()];
+                          return (
+                            dietaryData && (
+                              <span
+                                key={index}
+                                className={`flex items-center text-lg ${dietaryData.color}`}
+                                title={restriction}
+                              >
+                                {dietaryData.icon}
+                              </span>
+                            )
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div className="border-t border-rose-200 px-4 pb-4">
+                    <div className="mt-3 flex flex-col items-start justify-between">
+                      <div className="flex-1">
+                        {/* Placeholder for item description */}
+                        {item.description && (
+                          <div className="mb-3">
+                            <h5 className="mb-1 font-medium text-gray-700">
+                              Description:
+                            </h5>
+                            <p className="text-sm text-gray-600">
+                              {item.description}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Placeholder for item image */}
+                        {item.imageUrl && (
+                          <div className="mb-3">
+                            <h5 className="mb-1 font-medium text-gray-700">
+                              Photo:
+                            </h5>
+                            <img
+                              src={item.imageUrl}
+                              alt={item.title}
+                              className="h-32 w-32 rounded-lg object-cover"
+                            />
+                          </div>
+                        )}
+
+                        {/* Additional details can go here */}
+                        {item.servings && (
+                          <p className="mb-2 text-sm text-gray-600">
+                            <span className="font-medium">Servings:</span>{" "}
+                            {item.servings}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex w-full justify-end gap-2 p-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditItem(item);
+                          }}
+                          className="rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed"
+                        >
+                          <FiEdit />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteModalForItem(item);
+                          }}
+                          className="rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed"
+                        >
+                          <MdDelete />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   if (!event) {
     return (
       <div className="flex h-screen flex-col items-center justify-center text-center">
         <div className="mb-4 h-16 w-16 animate-spin rounded-full border-t-4 border-primaryRed"></div>
         <p className="text-lg font-medium text-primaryDark">
-          Logging event, please wait...
+          Loading event, please wait...
         </p>
       </div>
     );
   }
 
   return (
-    <div className="m-4 mb-10 rounded-2xl bg-white shadow-md md:event-details">
+    <div className="m-4 mb-10 max-w-7xl rounded-2xl bg-white shadow-md">
       <div className="flex w-full items-center justify-center rounded-tl-2xl rounded-tr-2xl bg-primaryRed px-4 py-2">
         <h1 className="text-center text-xl font-bold text-white">
           {event.title}
         </h1>
       </div>
-      <div className="relative z-0 p-4">
-        <MdDelete
-          onClick={openDeleteModalForEvent}
-          className="absolute right-4 top-4 text-2xl text-primaryRed"
-        />
-        <div>
-          <div className="flex items-center">
-            <FaCalendarAlt className="mr-2 text-primaryRed" />
-            <p className="font-bold">{event.date}</p>
+
+      <div className="p-4 md:p-6">
+        {/* Mobile layout */}
+        <div className="md:hidden">
+          <div className="mb-6">
+            <div className="relative">
+              {/* Action buttons - vertical on mobile */}
+              <div className="absolute right-0 top-0">
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={openDeleteModalForEvent}
+                    className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                  >
+                    <MdDelete className="text-lg text-white" />
+                  </button>
+                  <button
+                    onClick={() => setEditingEvent(true)}
+                    className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                  >
+                    <FiEdit className="text-lg text-white" />
+                  </button>
+                  <button
+                    onClick={handleParticipantsModal}
+                    className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                  >
+                    <BsPeople className="text-lg text-white" />
+                  </button>
+                  <ShareButton eventId={eventId} eventTitle={event.title} />
+                </div>
+              </div>
+
+              {/* Event info */}
+              <div className="pr-20">
+                <div className="mb-4 space-y-2">
+                  <div className="flex items-center">
+                    <FaCalendarAlt className="mr-2 text-primaryRed" />
+                    <p className="font-bold">{event.date}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <MdOutlineAccessTimeFilled className="mr-2 text-primaryRed" />
+                    <p className="font-bold">{formatTime(event.time)}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <TiLocation className="mr-2 text-primaryRed" />
+                    <p className="font-bold">{event.location}</p>
+                  </div>
+                </div>
+                <p className="text-gray-700">{event.description}</p>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mt-6">
+              <h3 className="mb-3 font-bold text-gray-800">
+                Item Distribution
+              </h3>
+              {progressData.length > 0 ? (
+                <>
+                  <div className="mb-4 h-6 w-full rounded-full bg-gray-200">
+                    <div className="flex h-6 rounded-full">
+                      {progressData.map((cat, index) => (
+                        <div
+                          key={cat.name}
+                          className={`${cat.color} ${index === 0 ? "rounded-l-full" : ""} ${index === progressData.length - 1 ? "rounded-r-full" : ""} flex items-center justify-center text-xs font-bold text-white`}
+                          style={{ width: `${cat.percentage}%` }}
+                        >
+                          {cat.count > 0 && cat.percentage > 10
+                            ? cat.count
+                            : ""}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Legend */}
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {progressData.map((cat) => {
+                      const IconComponent = cat.icon;
+                      return (
+                        <div key={cat.name} className="flex items-center">
+                          <IconComponent
+                            className={`mr-2 text-lg ${cat.textColor}`}
+                          />
+                          <span className="font-bold">
+                            {cat.name}: {cat.count}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500">No items added yet</p>
+              )}
+            </div>
           </div>
-          <div className="flex items-center">
-            <MdOutlineAccessTimeFilled className="mr-2 text-primaryRed" />
-            <p className="font-bold">{formatTime(event.time)}</p>
+
+          {/* Mobile items layout */}
+          <div>
+            {renderCategoryList(
+              "Main",
+              groupedItems.Main || [],
+              getCategoryTextColor("Main"),
+            )}
+            {renderCategoryList(
+              "Side",
+              groupedItems.Side || [],
+              getCategoryTextColor("Side"),
+            )}
+            {renderCategoryList(
+              "Dessert",
+              groupedItems.Dessert || [],
+              getCategoryTextColor("Dessert"),
+            )}
+            {renderCategoryList(
+              "Beverage",
+              groupedItems.Beverage || [],
+              getCategoryTextColor("Beverage"),
+            )}
+
+            {/* Empty state */}
+            {(!event.items || event.items.length === 0) && (
+              <div className="py-12 text-center">
+                <p className="mb-4 text-lg text-gray-500">No items added yet</p>
+                <p className="text-gray-400">
+                  Click the + button to add your first item!
+                </p>
+              </div>
+            )}
           </div>
-          <div className="flex items-center">
-            <TiLocation className="mr-2 text-primaryRed" />
-            <p className="font-bold">{event.location}</p>
-          </div>
-          <p className="pt-2">{event.description}</p>
         </div>
-        <div className="flex justify-around py-4">
-          <ShareButton eventId={eventId} eventTitle={event.title} />
-          <button
-            onClick={() => setEditingEvent(true)}
-            className="flex rounded-full bg-primaryRed p-3"
-          >
-            <FiEdit className="text-lg text-white" />
-          </button>
-          <button
-            onClick={handleParticipantsModal}
-            className="flex rounded-full bg-primaryRed p-3"
-          >
-            <BsPeople className="text-lg text-white" />
-          </button>
+
+        {/* Desktop layout */}
+        <div className="hidden md:block">
+          {/* Event details and buttons section */}
+          <div className="mb-8">
+            {/* Event details with horizontal buttons */}
+            <div className="mb-6 flex items-start justify-between">
+              <div className="flex-1">
+                <div className="mb-4 space-y-2">
+                  <div className="flex items-center">
+                    <FaCalendarAlt className="mr-2 text-primaryRed" />
+                    <p className="font-bold">{event.date}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <MdOutlineAccessTimeFilled className="mr-2 text-primaryRed" />
+                    <p className="font-bold">{formatTime(event.time)}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <TiLocation className="mr-2 text-primaryRed" />
+                    <p className="font-bold">{event.location}</p>
+                  </div>
+                </div>
+                <p className="text-gray-700">{event.description}</p>
+              </div>
+
+              {/* Action buttons - horizontal on desktop */}
+              <div className="ml-6 flex gap-2">
+                <button
+                  onClick={openDeleteModalForEvent}
+                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                >
+                  <MdDelete className="text-lg text-white" />
+                </button>
+                <button
+                  onClick={() => setEditingEvent(true)}
+                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                >
+                  <FiEdit className="text-lg text-white" />
+                </button>
+                <button
+                  onClick={handleParticipantsModal}
+                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                >
+                  <BsPeople className="text-lg text-white" />
+                </button>
+                <ShareButton eventId={eventId} eventTitle={event.title} />
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div>
+              <h3 className="mb-3 font-bold text-gray-800">
+                Item Distribution
+              </h3>
+              {progressData.length > 0 ? (
+                <>
+                  <div className="mb-4 h-6 w-full rounded-full bg-gray-200">
+                    <div className="flex h-6 rounded-full">
+                      {progressData.map((cat, index) => (
+                        <div
+                          key={cat.name}
+                          className={`${cat.color} ${index === 0 ? "rounded-l-full" : ""} ${index === progressData.length - 1 ? "rounded-r-full" : ""} flex items-center justify-center text-xs font-bold text-white`}
+                          style={{ width: `${cat.percentage}%` }}
+                        >
+                          {cat.count > 0 && cat.percentage > 10
+                            ? cat.count
+                            : ""}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Legend */}
+                  <div className="grid grid-cols-4 gap-4 text-sm">
+                    {progressData.map((cat) => {
+                      const IconComponent = cat.icon;
+                      return (
+                        <div key={cat.name} className="flex items-center">
+                          <IconComponent
+                            className={`mr-2 text-lg ${cat.textColor}`}
+                          />
+                          <span className="font-bold">
+                            {cat.name}: {cat.count}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500">No items added yet</p>
+              )}
+            </div>
+          </div>
+
+          {/* Four column layout for categories */}
+          <div className="grid grid-cols-4 gap-6">
+            <div>
+              {renderCategoryList(
+                "Main",
+                groupedItems.Main || [],
+                getCategoryTextColor("Main"),
+              )}
+            </div>
+            <div>
+              {renderCategoryList(
+                "Side",
+                groupedItems.Side || [],
+                getCategoryTextColor("Side"),
+              )}
+            </div>
+            <div>
+              {renderCategoryList(
+                "Dessert",
+                groupedItems.Dessert || [],
+                getCategoryTextColor("Dessert"),
+              )}
+            </div>
+            <div>
+              {renderCategoryList(
+                "Beverage",
+                groupedItems.Beverage || [],
+                getCategoryTextColor("Beverage"),
+              )}
+            </div>
+          </div>
+
+          {/* Empty state for desktop */}
+          {(!event.items || event.items.length === 0) && (
+            <div className="py-12 text-center">
+              <p className="mb-4 text-lg text-gray-500">No items added yet</p>
+              <p className="text-gray-400">
+                Click the + button to add your first item!
+              </p>
+            </div>
+          )}
         </div>
-        <div className="flex justify-between pb-4">
-          <div className="flex flex-col items-center justify-end">
-            <GiChickenOven className="text-3xl text-red-900" />
-            <p className="text-sm font-bold text-red-900">
-              Mains: {categoryCounts.Main || 0}
-            </p>
-          </div>
-          <div className="flex flex-col items-center justify-end">
-            <FaBowlFood className="text-2xl text-yellow-600" />
-            <p className="text-sm font-bold text-yellow-600">
-              Sides: {categoryCounts.Side || 0}
-            </p>
-          </div>
-          <div className="flex flex-col items-center justify-end">
-            <GiCakeSlice className="text-2xl text-rose-600" />
-            <p className="text-sm font-bold text-rose-600">
-              Desserts: {categoryCounts.Dessert || 0}
-            </p>
-          </div>
-          <div className="flex flex-col items-center justify-end">
-            <FaWineGlassAlt className="h-[23px] text-2xl text-fuchsia-900" />
-            <p className="text-sm font-bold text-fuchsia-900">
-              Drinks: {categoryCounts.Beverage || 0}
-            </p>
-          </div>
-        </div>
-        <ItemCard
-          items={groupItemsByCategory(event?.items)}
-          edit={handleEditItem}
-          openDeleteModal={openDeleteModalForItem}
-          updateParticipants={updateParticipants}
-        />
-        <button
-          onClick={handleAddItem}
-          className="fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white"
-        >
-          <FaPlus />
-        </button>
-
-        <ConfirmDeleteModal
-          isOpen={isDeleteModalOpen}
-          closeModal={() => setIsDeleteModalOpen(false)}
-          onConfirmDelete={
-            itemToDelete === event.id
-              ? handleDeleteEvent
-              : () => handleDeleteItem(itemToDelete)
-          }
-          deleteItemName={itemToDeleteName}
-        />
-
-        {isParticipantModalOpen && (
-          <ParticipantsModal
-            isOpen={isParticipantModalOpen}
-            onClose={handleParticipantsModal}
-            participants={participants}
-          />
-        )}
-
-        {editingEvent && (
-          <EventModal
-            closeModal={() => setEditingEvent(false)}
-            onSubmit={handleEdit}
-            initialData={event}
-          />
-        )}
-
-        {isItemModalOpen && (
-          <ItemModal
-            closeModal={() => setIsItemModalOpen(false)}
-            onSubmit={handleItemSubmit}
-            initialData={editingItem}
-            mode={editingItem ? "edit" : "add"}
-          />
-        )}
       </div>
+
+      {/* Add item button */}
+      <button
+        onClick={handleAddItem}
+        className="fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white shadow-lg transition-colors hover:bg-secondaryRed"
+      >
+        <FaPlus />
+      </button>
+
+      {/* Modals */}
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        closeModal={() => setIsDeleteModalOpen(false)}
+        onConfirmDelete={
+          itemToDelete === event.id
+            ? handleDeleteEvent
+            : () => handleDeleteItem(itemToDelete)
+        }
+        deleteItemName={itemToDeleteName}
+      />
+
+      {isParticipantModalOpen && (
+        <ParticipantsModal
+          isOpen={isParticipantModalOpen}
+          onClose={handleParticipantsModal}
+          participants={participants}
+        />
+      )}
+
+      {editingEvent && (
+        <EventModal
+          closeModal={() => setEditingEvent(false)}
+          onSubmit={handleEdit}
+          initialData={event}
+        />
+      )}
+
+      {isItemModalOpen && (
+        <ItemModal
+          closeModal={() => setIsItemModalOpen(false)}
+          onSubmit={handleItemSubmit}
+          initialData={editingItem}
+          mode={editingItem ? "edit" : "add"}
+        />
+      )}
     </div>
   );
 }
