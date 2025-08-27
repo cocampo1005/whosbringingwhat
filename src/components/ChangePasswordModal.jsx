@@ -88,8 +88,8 @@ export default function ChangePasswordModal({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-      <div className="relative w-full max-w-md mx-4 sm:mx-auto rounded-2xl bg-yellow-50 p-6 shadow-lg md:mr-[12rem]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50 px-4">
+  <div className="w-full max-w-md rounded-2xl bg-yellow-50 p-6 shadow-lg md:ml-[300px] md:-translate-x-10">
         <h2 className="mb-4 text-center text-lg font-semibold">
           Change Password
         </h2>
