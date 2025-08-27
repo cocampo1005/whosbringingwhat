@@ -27,10 +27,10 @@ import { MdDelete } from "react-icons/md";
 import { BsThreeDots } from "react-icons/bs";
 // Dietary restriction icons
 import { LuVegan } from "react-icons/lu";
-import { FaLeaf } from "react-icons/fa6";
-import { GiPeanut } from "react-icons/gi";
-import { GiMilkCarton } from "react-icons/gi";
-import { FaGlideG } from "react-icons/fa";
+import { FaLeaf, FaFish } from "react-icons/fa6";
+import { PiCowFill } from "react-icons/pi";
+import { FaGlideG, FaPepperHot } from "react-icons/fa";
+import { GiChicken, GiPeanut, GiMilkCarton, GiShrimp } from "react-icons/gi";
 import { PorkIconComponent } from "../styles/svgs";
 import ItemModal from "../components/ItemModal";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
@@ -57,9 +57,14 @@ function EventDetails() {
     vegan: { icon: <LuVegan />, color: "text-green-600" },
     vegetarian: { icon: <FaLeaf />, color: "text-emerald-500" },
     pork: { icon: <PorkIconComponent />, color: "text-pink-400" },
+    beef: { icon: <PiCowFill />, color: "text-amber-800" },
+    poultry: { icon: <GiChicken />, color: "text-orange-400" },
+    fish: { icon: <FaFish />, color: "text-sky-600" },
+    shellfish: { icon: <GiShrimp />, color: "text-orange-600" },
     nuts: { icon: <GiPeanut />, color: "text-yellow-600" },
     dairy: { icon: <GiMilkCarton />, color: "text-blue-500" },
     gluten: { icon: <FaGlideG />, color: "text-purple-600" },
+    spicy: { icon: <FaPepperHot />, color: "text-red-600" },
   };
 
   useEffect(() => {
@@ -168,8 +173,8 @@ function EventDetails() {
       {
         name: "Dessert",
         count: counts.Dessert,
-        color: "#c026d3",
-        textColor: "text-fuchsia-600",
+        color: "#ad46ff",
+        textColor: "text-purple-600",
         icon: GiCakeSlice,
       },
       {
@@ -344,7 +349,7 @@ function EventDetails() {
   }
 
   return (
-    <div className="relative mt-8 mb-10 max-w-7xl rounded-2xl bg-white shadow-md">
+    <div className="relative mb-10 mt-8 max-w-7xl rounded-2xl bg-white shadow-md">
       <div className="flex w-full items-center justify-center rounded-tl-2xl rounded-tr-2xl bg-primaryRed px-4 py-2">
         <h1 className="text-center text-xl font-bold text-white">
           {event.title}
@@ -403,7 +408,7 @@ function EventDetails() {
 
             {/* Pie chart for mobile */}
             <div className="mt-6">
-              <h3 className="font-bold text-gray-800">Item Distribution</h3>
+              <h3 className="font-bold text-primaryDark">Item Distribution</h3>
 
               {pieData.length > 0 ? (
                 <div className="flex items-center gap-4">
@@ -504,7 +509,7 @@ function EventDetails() {
 
         {/* Desktop layout */}
         <div className="hidden md:block">
-          <div className="flex items-start justify-between gap-8">
+          <div className="mb-8 flex items-start justify-between gap-8">
             {/* Event details section */}
             <div className="mb-6">
               <div className="mb-4 space-y-2">
@@ -527,7 +532,7 @@ function EventDetails() {
             {/* Pie chart and Action buttons section */}
 
             {/* Pie chart */}
-            <div className="flex-1">
+            <div className="justify-center">
               <h3 className="font-bold text-primaryDark">Item Distribution</h3>
               {pieData.length > 0 ? (
                 <div className="flex items-center gap-8">

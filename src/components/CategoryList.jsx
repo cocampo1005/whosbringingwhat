@@ -14,6 +14,14 @@ function CategoryList({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [expandedItems, setExpandedItems] = useState(() => new Set());
 
+  const CATEGORY_BG = {
+    Main: "bg-rose-50",
+    Side: "bg-yellow-50",
+    Dessert: "bg-purple-50",
+    Beverage: "bg-blue-50",
+    Miscellaneous: "bg-emerald-50",
+  };
+
   const toggleItem = (id) =>
     setExpandedItems((prev) => {
       const s = new Set(prev);
@@ -53,7 +61,10 @@ function CategoryList({
           {sortedItems.map((item) => {
             const open = expandedItems.has(item.id);
             return (
-              <div key={item.id} className="rounded-lg bg-rose-50 shadow-md">
+              <div
+                key={item.id}
+                className={`rounded-lg ${CATEGORY_BG[categoryName] ?? "bg-gray-50"} shadow-md`}
+              >
                 <div
                   className="flex cursor-pointer items-center justify-between p-4"
                   onClick={() => toggleItem(item.id)}
@@ -73,7 +84,7 @@ function CategoryList({
                       {item.assignee || "Unassigned"}
                     </p>
                     {item.dietary && item.dietary.length > 0 && (
-                      <div className="mt-2 flex gap-2">
+                      <div className="mt-2 flex flex-wrap gap-2">
                         {item.dietary.map((restriction, i) => {
                           const d = dietaryIcons[restriction?.toLowerCase?.()];
                           return d ? (
