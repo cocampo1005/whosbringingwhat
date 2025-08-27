@@ -39,10 +39,15 @@ function ItemModal({
   const dietaryOptions = [
     { label: "Vegetarian", value: "vegetarian" },
     { label: "Vegan", value: "vegan" },
-    { label: "Gluten-Free", value: "gluten" },
+    { label: "Gluten Free", value: "gluten" },
     { label: "Has Dairy", value: "dairy" },
     { label: "Has Nuts", value: "nuts" },
     { label: "Has Pork", value: "pork" },
+    { label: "Has Beef", value: "beef" },
+    { label: "Has Poultry", value: "poultry" },
+    { label: "Has Fish", value: "fish" },
+    { label: "Has Shellfish", value: "shellfish" },
+    { label: "Spicy", value: "spicy" },
   ];
 
   const normalize = (s = "") => s.trim().toLowerCase().replace(/\s+/g, " ");
