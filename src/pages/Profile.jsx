@@ -115,7 +115,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="flex flex-col items-center p-6">
+    <div className="flex flex-col items-center p-6 pt-12 sm:px-8">
       <div className="relative mb-4">
         {realTimeUser?.avatar || realTimeUser?.photoURL ? (
           <img
