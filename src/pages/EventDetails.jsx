@@ -57,13 +57,13 @@ function EventDetails() {
     vegan: { icon: <LuVegan />, color: "text-green-600" },
     vegetarian: { icon: <FaLeaf />, color: "text-emerald-500" },
     pork: { icon: <PorkIconComponent />, color: "text-pink-400" },
+    beef: { icon: <PiCowFill />, color: "text-amber-800" },
+    poultry: { icon: <GiChicken />, color: "text-orange-400" },
+    fish: { icon: <FaFish />, color: "text-sky-600" },
+    shellfish: { icon: <GiShrimp />, color: "text-orange-600" },
     nuts: { icon: <GiPeanut />, color: "text-yellow-600" },
     dairy: { icon: <GiMilkCarton />, color: "text-blue-500" },
     gluten: { icon: <FaGlideG />, color: "text-purple-600" },
-    beef: { icon: <PiCowFill />, color: "text-amber-700" },
-    poultry: { icon: <GiChicken />, color: "text-yellow-700" },
-    fish: { icon: <FaFish />, color: "text-sky-600" },
-    shellfish: { icon: <GiShrimp />, color: "text-orange-600" },
     spicy: { icon: <FaPepperHot />, color: "text-red-600" },
   };
 
