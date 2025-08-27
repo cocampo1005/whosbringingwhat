@@ -115,7 +115,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="flex flex-col items-center p-6">
+    <div className="flex flex-col items-center p-6 pt-12 sm:px-8">
       <div className="relative mb-4">
         {realTimeUser?.avatar || realTimeUser?.photoURL ? (
           <img
@@ -157,23 +157,25 @@ export default function Profile() {
         />
       </div>
 
-      <div className="w-full rounded-2xl bg-white px-4 shadow-md">
-        <div className="flex items-center border-b border-b-gray-200 py-4">
-          <IoMail className="mr-4 text-xl text-primaryRed" />
-          <p className="text-sm text-gray-500 no-underline">
-            {currentUser.email}
-          </p>
-        </div>
-        <div
-          onClick={() => setIsChangePasswordModalOpen(true)}
-          className="flex items-center border-b border-b-gray-200 py-4"
-        >
-          <FaUnlockKeyhole className="mr-4 text-xl text-primaryRed" />
-          <p className="text-sm text-gray-500">Change Password</p>
-        </div>
-        <div onClick={handleLogout} className="flex items-center py-4">
-          <IoLogOut className="mr-4 text-xl text-primaryRed" />
-          <p className="text-sm text-gray-500">Log Out</p>
+      <div className="w-full flex justify-center">
+        <div className="w-full max-w-md md:max-w-xl rounded-2xl bg-white px-4 shadow-md">
+          <div className="flex items-center border-b border-b-gray-200 py-4">
+            <IoMail className="mr-4 text-xl text-primaryRed" />
+            <p className="text-sm text-gray-500 no-underline">
+              {currentUser.email}
+            </p>
+          </div>
+          <div
+            onClick={() => setIsChangePasswordModalOpen(true)}
+            className="flex items-center border-b border-b-gray-200 py-4"
+          >
+            <FaUnlockKeyhole className="mr-4 text-xl text-primaryRed" />
+            <p className="text-sm text-gray-500">Change Password</p>
+          </div>
+          <div onClick={handleLogout} className="flex items-center py-4">
+            <IoLogOut className="mr-4 text-xl text-primaryRed" />
+            <p className="text-sm text-gray-500">Log Out</p>
+          </div>
         </div>
       </div>
       {isChangePasswordModalOpen && (

@@ -86,7 +86,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div
-        className="relative mx-4 w-full overflow-y-auto rounded-2xl bg-yellow-50 p-4 shadow-lg md:w-[400px]"
+        className="relative ml-0 w-full max-w-md overflow-y-auto rounded-2xl bg-yellow-50 p-4 shadow-lg md:ml-[224px]"
         style={{ maxHeight: modalHeight }}
       >
         <div className="flex justify-center">
