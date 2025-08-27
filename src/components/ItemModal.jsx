@@ -34,6 +34,7 @@ function ItemModal({
     description: initialData?.description || "",
     imageUrl: initialData?.imageUrl || "",
     servings: initialData?.servings || "",
+    avatar: initialData?.avatar || ""
   });
 
   const dietaryOptions = [
@@ -67,7 +68,26 @@ function ItemModal({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setItemData((prev) => ({ ...prev, [name]: value }));
+    if (name === "assignee") {
+      // Check if input is cleared (empty string), then clear avatar and ID
+      if (value.trim() === "") {
+        setItemData((prev) => ({
+          ...prev,
+          assignee: "",
+          assigneeId: null,
+          avatar: "",
+        }));
+      } else {
+        setItemData((prev) => ({
+          ...prev,
+          assignee: value,
+          assigneeId: null,
+          avatar: "", // also reset avatar when typing a new name
+        }));
+      }
+    } else {
+      setItemData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleDietaryChange = (tag) => {
@@ -164,7 +184,7 @@ function ItemModal({
     // Otherwise, set UID only when the assignee text equals my display name.
     const resolvedAssigneeId =
       itemData.assigneeId ?? (assigneeIsMe ? meUid : null);
-
+      
     const payload = {
       ...itemData,
       assignee: itemData.assignee?.trim() || "",
@@ -177,6 +197,7 @@ function ItemModal({
       createdByName: itemData.createdByName ?? (currentUser?.name || ""),
 
       updatedAt: Date.now(),
+      avatar: itemData.avatar?.trim() || "",
     };
 
     onSubmit(payload);
@@ -213,7 +234,25 @@ function ItemModal({
             <label className="mb-1 block font-bold after:ml-0.5 after:text-primaryRed after:content-['*']">
               Who's Bringing It?
             </label>
-            <div className="flex">
+            <div className="flex items-center w-full rounded-lg border border-gray-300 bg-white focus-within:border-primaryRed">
+              {itemData.assignee && ( 
+                itemData.avatar ? (
+                  <img
+                    src={itemData.avatar}
+                    alt="Assignee avatar"
+                    className="ml-2 h-6 w-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="ml-2 flex h-6 w-6 items-center justify-center rounded-full bg-primaryRed text-xs font-medium text-white">
+                    {(() => {
+                      const names = itemData.assignee.trim().split(" ");
+                      const firstInitial = names[0]?.[0] || "";
+                      const lastInitial = names[names.length - 1]?.[0] || "";
+                      return (firstInitial + lastInitial).toUpperCase();
+                    })()}
+                  </div>
+                )
+              )}
               <input
                 type="text"
                 name="assignee"
@@ -222,15 +261,14 @@ function ItemModal({
                   handleChange(e);
                   setShowSuggestions(true);
                 }}
-                className="combo-input w-full rounded-l-lg border border-gray-300 p-2 shadow-none ring-0 focus:border-primaryRed focus:ring-0"
+                className="flex-1 border-0 bg-white p-2 pl-2 focus:ring-0"
                 placeholder="Type a name..."
                 required
               />
-              {/* Down arrow button */}
               <button
                 type="button"
                 onClick={() => setShowSuggestions((prev) => !prev)}
-                className="flex items-center justify-center rounded-r-lg border border-l-0 border-gray-300 bg-white px-3 text-primaryDark hover:bg-gray-50"
+                className="px-3 text-primaryDark hover:bg-gray-50"
               >
                 <IoChevronDown
                   className={`h-4 w-4 transition-transform ${showSuggestions ? "rotate-180" : ""}`}
@@ -239,16 +277,14 @@ function ItemModal({
             </div>
 
             {/* Suggestion dropdown */}
+            {/* I want to add the profile picture here */}
             {showSuggestions && (
               <ul className="absolute z-10 mt-1 max-h-40 w-full overflow-y-auto rounded-md bg-white shadow">
                 {users
-                  .filter(
-                    (u) =>
-                      itemData.assignee
-                        ? u.name
-                            .toLowerCase()
-                            .includes(itemData.assignee.toLowerCase())
-                        : true, // if no filter, show all
+                  .filter((u) =>
+                    itemData.assignee
+                      ? u.name.toLowerCase().includes(itemData.assignee.toLowerCase())
+                      : true
                   )
                   .map((u) => (
                     <li
@@ -258,12 +294,32 @@ function ItemModal({
                           ...prev,
                           assignee: u.name,
                           assigneeId: u.id,
+                          avatar: u.avatar,
                         }));
                         setShowSuggestions(false);
                       }}
-                      className="cursor-pointer px-3 py-1 hover:bg-gray-100"
+                      className="cursor-pointer px-3 py-2 hover:bg-gray-100"
                     >
-                      {u.name}
+                      <div className="flex items-center gap-2">
+                        {u.avatar ? (
+                          <img
+                            src={u.avatar}
+                            alt={`${u.name}'s avatar`}
+                            className="h-6 w-6 rounded-full object-cover"
+                          />
+                        ) : (
+                          // <div className="h-6 w-6 rounded-full bg-gray-300">
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primaryRed text-xs font-medium text-white">
+                            {(() => {
+                              const names = u.name.trim().split(" ");
+                              const firstInitial = names[0]?.[0] || "";
+                              const lastInitial = names[names.length - 1]?.[0] || "";
+                              return (firstInitial + lastInitial).toUpperCase();
+                            })()}
+                          </div>
+                        )}
+                        <span>{u.name}</span>
+                      </div>
                     </li>
                   ))}
               </ul>

@@ -69,9 +69,27 @@ function CategoryList({
                         <FiChevronRight className="text-primaryDark" />
                       )}
                     </div>
-                    <p className="mt-1 text-sm text-gray-500">
-                      {item.assignee || "Unassigned"}
-                    </p>
+                    <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
+                      {item.assignee && (
+                        item.avatar ? (
+                          <img
+                            src={item.avatar}
+                            alt="Assignee avatar"
+                            className="h-6 w-6 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primaryRed text-xs font-medium text-white">
+                            {(() => {
+                              const names = item.assignee.trim().split(" ");
+                              const firstInitial = names[0]?.[0] || "";
+                              const lastInitial = names[names.length - 1]?.[0] || "";
+                              return (firstInitial + lastInitial).toUpperCase();
+                            })()}
+                          </div>
+                        )
+                      )}
+                      <span>{item.assignee || "Unassigned"}</span>
+                    </div>
                     {item.dietary && item.dietary.length > 0 && (
                       <div className="mt-2 flex gap-2">
                         {item.dietary.map((restriction, i) => {
