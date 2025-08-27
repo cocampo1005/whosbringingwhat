@@ -17,7 +17,7 @@ function CategoryList({
   const CATEGORY_BG = {
     Main: "bg-rose-50",
     Side: "bg-yellow-50",
-    Dessert: "bg-fuchsia-50",
+    Dessert: "bg-purple-50",
     Beverage: "bg-blue-50",
     Miscellaneous: "bg-emerald-50",
   };

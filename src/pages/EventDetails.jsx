@@ -173,8 +173,8 @@ function EventDetails() {
       {
         name: "Dessert",
         count: counts.Dessert,
-        color: "#c026d3",
-        textColor: "text-fuchsia-600",
+        color: "#ad46ff",
+        textColor: "text-purple-600",
         icon: GiCakeSlice,
       },
       {
