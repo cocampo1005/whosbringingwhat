@@ -389,7 +389,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-6 md:flex-row">
+        <div className="flex flex-col gap-6 md:flex-row md:items-start">
           {/* Dietary Restrictions Section */}
           <div className="w-full rounded-2xl bg-white px-4 shadow-md">
             <div className="flex items-center justify-between py-4">
