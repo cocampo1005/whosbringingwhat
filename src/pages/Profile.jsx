@@ -324,215 +324,245 @@ export default function Profile() {
   };
 
   return (
-    <div className="flex flex-col items-center space-y-6 py-8">
-      {/* Profile Avatar and Name */}
-      <div className="flex flex-col items-center">
-        <div className="relative mb-4">
-          {realTimeUser?.avatar || realTimeUser?.photoURL ? (
-            <img
-              src={realTimeUser.avatar || realTimeUser.photoURL}
-              alt="Profile"
-              className="h-24 w-24 rounded-full border-4 border-primaryRed object-cover"
+    <div className="flex flex-col items-center space-y-6 py-8 md:p-12">
+      <div className="w-full max-w-2xl space-y-8 md:flex md:flex-col md:justify-between">
+        {/* Profile Avatar and Name */}
+        <div className="flex flex-col items-center md:flex-row md:items-center">
+          <div className="relative mb-4">
+            {realTimeUser?.avatar || realTimeUser?.photoURL ? (
+              <img
+                src={realTimeUser.avatar || realTimeUser.photoURL}
+                alt="Profile"
+                className="h-24 w-24 rounded-full border-4 border-primaryRed object-cover"
+              />
+            ) : (
+              <BsPersonFill className="h-24 w-24 text-primaryRed" />
+            )}
+            {/* Edit Avatar Button */}
+            <label
+              htmlFor="avatar-upload"
+              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full bg-primaryRed p-2"
+            >
+              <FiEdit className="text-xs text-white" />
+            </label>
+
+            {/* Hidden File Input */}
+            <input
+              type="file"
+              id="avatar-upload"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              disabled={uploading}
+              className="hidden"
             />
-          ) : (
-            <BsPersonFill className="h-24 w-24 text-primaryRed" />
-          )}
-          {/* Edit Avatar Button */}
-          <label
-            htmlFor="avatar-upload"
-            className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full bg-primaryRed p-2"
-          >
-            <FiEdit className="text-xs text-white" />
-          </label>
-
-          {/* Hidden File Input */}
-          <input
-            type="file"
-            id="avatar-upload"
-            accept="image/*"
-            onChange={handleAvatarUpload}
-            disabled={uploading}
-            className="hidden"
-          />
-        </div>
-
-        <div className="relative mb-4 flex items-center justify-center px-5">
-          <h2 className="text-xl font-semibold">
-            {realTimeUser?.name || "User Name"}{" "}
-          </h2>
-          <MdEdit
-            onClick={() =>
-              handleNameUpdate(prompt("Enter new name:", realTimeUser?.name))
-            }
-            className="text-md absolute right-0 cursor-pointer text-primaryRed"
-          />
-        </div>
-      </div>
-
-      {/* Dietary Restrictions Section */}
-      <div className="w-full rounded-2xl bg-white px-4 shadow-md">
-        <div className="flex items-center justify-between py-4">
-          <div className="flex items-center">
-            <FaLeaf className="mr-4 text-xl text-primaryRed" />
-            <h3 className="text-lg font-semibold text-gray-800">
-              Dietary Restrictions
-            </h3>
           </div>
-          <MdEdit
-            onClick={() => setIsEditingDietary(!isEditingDietary)}
-            className="cursor-pointer text-lg text-primaryRed"
-          />
+
+          <div className="md:ml-8">
+            <div className="relative flex items-center justify-center px-5 md:justify-start md:p-0">
+              <h2 className="text-xl font-semibold">
+                {realTimeUser?.name || "User Name"}{" "}
+              </h2>
+              <MdEdit
+                onClick={() =>
+                  handleNameUpdate(
+                    prompt("Enter new name:", realTimeUser?.name),
+                  )
+                }
+                className="text-md absolute right-0 cursor-pointer text-primaryRed md:right-[-10px]"
+              />
+            </div>
+            {realTimeUser?.createdAt && (
+              <p className="text-center text-xs text-gray-400 md:text-start">
+                Member since{" "}
+                {(
+                  realTimeUser.createdAt?.toDate?.() ||
+                  (realTimeUser.createdAt?.seconds &&
+                    new Date(realTimeUser.createdAt.seconds * 1000)) ||
+                  new Date(realTimeUser.createdAt)
+                ).toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            )}
+          </div>
         </div>
 
-        <div className="pb-4">
-          {isEditingDietary ? (
-            <div>
-              <div className="mb-6 space-y-3">
-                {Object.entries(dietaryRestrictions).map(
-                  ([key, { icon, color, label }]) => (
-                    <label
-                      key={key}
-                      className="flex cursor-pointer items-center space-x-3"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedRestrictions.includes(key)}
-                        onChange={() => toggleRestriction(key)}
-                        className="rounded border-gray-300 text-primaryRed focus:ring-primaryRed"
-                      />
-                      <div className={`text-lg ${color}`}>{icon}</div>
-                      <span className="text-sm text-gray-700">{label}</span>
-                    </label>
-                  ),
-                )}
+        <div className="flex flex-col gap-6 md:flex-row">
+          {/* Dietary Restrictions Section */}
+          <div className="w-full rounded-2xl bg-white px-4 shadow-md">
+            <div className="flex items-center justify-between py-4">
+              <div className="flex items-center">
+                <FaLeaf className="mr-4 text-xl text-primaryRed" />
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Dietary Restrictions
+                </h3>
               </div>
-
-              <div className="flex justify-center space-x-4">
-                <button
-                  onClick={handleDietaryRestrictionsUpdate}
-                  className="flex items-center rounded-lg bg-primaryRed px-6 py-2 text-white transition active:bg-rose-500"
-                >
-                  Save
-                </button>
-
-                <button
-                  onClick={() => {
-                    setIsEditingDietary(false);
-                    setSelectedRestrictions(
-                      realTimeUser?.dietaryRestrictions || [],
-                    );
-                  }}
-                  className="rounded-lg border-2 border-primaryRed bg-white px-6 py-2 font-bold text-primaryRed transition hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-              </div>
+              <MdEdit
+                onClick={() => setIsEditingDietary(!isEditingDietary)}
+                className="cursor-pointer text-lg text-primaryRed"
+              />
             </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {(realTimeUser?.dietaryRestrictions || []).length > 0 ? (
-                (realTimeUser.dietaryRestrictions || []).map((restriction) => {
-                  const restrictionData = dietaryRestrictions[restriction];
-                  return restrictionData ? (
-                    <div
-                      key={restriction}
-                      className="flex items-center space-x-2 rounded-full bg-gray-100 px-3 py-1"
+
+            <div className="pb-4">
+              {isEditingDietary ? (
+                <div>
+                  <div className="mb-6 space-y-3">
+                    {Object.entries(dietaryRestrictions).map(
+                      ([key, { icon, color, label }]) => (
+                        <label
+                          key={key}
+                          className="flex cursor-pointer items-center space-x-3"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedRestrictions.includes(key)}
+                            onChange={() => toggleRestriction(key)}
+                            className="rounded border-gray-300 text-primaryRed focus:ring-primaryRed"
+                          />
+                          <div className={`text-lg ${color}`}>{icon}</div>
+                          <span className="text-sm text-gray-700">{label}</span>
+                        </label>
+                      ),
+                    )}
+                  </div>
+
+                  <div className="flex justify-center space-x-4">
+                    <button
+                      onClick={handleDietaryRestrictionsUpdate}
+                      className="flex items-center rounded-lg bg-primaryRed px-6 py-2 text-white transition active:bg-rose-500"
                     >
-                      <div className={`text-sm ${restrictionData.color}`}>
-                        {restrictionData.icon}
-                      </div>
-                      <span className="text-sm text-gray-700">
-                        {restrictionData.label}
-                      </span>
-                    </div>
-                  ) : null;
-                })
+                      Save
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setIsEditingDietary(false);
+                        setSelectedRestrictions(
+                          realTimeUser?.dietaryRestrictions || [],
+                        );
+                      }}
+                      className="rounded-lg border-2 border-primaryRed bg-white px-6 py-2 font-bold text-primaryRed transition hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               ) : (
-                <p className="text-sm text-gray-500">
-                  No dietary restrictions set
-                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(realTimeUser?.dietaryRestrictions || []).length > 0 ? (
+                    (realTimeUser.dietaryRestrictions || []).map(
+                      (restriction) => {
+                        const restrictionData =
+                          dietaryRestrictions[restriction];
+                        return restrictionData ? (
+                          <div
+                            key={restriction}
+                            className="flex items-center space-x-2 rounded-full bg-gray-100 px-3 py-1"
+                          >
+                            <div className={`text-sm ${restrictionData.color}`}>
+                              {restrictionData.icon}
+                            </div>
+                            <span className="text-sm text-gray-700">
+                              {restrictionData.label}
+                            </span>
+                          </div>
+                        ) : null;
+                      },
+                    )
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      No dietary restrictions set
+                    </p>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Security Section */}
-      <div className="w-full rounded-2xl bg-white px-4 shadow-md">
-        <div
-          onClick={() => setIsSecurityExpanded(!isSecurityExpanded)}
-          className="flex cursor-pointer items-center justify-between py-4"
-        >
-          <div className="flex items-center">
-            <MdSecurity className="mr-4 text-xl text-primaryRed" />
-            <h3 className="text-lg font-semibold text-gray-800">Security</h3>
           </div>
-          {isSecurityExpanded ? <IoChevronUp /> : <IoChevronDown />}
-        </div>
 
-        {isSecurityExpanded && (
-          <div className="pb-4">
-            {isGoogleUser && (
-              <div className="mb-2 flex items-center justify-center rounded-md bg-rose-50 p-3">
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <FcGoogle size={20} />
-                  Logged in with Google
+          {/* Security Section */}
+          <div className="w-full rounded-2xl bg-white px-4 shadow-md">
+            <div
+              onClick={() => setIsSecurityExpanded(!isSecurityExpanded)}
+              className="flex cursor-pointer items-center justify-between py-4"
+            >
+              <div className="flex items-center">
+                <MdSecurity className="mr-4 text-xl text-primaryRed" />
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Security
+                </h3>
+              </div>
+              {isSecurityExpanded ? <IoChevronUp /> : <IoChevronDown />}
+            </div>
+
+            {isSecurityExpanded && (
+              <div className="pb-4">
+                {isGoogleUser && (
+                  <div className="mb-2 flex items-center justify-center rounded-md bg-rose-50 p-3">
+                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                      <FcGoogle size={20} />
+                      Logged in with Google
+                    </div>
+                  </div>
+                )}
+
+                {/* Change Email Section */}
+                <div
+                  onClick={handleEmailUpdate}
+                  className="flex cursor-pointer items-center border-b border-b-gray-200 py-3 hover:bg-gray-50"
+                >
+                  <IoMail className="mr-4 text-lg text-primaryRed" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-700">
+                      Change Email
+                    </p>
+                    <p className="text-xs text-gray-500">{currentUser.email}</p>
+                  </div>
+                </div>
+
+                {/* Change Password Section */}
+                <div
+                  onClick={() => {
+                    if (isGoogleUser) {
+                      alert(
+                        "To change your password, please visit your Google account settings at myaccount.google.com",
+                      );
+                    } else {
+                      setIsChangePasswordModalOpen(true);
+                    }
+                  }}
+                  className="flex cursor-pointer items-center border-b border-b-gray-200 py-3 hover:bg-gray-50"
+                >
+                  <FaUnlockKeyhole className="mr-4 text-lg text-primaryRed" />
+                  <p className="text-sm font-medium text-gray-700">
+                    Change Password
+                  </p>
+                </div>
+
+                {/* Log Out Section */}
+                <div
+                  onClick={handleLogout}
+                  className="flex cursor-pointer items-center border-b border-b-gray-200 py-3 hover:bg-gray-50"
+                >
+                  <IoLogOut className="mr-4 text-lg text-primaryRed" />
+                  <p className="text-sm font-medium text-gray-700">Log Out</p>
+                </div>
+
+                {/* Delete Account Section */}
+                <div
+                  onClick={handleDeleteAccount}
+                  className="flex cursor-pointer items-center py-3 hover:bg-red-50"
+                >
+                  <MdDelete className="mr-4 text-lg text-red-600" />
+                  <p className="text-sm font-medium text-red-600">
+                    Delete Account
+                  </p>
                 </div>
               </div>
             )}
-
-            {/* Change Email Section */}
-            <div
-              onClick={handleEmailUpdate}
-              className="flex cursor-pointer items-center border-b border-b-gray-200 py-3 hover:bg-gray-50"
-            >
-              <IoMail className="mr-4 text-lg text-primaryRed" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700">
-                  Change Email
-                </p>
-                <p className="text-xs text-gray-500">{currentUser.email}</p>
-              </div>
-            </div>
-
-            {/* Change Password Section */}
-            <div
-              onClick={() => {
-                if (isGoogleUser) {
-                  alert(
-                    "To change your password, please visit your Google account settings at myaccount.google.com",
-                  );
-                } else {
-                  setIsChangePasswordModalOpen(true);
-                }
-              }}
-              className="flex cursor-pointer items-center border-b border-b-gray-200 py-3 hover:bg-gray-50"
-            >
-              <FaUnlockKeyhole className="mr-4 text-lg text-primaryRed" />
-              <p className="text-sm font-medium text-gray-700">
-                Change Password
-              </p>
-            </div>
-
-            {/* Log Out Section */}
-            <div
-              onClick={handleLogout}
-              className="flex cursor-pointer items-center border-b border-b-gray-200 py-3 hover:bg-gray-50"
-            >
-              <IoLogOut className="mr-4 text-lg text-primaryRed" />
-              <p className="text-sm font-medium text-gray-700">Log Out</p>
-            </div>
-
-            {/* Delete Account Section */}
-            <div
-              onClick={handleDeleteAccount}
-              className="flex cursor-pointer items-center py-3 hover:bg-red-50"
-            >
-              <MdDelete className="mr-4 text-lg text-red-600" />
-              <p className="text-sm font-medium text-red-600">Delete Account</p>
-            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {isChangePasswordModalOpen && (
