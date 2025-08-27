@@ -76,7 +76,7 @@ export default function Events() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 pt-9">
+    <div className="max-w-5xl mx-auto pt-8 pb-8">
       {/* Placeholder for event content */}
 
       {(
@@ -90,7 +90,7 @@ export default function Events() {
       ) : (
         <>
           {/* <div className="mb-12 flex items-center justify-start gap-4"> */}
-          <div className="mb-12 flex flex-wrap items-center gap-4 justify-between sm:justify-start sm:gap-8">
+          <div className="mb-9 flex flex-wrap items-center gap-4 justify-between sm:justify-start sm:gap-8">
             <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
               <button
                 type="button"

@@ -344,7 +344,7 @@ function EventDetails() {
   }
 
   return (
-    <div className="relative m-4 mb-10 max-w-7xl rounded-2xl bg-white shadow-md">
+    <div className="relative mt-8 mb-10 max-w-7xl rounded-2xl bg-white shadow-md">
       <div className="flex w-full items-center justify-center rounded-tl-2xl rounded-tr-2xl bg-primaryRed px-4 py-2">
         <h1 className="text-center text-xl font-bold text-white">
           {event.title}

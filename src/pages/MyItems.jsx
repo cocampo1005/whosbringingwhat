@@ -75,7 +75,7 @@ export default function MyItems() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 pt-12">
+    <div className="max-w-5xl mx-auto pt-8 pb-8 md:pt-12">
       {groupedByEvent.length === 0 ? (
         <p className="text-center text-gray-600">
           Items you bring will show up here.

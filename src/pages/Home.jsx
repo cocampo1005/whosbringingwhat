@@ -31,7 +31,7 @@ export default function Home() {
           </h1>
         </header>
 
-        <main className="mb-[76px] mt-12 md:mt-16 flex-1 px-4 sm:px-6 lg:px-8">
+        <main className="mb-[66px] mt-12 md:mt-16 flex-1 px-8 sm:px-8 lg:px-8">
           <Outlet />
         </main>
       </div>
