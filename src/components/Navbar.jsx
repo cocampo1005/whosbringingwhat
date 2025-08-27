@@ -1,6 +1,7 @@
 import React from "react";
 import { FaCalendarAlt, FaClipboardList, FaUser } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
+import logo from "../assets/light-outline-logo.svg";
 
 export default function Navbar() {
   const navLinkStyles = ({ isActive }) =>
@@ -11,12 +12,14 @@ export default function Navbar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <nav className="hidden md:flex fixed top-0 left-0 h-screen w-56 bg-primaryRed flex-col justify-between py-6 px-4 z-40 shadow-[6px_0_12px_-2px_rgba(0,0,0,0.2)]">
+      <nav className="hidden md:flex fixed top-0 left-0 h-screen w-56 bg-primaryRed flex-col px-4 py-6 z-40 shadow-[6px_0_12px_-2px_rgba(0,0,0,0.2)]">
       {/* Logo */}
-      <div>
-        <div className="mb-10 text-white text-2xl font-bold tracking-wide">
-          Potluck
-        </div>
+      <div className="flex flex-col flex-grow">
+        <img
+          alt="Who's Bringing What Logo"
+          src={logo}
+          className="mx-auto mb-12 h-28 w-auto"
+        />
 
         {/* Top Nav Links */}
         <div className="flex flex-col gap-4">
@@ -44,20 +47,20 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Bottom Profile Link */}
-      <div>
-        <NavLink to="/profile" className={({ isActive }) =>
-          `flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            isActive
-              ? "bg-white text-primaryRed"
-              : "text-white hover:bg-white/10"
-          }`
-        }>
-          <FaUser size={18} />
-          <span>Profile</span>
-        </NavLink>
-      </div>
-    </nav>
+        {/* Bottom Profile Link */}
+        <div>
+          <NavLink to="/profile" className={({ isActive }) =>
+            `flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isActive
+                ? "bg-white text-primaryRed"
+                : "text-white hover:bg-white/10"
+            }`
+          }>
+            <FaUser size={18} />
+            <span>Profile</span>
+          </NavLink>
+        </div>
+      </nav>
 
       {/* Mobile Bottom Nav */}
       <nav className="fixed bottom-0 left-0 right-0 bg-primaryRed flex justify-around items-center h-16 md:hidden z-20">
