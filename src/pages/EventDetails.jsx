@@ -77,19 +77,15 @@ function EventDetails() {
 
           // Extract participants from items
           if (eventData.items) {
-            const participantSet = new Set();
+            const participantMap = new Map();
             eventData.items.forEach((item) => {
-              if (item.assignee && typeof item.assignee === "string") {
-                const cleanAssignee = item.assignee
-                  .replace(/\s+/g, " ")
-                  .trim()
-                  .toLowerCase();
-                if (cleanAssignee) {
-                  participantSet.add(cleanAssignee);
-                }
-              }
+              const key = item.assignee?.trim().toLowerCase();
+                participantMap.set(key, {
+                  assignee: item.assignee?.trim(),
+                  avatar: item.avatar || "",
+                });
             });
-            setParticipants(Array.from(participantSet));
+            setParticipants(Array.from(participantMap.values()));
           }
         } else {
           console.error("Event not found!");
