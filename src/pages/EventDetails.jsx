@@ -80,10 +80,10 @@ function EventDetails() {
             const participantMap = new Map();
             eventData.items.forEach((item) => {
               const key = item.assignee?.trim().toLowerCase();
-                participantMap.set(key, {
-                  assignee: item.assignee?.trim(),
-                  avatar: item.avatar || "",
-                });
+              participantMap.set(key, {
+                assignee: item.assignee?.trim(),
+                avatar: item.avatar || "",
+              });
             });
             setParticipants(Array.from(participantMap.values()));
           }
@@ -563,26 +563,35 @@ function EventDetails() {
             </div>
 
             {/* Action buttons - horizontal on desktop */}
-            <div className="ml-6 flex gap-2">
+            <div className="flex h-44 flex-col items-end justify-between">
+              <div className="flex gap-2">
+                <button
+                  onClick={openDeleteModalForEvent}
+                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                >
+                  <MdDelete className="text-lg text-white" />
+                </button>
+                <button
+                  onClick={() => setEditingEvent(true)}
+                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                >
+                  <FiEdit className="text-lg text-white" />
+                </button>
+                <button
+                  onClick={handleParticipantsModal}
+                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                >
+                  <BsPeople className="text-lg text-white" />
+                </button>
+                <ShareButton eventId={eventId} eventTitle={event.title} />
+              </div>
               <button
-                onClick={openDeleteModalForEvent}
-                className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                onClick={handleAddItem}
+                className="flex items-center gap-2 rounded-xl bg-primaryRed px-4 py-3 text-sm font-semibold text-white hover:bg-secondaryRed"
               >
-                <MdDelete className="text-lg text-white" />
+                <FaPlus />
+                <span>Add Item</span>
               </button>
-              <button
-                onClick={() => setEditingEvent(true)}
-                className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-              >
-                <FiEdit className="text-lg text-white" />
-              </button>
-              <button
-                onClick={handleParticipantsModal}
-                className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-              >
-                <BsPeople className="text-lg text-white" />
-              </button>
-              <ShareButton eventId={eventId} eventTitle={event.title} />
             </div>
           </div>
 
@@ -650,7 +659,7 @@ function EventDetails() {
       {/* Add item button */}
       <button
         onClick={handleAddItem}
-        className="fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white shadow-lg transition-colors hover:bg-secondaryRed"
+        className="fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white shadow-lg shadow-md transition-colors hover:bg-secondaryRed md:hidden"
       >
         <FaPlus />
       </button>

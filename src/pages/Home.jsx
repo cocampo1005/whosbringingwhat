@@ -1,6 +1,6 @@
-import React from "react";
 import Navbar from "../components/Navbar";
-import { Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import logo from "../assets/logo-with-face-outlined.svg";
 
 export default function Home() {
   const location = useLocation();
@@ -20,18 +20,23 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen overflow-hidden">
+    <div className="flex min-h-screen flex-col overflow-hidden md:flex-row">
       <Navbar />
 
-      <div className="flex-1 flex flex-col md:ml-56">
+      <div className="flex flex-1 flex-col md:ml-56">
         {/* Top header */}
-        <header className="bg-rose-100 shadow px-6 md:pl-12 py-3 fixed top-0 left-0 md:left-56 right-0 z-10">
-          <h1 className="text-center md:text-left text-lg sm:text-xl md:text-2xl font-bold text-primaryRed tracking-wide">
-            {getPageName()}
-          </h1>
+        <header className="fixed left-0 right-0 top-0 z-10 bg-primaryRed px-6 py-3 shadow md:left-56 md:bg-rose-100 md:pl-12">
+          <div className="relative flex items-center justify-center gap-4 md:justify-start">
+            <Link to="/" className="absolute left-0 md:hidden">
+              <img src={logo} className="h-10" />
+            </Link>
+            <h1 className="text-primaryLight text-center text-[1.5rem] font-bold tracking-wide md:text-left md:text-2xl md:text-primaryRed">
+              {getPageName()}
+            </h1>
+          </div>
         </header>
 
-        <main className="mb-[66px] mt-12 md:mt-16 flex-1 px-8 sm:px-8 lg:px-8">
+        <main className="mb-[64px] mt-[60px] flex-1 px-8 sm:px-8 md:mt-16 lg:px-8">
           <Outlet />
         </main>
       </div>
