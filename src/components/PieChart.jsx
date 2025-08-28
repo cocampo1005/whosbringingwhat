@@ -9,6 +9,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * - delayStep: number (ms)         extra delay per index, default 120
  * - startAngle: number (radians)   default -Math.PI/2 (12 o'clock)
  * - emptyLabel: string             default "No items yet"
+ * - strokeWidth: number (px)       stroke width for gaps, default 2
+ * - strokeColor: string            stroke color for gaps, default "white"
  */
 export default function PieChart({
   data = [],
@@ -18,8 +20,10 @@ export default function PieChart({
   delayStep = 120,
   startAngle = -Math.PI / 2,
   emptyLabel = "No items yet",
+  strokeWidth = 2,
+  strokeColor = "white",
 }) {
-  const EPS = 1e-4; // guard for “full circle” sweeps
+  const EPS = 1e-4; // guard for "full circle" sweeps
 
   // Keep only non-zero slices
   const slices = useMemo(
@@ -134,7 +138,14 @@ export default function PieChart({
           role="img"
           aria-label="Item distribution"
         >
-          <circle cx={cx} cy={cy} r={r} fill={only.d.color} />
+          <circle
+            cx={cx}
+            cy={cy}
+            r={r}
+            fill={only.d.color}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+          />
         </svg>
       );
     }
@@ -159,7 +170,12 @@ export default function PieChart({
         role="img"
         aria-label="Item distribution"
       >
-        <path d={dPath} fill={only.d.color} />
+        <path
+          d={dPath}
+          fill={only.d.color}
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+        />
       </svg>
     );
   }
@@ -206,9 +222,23 @@ export default function PieChart({
       <title>Item distribution</title>
       {paths.map((seg) =>
         seg.circle ? (
-          <circle key={seg.key} cx={cx} cy={cy} r={r} fill={seg.color} />
+          <circle
+            key={seg.key}
+            cx={cx}
+            cy={cy}
+            r={r}
+            fill={seg.color}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+          />
         ) : (
-          <path key={seg.key} d={seg.dPath} fill={seg.color} />
+          <path
+            key={seg.key}
+            d={seg.dPath}
+            fill={seg.color}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+          />
         ),
       )}
     </svg>
