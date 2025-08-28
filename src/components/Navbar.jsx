@@ -1,7 +1,7 @@
 import React from "react";
 import { FaCalendarAlt, FaClipboardList, FaUser } from "react-icons/fa";
-import { NavLink } from "react-router-dom";
-import logo from "../assets/light-outline-logo.svg";
+import { Link, NavLink } from "react-router-dom";
+import logo from "../assets/logo-with-face-outlined.svg";
 
 export default function Navbar() {
   const navLinkStyles = ({ isActive }) =>
@@ -12,50 +12,61 @@ export default function Navbar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <nav className="hidden md:flex fixed top-0 left-0 h-screen w-56 bg-primaryRed flex-col px-4 py-6 z-40 shadow-[6px_0_12px_-2px_rgba(0,0,0,0.2)]">
-      {/* Logo */}
-      <div className="flex flex-col flex-grow">
-        <img
-          alt="Who's Bringing What Logo"
-          src={logo}
-          className="mx-auto mb-12 h-28 w-auto"
-        />
+      <nav className="fixed left-0 top-0 z-40 hidden h-screen w-56 flex-col bg-primaryRed px-4 py-6 shadow-[6px_0_12px_-2px_rgba(0,0,0,0.2)] md:flex">
+        {/* Logo */}
+        <div className="flex flex-grow flex-col">
+          <Link to="/">
+            <img
+              alt="Who's Bringing What Logo"
+              src={logo}
+              className="mx-auto mb-12 h-36 w-auto"
+            />
+          </Link>
 
-        {/* Top Nav Links */}
-        <div className="flex flex-col gap-4">
-          <NavLink to="/events" className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              isActive
-                ? "bg-white text-primaryRed"
-                : "text-white hover:bg-white/10"
-            }`
-          }>
-            <FaCalendarAlt size={18} />
-            <span>Events</span>
-          </NavLink>
+          {/* Top Nav Links */}
+          <div className="flex flex-col gap-4">
+            <NavLink
+              to="/events"
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-white text-primaryRed"
+                    : "text-white hover:bg-white/10"
+                }`
+              }
+            >
+              <FaCalendarAlt size={18} />
+              <span>Events</span>
+            </NavLink>
 
-          <NavLink to="/my-items" className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              isActive
-                ? "bg-white text-primaryRed"
-                : "text-white hover:bg-white/10"
-            }`
-          }>
-            <FaClipboardList size={18} />
-            <span>My Items</span>
-          </NavLink>
+            <NavLink
+              to="/my-items"
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-white text-primaryRed"
+                    : "text-white hover:bg-white/10"
+                }`
+              }
+            >
+              <FaClipboardList size={18} />
+              <span>My Items</span>
+            </NavLink>
+          </div>
         </div>
-      </div>
 
         {/* Bottom Profile Link */}
         <div>
-          <NavLink to="/profile" className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              isActive
-                ? "bg-white text-primaryRed"
-                : "text-white hover:bg-white/10"
-            }`
-          }>
+          <NavLink
+            to="/profile"
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-white text-primaryRed"
+                  : "text-white hover:bg-white/10"
+              }`
+            }
+          >
             <FaUser size={18} />
             <span>Profile</span>
           </NavLink>
@@ -63,7 +74,7 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-primaryRed flex justify-around items-center h-16 md:hidden z-20">
+      <nav className="fixed bottom-0 left-0 right-0 z-20 flex h-16 items-center justify-around bg-primaryRed shadow md:hidden">
         <NavLink to="/events" className={navLinkStyles}>
           <FaCalendarAlt size={20} />
           <span>Events</span>

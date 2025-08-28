@@ -76,7 +76,7 @@ export default function Events() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto pt-8 pb-8">
+    <div className="mx-auto max-w-5xl pb-8 pt-8">
       {/* Placeholder for event content */}
 
       {(
@@ -90,36 +90,46 @@ export default function Events() {
       ) : (
         <>
           {/* <div className="mb-12 flex items-center justify-start gap-4"> */}
-          <div className="mb-9 flex flex-wrap items-center gap-4 justify-between sm:justify-start sm:gap-8">
-            <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
-              <button
-                type="button"
-                onClick={() => setFilter("all")}
-                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
-                  filter === "all"
-                    ? "bg-primaryRed text-white"
-                    : "text-primaryDark hover:bg-gray-50"
-                }`}
-                aria-pressed={filter === "all"}
-              >
-                All Events
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilter("mine")}
-                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
-                  filter === "mine"
-                    ? "bg-primaryRed text-white"
-                    : "text-primaryDark hover:bg-gray-50"
-                }`}
-                aria-pressed={filter === "mine"}
-              >
-                Contributed Events
-              </button>
+          <div className="mb-9 flex w-full items-center justify-between gap-4 sm:gap-8">
+            <div className="flex w-full items-center justify-between gap-4 md:w-auto md:justify-start">
+              <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
+                <button
+                  type="button"
+                  onClick={() => setFilter("all")}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                    filter === "all"
+                      ? "bg-primaryRed text-white"
+                      : "text-primaryDark hover:bg-gray-50"
+                  }`}
+                  aria-pressed={filter === "all"}
+                >
+                  All Events
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilter("mine")}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                    filter === "mine"
+                      ? "bg-primaryRed text-white"
+                      : "text-primaryDark hover:bg-gray-50"
+                  }`}
+                  aria-pressed={filter === "mine"}
+                >
+                  Contributed Events
+                </button>
+              </div>
+              <span className="text-xs text-gray-500">
+                {filter === "all" ? events.length : filteredEvents.length}{" "}
+                events
+              </span>
             </div>
-            <span className="text-xs text-gray-500">
-              {filter === "all" ? events.length : filteredEvents.length} events
-            </span>
+            <button
+              className="items hidden items-center gap-2 rounded-xl bg-primaryRed px-4 py-3 text-sm font-semibold text-white hover:bg-secondaryRed md:flex"
+              onClick={handleAddEvent}
+            >
+              <FaPlus />
+              <span>Add Event</span>
+            </button>
           </div>
 
           <EventCard events={filteredEvents} />
@@ -135,7 +145,7 @@ export default function Events() {
 
       <button
         onClick={handleAddEvent}
-        className="fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white"
+        className="fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white shadow-md md:hidden"
       >
         <FaPlus />
       </button>
