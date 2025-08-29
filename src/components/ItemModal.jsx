@@ -289,7 +289,6 @@ function ItemModal({
                     >
                       <div className="flex items-center gap-2">
                         <AssigneeAvatar assigneeId={u.id} displayName={u.name} size={24}/>
-                        <span>{u.name}</span>
                       </div>
                     </li>
                   ))

@@ -85,11 +85,10 @@ function CategoryList({
                       {item.assignee && (
                         <AssigneeAvatar 
                           assigneeId={item.assigneeId}
-                          assignee={item.assignee}
+                          displayName={item.assignee}
                           size={24}
                         />
                       )}
-                      <span>{item.assignee || "Unassigned"}</span>
                     </div>
                     {item.dietary && item.dietary.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">

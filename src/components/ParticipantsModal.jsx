@@ -32,7 +32,6 @@ export default function ParticipantsModal({ isOpen, onClose, participants }) {
                     displayName={displayName}
                     size={28}
                   />
-                  <span className="font-medium">{displayName}</span>
                 </li>
               );
             })}

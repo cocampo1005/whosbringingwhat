@@ -1,7 +1,7 @@
 import React, { useMemo } from "react"
 import { useUser } from "../contexts/UsersContext"
 
-export default function AssigneeAvatar({ assigneeId, displayName, size=24, className = ""}) {
+export default function AssigneeAvatar({ assigneeId, displayName, size=24, className = "", debugSource}) {
   const { user } = useUser(assigneeId);
   const name = user?.name || displayName || "";
   const initials = useMemo(() => {
@@ -13,22 +13,28 @@ export default function AssigneeAvatar({ assigneeId, displayName, size=24, class
 
   if (user?.avatar) {
     return (
-      <img 
-        src={user.avatar}
-        alt={`${name || "User"} avatar`}
-        className={`rounded-full object-cover ${className}`}
-        style={{ width: size, height: size }}
-      />
+      <>
+        <img 
+          src={user.avatar}
+          alt={`${name || "User"} avatar`}
+          className={`rounded-full object-cover ${className}`}
+          style={{ width: size, height: size }}
+        />
+        <span className={`${className}`}>{user.name}</span>
+      </>
     )
   }
 
   return (
-    <div
-      className={`flex items-center justify-center rounded-full bg-primaryRed text-white text-[10px] font-medium ${className}`}
-      style={{ width: size, height: size }}
-      title={name}
-    >
-      {initials}
-    </div>    
+    <>
+      <div
+        className={`flex items-center justify-center rounded-full bg-primaryRed text-white text-[10px] font-medium ${className}`}
+        style={{ width: size, height: size }}
+        title={name}
+      >
+        {initials}
+      </div>
+      <span className={`${className}`}>{name || "Unassigned"}</span>
+    </>
   )
 }
