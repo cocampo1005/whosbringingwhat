@@ -6,23 +6,12 @@ import AssigneeAvatar from "./AssigneeAvatar";
 export default function ParticipantsModal({ isOpen, onClose, participants }) {
   const ids = participants.map(p => p.assigneeId).filter(Boolean);
   const { users: userList, status } = useUsers(ids);
-  // If the modal isn't open, return null (don't render anything)
-  if (!isOpen) return null;
-
-  // const formatName = (name) => {
-  //   return name
-  //     .split(" ")
-  //     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-  //     .join(" ");
-  // };
-  // const cleanedParticipants = participants.map((p) => ({
-  //   name: formatName(p.assignee),
-  //   avatar: p.avatar,
-  // }));
-
+  
   // Map uid -> user for quick lookup
   const userById = new Map(ids.map((id, i) => [id, userList[i]]));
-
+  
+  // If the modal isn't open, return null (don't render anything)
+  if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 bg-gray-500 bg-opacity-50">
       <div className="flex h-full items-center justify-center md:ml-[14rem]">
@@ -48,33 +37,6 @@ export default function ParticipantsModal({ isOpen, onClose, participants }) {
               );
             })}
           </ul>
-          {/* <ul className="space-y-2">
-            {cleanedParticipants.length > 0 ? (
-              cleanedParticipants.map((participant, index) => (
-                <li key={index} className="flex items-center gap-2 text-sm text-gray-700">
-                {participant.avatar ? (
-                  <img
-                    src={participant.avatar}
-                    alt="Participant avatar"
-                    className="h-6 w-6 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primaryRed text-xs font-medium text-white">
-                    {(() => {
-                      const names = participant.name.trim().split(" ");
-                      const firstInitial = names[0]?.[0] || "";
-                      const lastInitial = names[names.length - 1]?.[0] || "";
-                      return (firstInitial + lastInitial).toUpperCase();
-                    })()}
-                  </div>
-                )}
-                <span>{participant.name}</span>
-              </li>
-              ))
-            ) : (
-              <li className="text-gray-500">No participants yet.</li>
-            )}
-          </ul> */}
 
           {/* Close button */}
           <IoClose
