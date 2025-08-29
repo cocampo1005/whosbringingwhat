@@ -15,7 +15,7 @@ export default function AssigneeAvatar({ assigneeId, displayName, size=24, class
     return (
       <img 
         src={user.avatar}
-        atl={`${name} || "User" avatar`}
+        alt={`${name || "User"} avatar`}
         className={`rounded-full object-cover ${className}`}
         style={{ width: size, height: size }}
       />
