@@ -1,6 +1,7 @@
 import React, { useMemo, useState, memo } from "react";
 import { FiChevronDown, FiChevronRight, FiEdit } from "react-icons/fi";
 import { MdDelete } from "react-icons/md";
+import AssigneeAvatar from "./AssigneeAvatar"
 
 function CategoryList({
   categoryName, // "Main" | "Side" | "Dessert" | "Beverage" | "Miscellaneous"
@@ -82,22 +83,11 @@ function CategoryList({
                     </div>
                     <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
                       {item.assignee && (
-                        item.avatar ? (
-                          <img
-                            src={item.avatar}
-                            alt="Assignee avatar"
-                            className="h-6 w-6 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primaryRed text-xs font-medium text-white">
-                            {(() => {
-                              const names = item.assignee.trim().split(" ");
-                              const firstInitial = names[0]?.[0] || "";
-                              const lastInitial = names[names.length - 1]?.[0] || "";
-                              return (firstInitial + lastInitial).toUpperCase();
-                            })()}
-                          </div>
-                        )
+                        <AssigneeAvatar 
+                          assigneeId={item.assigneeId}
+                          assignee={item.assignee}
+                          size={24}
+                        />
                       )}
                       <span>{item.assignee || "Unassigned"}</span>
                     </div>
@@ -207,6 +197,7 @@ function areEqual(prev, next) {
         id: x.id,
         title: x.title,
         assignee: x.assignee || "",
+        assigneeId: x.assigneeId || "",
         description: x.description || "",
         imageUrl: x.imageUrl || "",
         servings: x.servings || "",

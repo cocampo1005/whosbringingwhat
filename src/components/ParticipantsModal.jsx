@@ -1,20 +1,27 @@
 import React from "react";
 import { IoClose } from "react-icons/io5";
+import { useUsers } from "../contexts/UsersContext";
+import AssigneeAvatar from "./AssigneeAvatar";
 
 export default function ParticipantsModal({ isOpen, onClose, participants }) {
+  const ids = participants.map(p => p.assigneeId).filter(Boolean);
+  const { users: userList, status } = useUsers(ids);
   // If the modal isn't open, return null (don't render anything)
   if (!isOpen) return null;
 
-  const formatName = (name) => {
-    return name
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
-  };
-  const cleanedParticipants = participants.map((p) => ({
-    name: formatName(p.assignee),
-    avatar: p.avatar,
-  }));
+  // const formatName = (name) => {
+  //   return name
+  //     .split(" ")
+  //     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+  //     .join(" ");
+  // };
+  // const cleanedParticipants = participants.map((p) => ({
+  //   name: formatName(p.assignee),
+  //   avatar: p.avatar,
+  // }));
+
+  // Map uid -> user for quick lookup
+  const userById = new Map(ids.map((id, i) => [id, userList[i]]));
 
   return (
     <div className="fixed inset-0 z-50 bg-gray-500 bg-opacity-50">
@@ -25,7 +32,23 @@ export default function ParticipantsModal({ isOpen, onClose, participants }) {
           </h2>
 
           {/* List of participants */}
-          <ul className="space-y-2">
+          <ul className="space-y-3">
+            {participants.map((p, idx) => {
+              const u = p.assigneeId ? userById.get(p.assigneeId) : undefined;
+              const displayName = u?.name || p.assignee || "Unnamed";
+              return (
+                <li key={p.assigneeId || `name:${p.assignee}-${idx}`} className="flex items-center gap-2">
+                  <AssigneeAvatar
+                    assigneeId={p.assigneeId}
+                    displayName={displayName}
+                    size={28}
+                  />
+                  <span className="font-medium">{displayName}</span>
+                </li>
+              );
+            })}
+          </ul>
+          {/* <ul className="space-y-2">
             {cleanedParticipants.length > 0 ? (
               cleanedParticipants.map((participant, index) => (
                 <li key={index} className="flex items-center gap-2 text-sm text-gray-700">
@@ -51,7 +74,7 @@ export default function ParticipantsModal({ isOpen, onClose, participants }) {
             ) : (
               <li className="text-gray-500">No participants yet.</li>
             )}
-          </ul>
+          </ul> */}
 
           {/* Close button */}
           <IoClose

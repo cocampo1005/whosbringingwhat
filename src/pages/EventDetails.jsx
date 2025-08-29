@@ -77,16 +77,19 @@ function EventDetails() {
 
           // Extract participants from items
           if (eventData.items) {
-            const participantMap = new Map();
-            eventData.items.forEach((item) => {
-              const key = item.assignee?.trim().toLowerCase();
-              participantMap.set(key, {
-                assignee: item.assignee?.trim(),
-                avatar: item.avatar || "",
-              });
-            });
-            setParticipants(Array.from(participantMap.values()));
-          }
+            // Prefer UID; fall back to normalized name if legacy items lack assigneeId.
+            const byKey = new Map();
+            for (const item of eventData.items) {
+              const uid = item.assigneeId || null;
+              const name = (item.assignee || "").trim();
+              const key = uid || name.toLowerCase(); // ensure dedupe
+              if (!key) continue;
+              if (!byKey.has(key)) {
+                byKey.set(key, { assigneeId: uid, assignee: name });
+              }
+            }
+              setParticipants([...byKey.values()]);
+            }
         } else {
           console.error("Event not found!");
         }
