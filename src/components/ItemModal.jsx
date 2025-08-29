@@ -14,6 +14,7 @@ import {
   deleteObject,
 } from "firebase/storage";
 import imageCompression from "browser-image-compression";
+import AssigneeAvatar from "./AssigneeAvatar";
 
 function ItemModal({
   closeModal,
@@ -29,12 +30,12 @@ function ItemModal({
     id: initialData?.id || (mode === "add" && uuidv4()),
     title: initialData?.title || "",
     assignee: initialData?.assignee || currentUser.name,
+    assigneeId: initialData?.assigneeId ?? currentUser?.uid ?? null,
     category: initialData?.category || "Main",
     dietary: initialData?.dietary || [],
     description: initialData?.description || "",
     imageUrl: initialData?.imageUrl || "",
     servings: initialData?.servings || "",
-    avatar: initialData?.avatar || ""
   });
 
   const dietaryOptions = [
@@ -202,7 +203,6 @@ function ItemModal({
       createdByName: itemData.createdByName ?? (currentUser?.name || ""),
 
       updatedAt: Date.now(),
-      avatar: itemData.avatar?.trim() || "",
     };
 
     onSubmit(payload);
@@ -240,24 +240,7 @@ function ItemModal({
               Who's Bringing It?
             </label>
             <div className="flex items-center w-full rounded-lg border border-gray-300 bg-white focus-within:border-primaryRed">
-              {itemData.assignee && ( 
-                itemData.avatar ? (
-                  <img
-                    src={itemData.avatar}
-                    alt="Assignee avatar"
-                    className="ml-2 h-6 w-6 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="ml-2 flex h-6 w-6 items-center justify-center rounded-full bg-primaryRed text-xs font-medium text-white">
-                    {(() => {
-                      const names = itemData.assignee.trim().split(" ");
-                      const firstInitial = names[0]?.[0] || "";
-                      const lastInitial = names[names.length - 1]?.[0] || "";
-                      return (firstInitial + lastInitial).toUpperCase();
-                    })()}
-                  </div>
-                )
-              )}
+              <AssigneeAvatar assigneeId={itemData.assigneeId} displayName={itemData.assignee} size={24} className={'ml-2'}/>
               <input
                 type="text"
                 name="assignee"
@@ -288,7 +271,7 @@ function ItemModal({
                 {users
                   .filter((u) =>
                     itemData.assignee
-                      ? u.name.toLowerCase().includes(itemData.assignee.toLowerCase())
+                      ? u.name.toLowerCase().includes(itemData.assignee?.toLowerCase())
                       : true
                   )
                   .map((u) => (
@@ -299,34 +282,18 @@ function ItemModal({
                           ...prev,
                           assignee: u.name,
                           assigneeId: u.id,
-                          avatar: u.avatar,
                         }));
                         setShowSuggestions(false);
                       }}
                       className="cursor-pointer px-3 py-2 hover:bg-gray-100"
                     >
                       <div className="flex items-center gap-2">
-                        {u.avatar ? (
-                          <img
-                            src={u.avatar}
-                            alt={`${u.name}'s avatar`}
-                            className="h-6 w-6 rounded-full object-cover"
-                          />
-                        ) : (
-                          // <div className="h-6 w-6 rounded-full bg-gray-300">
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primaryRed text-xs font-medium text-white">
-                            {(() => {
-                              const names = u.name.trim().split(" ");
-                              const firstInitial = names[0]?.[0] || "";
-                              const lastInitial = names[names.length - 1]?.[0] || "";
-                              return (firstInitial + lastInitial).toUpperCase();
-                            })()}
-                          </div>
-                        )}
+                        <AssigneeAvatar assigneeId={u.id} displayName={u.name} size={24}/>
                         <span>{u.name}</span>
                       </div>
                     </li>
-                  ))}
+                  ))
+                }
               </ul>
             )}
           </div>
