@@ -240,7 +240,7 @@ function ItemModal({
               Who's Bringing It?
             </label>
             <div className="flex items-center w-full rounded-lg border border-gray-300 bg-white focus-within:border-primaryRed">
-              <AssigneeAvatar assigneeId={itemData.assigneeId} displayName={itemData.assignee} size={24} className={'ml-2'}/>
+              <AssigneeAvatar assigneeId={itemData.assigneeId} displayName={itemData.assignee} size={24} className={'ml-2'} showName={false}/>
               <input
                 type="text"
                 name="assignee"
