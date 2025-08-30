@@ -2,8 +2,11 @@ import React from "react";
 import { FaCalendarAlt, FaClipboardList, FaUser } from "react-icons/fa";
 import { Link, NavLink } from "react-router-dom";
 import logo from "../assets/logo-with-face-outlined.svg";
+import { useAuth } from "../contexts/AuthContext";
+import AssigneeAvatar from "./AssigneeAvatar";
 
 export default function Navbar() {
+  const { currentUser } = useAuth();
   const navLinkStyles = ({ isActive }) =>
     `flex flex-col items-center justify-center text-xs font-medium ${
       isActive ? "text-white" : "text-rose-200"
@@ -30,8 +33,8 @@ export default function Navbar() {
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                   isActive
-                    ? "bg-white text-primaryRed"
-                    : "text-white hover:bg-white/10"
+                  ? "bg-white/20 text-white"        // translucent white background, keep text white
+                  : "text-white hover:bg-white/10"
                 }`
               }
             >
@@ -44,8 +47,8 @@ export default function Navbar() {
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                   isActive
-                    ? "bg-white text-primaryRed"
-                    : "text-white hover:bg-white/10"
+                  ? "bg-white/20 text-white"        // translucent white background, keep text white
+                  : "text-white hover:bg-white/10"
                 }`
               }
             >
@@ -60,15 +63,20 @@ export default function Navbar() {
           <NavLink
             to="/profile"
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              `flex items-center justify-between gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-white text-primaryRed"
-                  : "text-white hover:bg-white/10"
+                ? "bg-white/20 text-white"        // translucent white background, keep text white
+                : "text-white hover:bg-white/10"
               }`
             }
           >
-            <FaUser size={18} />
-            <span>Profile</span>
+            {/* Left: avatar with initials fallback */}
+            <div className="flex items-center gap-3">
+              {currentUser?.uid && (
+                <AssigneeAvatar assigneeId={currentUser.uid} size={28} showName={false} />
+              )}
+              <span className="text-white md:text-inherit">Profile</span>
+            </div>
           </NavLink>
         </div>
       </nav>
@@ -84,8 +92,9 @@ export default function Navbar() {
           <span>My Items</span>
         </NavLink>
         <NavLink to="/profile" className={navLinkStyles}>
-          <FaUser size={20} />
-          <span>Profile</span>
+            {currentUser?.uid && (
+              <AssigneeAvatar assigneeId={currentUser.uid} size={34} showName={false}/>
+            )}
         </NavLink>
       </nav>
     </>

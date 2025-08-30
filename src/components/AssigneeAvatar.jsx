@@ -1,7 +1,7 @@
 import React, { useMemo } from "react"
 import { useUser } from "../contexts/UsersContext"
 
-export default function AssigneeAvatar({ assigneeId, displayName, size=24, className = "", debugSource}) {
+export default function AssigneeAvatar({ assigneeId, displayName, size=24, className = "", showName = true}) {
   const { user } = useUser(assigneeId);
   const name = user?.name || displayName || "";
   const initials = useMemo(() => {
@@ -20,7 +20,7 @@ export default function AssigneeAvatar({ assigneeId, displayName, size=24, class
           className={`rounded-full object-cover ${className}`}
           style={{ width: size, height: size }}
         />
-        <span className={`${className}`}>{user.name}</span>
+        {showName && <span className={`${className}`}>{user.name}</span>}
       </>
     )
   }
@@ -34,7 +34,7 @@ export default function AssigneeAvatar({ assigneeId, displayName, size=24, class
       >
         {initials}
       </div>
-      <span className={`${className}`}>{name || "Unassigned"}</span>
+      {showName && <span className={`${className}`}>{name || "Unassigned"}</span>}
     </>
   )
 }
