@@ -10,7 +10,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
     title: initialData.title || "",
     description: initialData.description || "",
     date: initialData.date || null,
-    items: [],
+    items: initialData.items || [],
     time: initialData.time || "",
     location: initialData.location || "",
     createdBy: initialData.createdBy || currentUser.name,
@@ -86,7 +86,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div
-        className="relative ml-0 w-full max-w-md overflow-y-auto rounded-2xl bg-yellow-50 p-4 shadow-lg ml-8 mr-8 md:ml-[236px]"
+        className="relative ml-0 ml-8 mr-8 w-full max-w-md overflow-y-auto rounded-2xl bg-yellow-50 p-4 shadow-lg md:ml-[236px]"
         style={{ maxHeight: modalHeight }}
       >
         <div className="flex justify-center">
