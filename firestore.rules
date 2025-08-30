@@ -1,14 +1,93 @@
-match /items/{itemId} {
-  allow read: if true;
+// firestore.rules
+rules_version = '2';
 
-  // Create: creator must be the caller; assigneeId can be anyone
-  allow create: if isCook()
-             && request.resource.data.createdById == request.auth.uid
-             && ('assigneeId' in request.resource.data);
+service cloud.firestore {
+  match /databases/{database}/documents {
 
-  // Update/Delete: cooks & chefs can manage any item
-  allow update, delete: if isCook();
+    /* ---------- Helpers ---------- */
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-  // Extra check: creator cannot change after creation
-  allow update: if unchanged('createdById');
+    function userRole() {
+      return request.auth.token.role;
+    }
+
+    function isChef() {
+      return isSignedIn() && userRole() == 'chef';
+    }
+
+    function isCook() {
+      return isSignedIn() && (userRole() == 'cook' || userRole() == 'chef');
+    }
+
+    // Prevent changing a field after creation
+    function unchanged(field) {
+      return !(''+field in resource.data) || request.resource.data[field] == resource.data[field];
+    }
+
+    // Allow only specific fields to be changed (for profile updates)
+    function changedKeysAreOnly(allowed) {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly(allowed);
+    }
+
+    /* ---------- Users ---------- */
+    match /users/{userId} {
+      // Any signed-in user can read user profiles
+      allow read: if isSignedIn();
+
+      // Users can create/update their own doc, but only certain profile fields.
+      // Custom role is mirrored here by Admin SDK; clients must NOT edit it.
+      allow create, update: if request.auth.uid == userId
+        && changedKeysAreOnly(['name', 'avatar', 'displayName', 'photoURL']);
+
+      // (Optional) block deletes from the client
+      allow delete: if false;
+    }
+
+    /* ---------- Events ---------- */
+    match /events/{eventId} {
+      allow read: if isSignedIn();
+      // Cooks & chefs can create/update/delete events
+      allow create, update, delete: if isCook();
+    }
+
+    /* ---------- Categories (under each event) ---------- */
+    match /events/{eventId}/categories/{catId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isCook();
+    }
+
+    /* ---------- Items (under each category) ---------- */
+    match /events/{eventId}/categories/{catId}/items/{itemId} {
+      allow read: if isSignedIn();
+
+      // Create: must come from a cook, creator must be caller, and an assignee must be set
+      allow create: if isCook()
+        && request.resource.data.createdById == request.auth.uid
+        && ('assigneeId' in request.resource.data);
+
+      // Update/Delete: cooks & chefs can manage ANY item
+      allow update, delete: if isCook()
+        && unchanged('createdById'); // creator cannot be rewritten later
+    }
+
+    /* ---------- Optional: if you also keep a top-level /items collection ---------- */
+    match /items/{itemId} {
+      allow read: if isSignedIn();
+
+      allow create: if isCook()
+        && request.resource.data.createdById == request.auth.uid
+        && ('assigneeId' in request.resource.data);
+
+      allow update, delete: if isCook()
+        && unchanged('createdById');
+    }
+
+    /* ---------- Role change audit log (written by Admin SDK in Cloud Function) ---------- */
+    match /role_changes/{logId} {
+      allow read: if isChef();  // only chefs can read audit logs
+      allow write: if false;    // no client writes; Admin SDK bypasses rules
+    }
+  }
 }
