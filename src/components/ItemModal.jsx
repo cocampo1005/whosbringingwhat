@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "../contexts/AuthContext";
 import { IoClose } from "react-icons/io5";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+// import { collection, getDocs } from "firebase/firestore";
+// import { db } from "../firebase";
 import { IoChevronDown } from "react-icons/io5";
 import { MdDelete, MdImage } from "react-icons/md";
 import {
@@ -15,15 +15,27 @@ import {
 } from "firebase/storage";
 import imageCompression from "browser-image-compression";
 import AssigneeAvatar from "./AssigneeAvatar";
+import { useUsers } from "../contexts/UsersContext";
 
 function ItemModal({
   closeModal,
   onSubmit,
   initialData = {},
-  mode = "add", // "add" or "edit"
+  mode = "add",
+  memberIds = [],
 }) {
   const { currentUser } = useAuth();
-  const [users, setUsers] = useState([]);
+  const allMemberIds = Array.from(
+    new Set(
+      [currentUser?.uid, ...(Array.isArray(memberIds) ? memberIds : [])].filter(
+        Boolean,
+      ),
+    ),
+  );
+
+  const { users: memberUsers = [], status: memberUsersStatus } =
+    useUsers(allMemberIds);
+  const [assigneeQuery, setAssigneeQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [itemData, setItemData] = useState({
@@ -55,13 +67,13 @@ function ItemModal({
   const normalize = (s = "") => s.trim().toLowerCase().replace(/\s+/g, " ");
 
   // Fetch users once
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const snap = await getDocs(collection(db, "users"));
-      setUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    };
-    fetchUsers();
-  }, []);
+  // useEffect(() => {
+  //   const fetchUsers = async () => {
+  //     const snap = await getDocs(collection(db, "users"));
+  //     setUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+  //   };
+  //   fetchUsers();
+  // }, []);
 
   // Handler when selecting from dropdown
   const handleSelectUser = (user) => {
@@ -190,7 +202,7 @@ function ItemModal({
     // Otherwise, set UID only when the assignee text equals my display name.
     const resolvedAssigneeId =
       itemData.assigneeId ?? (assigneeIsMe ? meUid : null);
-      
+
     const payload = {
       ...itemData,
       assignee: itemData.assignee?.trim() || "",
@@ -210,16 +222,19 @@ function ItemModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="relative mx-4 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-yellow-50 p-6 shadow-lg md:ml-[14rem]">
-        <h2 className="mb-4 text-center text-xl font-bold">
-          {mode === "add" ? "Add Item" : "Edit Item"}
-        </h2>
-        <IoClose
-          className="absolute right-4 top-4 cursor-pointer text-2xl"
-          onClick={closeModal}
-        />
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50 p-4">
+      <div className="relative mx-4 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-yellow-50 p-0 shadow-lg md:ml-[14rem]">
+        <div className="flex w-full items-center justify-center rounded-t-2xl bg-primaryRed px-4 py-2 relative">
+          <h2 className="text-center text-xl font-bold text-white">
+            {mode === "add" ? "Add Item" : "Edit Item"}
+          </h2>
+          <IoClose
+            className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-2xl text-white"
+            onClick={closeModal}
+          />
+        </div>
+        <div className="flex-1 px-6 pb-6 pt-4 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block font-bold after:ml-0.5 after:text-primaryRed after:content-['*']">
               Item Name
@@ -239,40 +254,52 @@ function ItemModal({
             <label className="mb-1 block font-bold after:ml-0.5 after:text-primaryRed after:content-['*']">
               Who's Bringing It?
             </label>
-            <div className="flex items-center w-full rounded-lg border border-gray-300 bg-white focus-within:border-primaryRed">
-              <AssigneeAvatar assigneeId={itemData.assigneeId} displayName={itemData.assignee} size={24} className={'ml-2'} showName={false}/>
+            <div className="flex w-full items-stretch rounded-lg border border-gray-300 bg-white focus-within:border-primaryRed">
+              <AssigneeAvatar
+                assigneeId={itemData.assigneeId}
+                displayName={itemData.assignee}
+                size={24}
+                className={"ml-3 self-center"}
+                showName={false}
+              />
+
               <input
                 type="text"
                 name="assignee"
                 value={itemData.assignee}
                 onChange={(e) => {
                   handleChange(e);
+                  setAssigneeQuery(e.target.value);
                   setShowSuggestions(true);
                 }}
                 className="flex-1 border-0 bg-white p-2 pl-2 focus:ring-0"
                 placeholder="Type a name..."
                 required
               />
+
               <button
                 type="button"
                 onClick={() => setShowSuggestions((prev) => !prev)}
-                className="px-3 text-primaryDark hover:bg-gray-50"
+                className="rounded-r-lg px-3 text-primaryDark hover:bg-gray-50"
               >
                 <IoChevronDown
-                  className={`h-4 w-4 transition-transform ${showSuggestions ? "rotate-180" : ""}`}
+                  className={`h-4 w-4 transition-transform ${
+                    showSuggestions ? "rotate-180" : ""
+                  }`}
                 />
               </button>
             </div>
 
             {/* Suggestion dropdown */}
-            {/* I want to add the profile picture here */}
             {showSuggestions && (
               <ul className="absolute z-10 mt-1 max-h-40 w-full overflow-y-auto rounded-md bg-white shadow">
-                {users
+                {memberUsers
                   .filter((u) =>
-                    itemData.assignee
-                      ? u.name.toLowerCase().includes(itemData.assignee?.toLowerCase())
-                      : true
+                    assigneeQuery
+                      ? u?.name
+                          ?.toLowerCase()
+                          .includes(assigneeQuery.toLowerCase())
+                      : true,
                   )
                   .map((u) => (
                     <li
@@ -283,16 +310,20 @@ function ItemModal({
                           assignee: u.name,
                           assigneeId: u.id,
                         }));
+                        setAssigneeQuery("");
                         setShowSuggestions(false);
                       }}
                       className="cursor-pointer px-3 py-2 hover:bg-gray-100"
                     >
                       <div className="flex items-center gap-2">
-                        <AssigneeAvatar assigneeId={u.id} displayName={u.name} size={24}/>
+                        <AssigneeAvatar
+                          assigneeId={u.id}
+                          displayName={u.name}
+                          size={24}
+                        />
                       </div>
                     </li>
-                  ))
-                }
+                  ))}
               </ul>
             )}
           </div>
@@ -432,6 +463,7 @@ function ItemModal({
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

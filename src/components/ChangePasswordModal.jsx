@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { FaRegCircleCheck } from "react-icons/fa6";
 import { PiWarningBold } from "react-icons/pi";
+import { IoClose } from "react-icons/io5";
 import { auth } from "../firebase";
 
 export default function ChangePasswordModal({ onClose }) {
@@ -89,10 +90,18 @@ export default function ChangePasswordModal({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50 px-4">
-  <div className="w-full max-w-md rounded-2xl bg-yellow-50 p-6 shadow-lg md:ml-[300px] md:-translate-x-10">
-        <h2 className="mb-4 text-center text-lg font-semibold">
-          Change Password
-        </h2>
+      <div className="w-full max-w-md rounded-2xl bg-yellow-50 p-0 shadow-lg md:ml-[300px] md:-translate-x-10">
+        <div className="flex w-full items-center justify-center rounded-t-2xl bg-primaryRed px-4 py-2 relative">
+          <h2 className="text-center text-lg font-semibold text-white">
+            Change Password
+          </h2>
+          <IoClose
+            className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-2xl text-white"
+            onClick={onClose}
+          />
+        </div>
+
+        <div className="px-6 pb-6 pt-4">
 
         {success && (
           <div className="mb-4 flex flex-col items-center justify-center">
@@ -211,30 +220,31 @@ export default function ChangePasswordModal({ onClose }) {
         </div>
 
         {/* Actions */}
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-center">
           {success ? (
             <button
               onClick={onClose}
-              className="flex-grow rounded-lg bg-primaryRed px-4 py-2 text-white hover:bg-secondaryRed"
+              className="rounded-lg bg-primaryRed px-4 py-2 text-sm font-bold text-white hover:bg-secondaryRed"
             >
               Close
             </button>
           ) : (
-            <div className="flex space-x-4">
+            <div className="flex justify-center gap-3">
               <button
                 onClick={onClose}
-                className="flex-grow rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300"
+                className="rounded-lg border-2 border-primaryRed bg-white px-4 py-2 text-sm font-bold text-primaryRed hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
-                className="flex-grow rounded-lg bg-primaryRed px-4 py-2 text-white hover:bg-secondaryRed"
+                className="rounded-lg bg-primaryRed px-4 py-2 text-sm font-bold text-white hover:bg-secondaryRed"
               >
                 Change Password
               </button>
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>

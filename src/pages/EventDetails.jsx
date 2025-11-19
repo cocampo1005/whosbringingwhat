@@ -11,9 +11,11 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { formatTime } from "../utils/formatters";
+import { useAuth } from "../contexts/AuthContext";
+import { useRole } from "../hooks/useRole";
 import EventModal from "../components/EventModal";
 import ShareButton from "../components/ShareButton";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiLogOut } from "react-icons/fi";
 import { BsPeople } from "react-icons/bs";
 import { MdOutlineAccessTimeFilled } from "react-icons/md";
 import { FaCalendarAlt } from "react-icons/fa";
@@ -37,10 +39,15 @@ import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import ParticipantsModal from "../components/ParticipantsModal";
 import PieChart from "../components/PieChart";
 import CategoryList from "../components/CategoryList";
+import JoinEventPromptModal from "../components/JoinEventPromptModal";
 import { deleteAllEventItemImages } from "../utils/storageCleanup";
 
 function EventDetails() {
   const { eventId } = useParams();
+  const { currentUser } = useAuth();
+  const role = useRole();
+  const isAdmin = role === "admin";
+
   const [event, setEvent] = useState(null);
   const [editingEvent, setEditingEvent] = useState(false);
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -48,9 +55,52 @@ function EventDetails() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [itemToDeleteName, setItemToDeleteName] = useState("");
-  const [participants, setParticipants] = useState([]);
   const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
+  const [isParticipantConfirmOpen, setIsParticipantConfirmOpen] =
+    useState(false);
+  const [participantToRemove, setParticipantToRemove] = useState(null);
+  const [participantToRemoveName, setParticipantToRemoveName] =
+    useState("");
+  const [isSelfRemoval, setIsSelfRemoval] = useState(false);
   const navigate = useNavigate();
+
+  const isHost =
+    !!currentUser &&
+    !!event &&
+    ((event.hostId && event.hostId === currentUser.uid) ||
+      (!event.hostId &&
+        event.createdById &&
+        event.createdById === currentUser.uid));
+
+  const isMember =
+    !!currentUser &&
+    !!event &&
+    (isAdmin ||
+      isHost ||
+      (Array.isArray(event.members) &&
+        event.members.includes(currentUser.uid)));
+
+  const memberIds = useMemo(() => {
+    if (!event) return [];
+
+    const baseHostId = event.hostId || event.createdById || null;
+    const membersArray = Array.isArray(event.members) ? event.members : [];
+
+    return Array.from(new Set([baseHostId, ...membersArray].filter(Boolean)));
+  }, [event]);
+
+  const canManageEvent = isAdmin || isHost;
+  const showSelfRemoveButton =
+    !!currentUser && !!event && !isHost && !isAdmin && isMember;
+
+  const canUserManageItem = (item) => {
+    if (!currentUser || !event) return false;
+    if (isAdmin || isHost) return true;
+    return (
+      item.createdById === currentUser.uid ||
+      item.assigneeId === currentUser.uid
+    );
+  };
 
   // Dietary icons configuration
   const dietaryIcons = {
@@ -74,22 +124,6 @@ function EventDetails() {
         if (docSnapshot.exists()) {
           const eventData = { id: docSnapshot.id, ...docSnapshot.data() };
           setEvent(eventData);
-
-          // Extract participants from items
-          if (eventData.items) {
-            // Prefer UID; fall back to normalized name if legacy items lack assigneeId.
-            const byKey = new Map();
-            for (const item of eventData.items) {
-              const uid = item.assigneeId || null;
-              const name = (item.assignee || "").trim();
-              const key = uid || name.toLowerCase(); // ensure dedupe
-              if (!key) continue;
-              if (!byKey.has(key)) {
-                byKey.set(key, { assigneeId: uid, assignee: name });
-              }
-            }
-              setParticipants([...byKey.values()]);
-            }
         } else {
           console.error("Event not found!");
         }
@@ -111,6 +145,112 @@ function EventDetails() {
     } finally {
       setEditingEvent(false);
     }
+  };
+
+  const handleJoinEvent = async () => {
+    if (!currentUser || !event) return;
+
+    try {
+      const eventRef = doc(db, "events", eventId);
+      await updateDoc(eventRef, {
+        members: arrayUnion(currentUser.uid),
+      });
+
+      setEvent((prev) => {
+        if (!prev) return prev;
+        const existingMembers = Array.isArray(prev.members) ? prev.members : [];
+        if (existingMembers.includes(currentUser.uid)) return prev;
+        return {
+          ...prev,
+          members: [...existingMembers, currentUser.uid],
+        };
+      });
+    } catch (error) {
+      console.error("Error joining event:", error);
+    }
+  };
+
+  const handleRemoveParticipant = async (participantId) => {
+    if (!participantId) return;
+
+    try {
+      const eventRef = doc(db, "events", eventId);
+      const eventSnap = await getDoc(eventRef);
+
+      if (!eventSnap.exists()) {
+        console.error("Event not found when removing participant");
+        return;
+      }
+
+      const data = eventSnap.data();
+      const hostIdFromDoc = data.hostId || data.createdById || null;
+
+      if (hostIdFromDoc && hostIdFromDoc === participantId) {
+        console.warn("Cannot remove the host from the event");
+        return;
+      }
+
+      const existingMembers = Array.isArray(data.members) ? data.members : [];
+      const updatedMembers = existingMembers.filter((id) => id !== participantId);
+
+      const existingItems = Array.isArray(data.items) ? data.items : [];
+      const updatedItems = existingItems.filter(
+        (item) => item.assigneeId !== participantId,
+      );
+
+      await updateDoc(eventRef, {
+        members: updatedMembers,
+        items: updatedItems,
+      });
+
+      setEvent((prev) => {
+        if (!prev) return prev;
+
+        const prevMembers = Array.isArray(prev.members) ? prev.members : [];
+        const nextMembers = prevMembers.filter((id) => id !== participantId);
+
+        const prevItems = Array.isArray(prev.items) ? prev.items : [];
+        const nextItems = prevItems.filter(
+          (item) => item.assigneeId !== participantId,
+        );
+
+        return {
+          ...prev,
+          members: nextMembers,
+          items: nextItems,
+        };
+      });
+
+      if (currentUser && currentUser.uid === participantId) {
+        setIsParticipantModalOpen(false);
+      }
+    } catch (error) {
+      console.error("Error removing participant:", error);
+    }
+  };
+
+  const openParticipantRemovalConfirm = (
+    participantId,
+    participantName,
+    isSelf = false,
+  ) => {
+    if (!participantId) return;
+
+    setParticipantToRemove(participantId);
+    setParticipantToRemoveName(participantName || "this participant");
+    setIsSelfRemoval(!!isSelf);
+    setIsParticipantConfirmOpen(true);
+  };
+
+  const handleConfirmRemoveParticipant = async () => {
+    if (!participantToRemove) return;
+
+    await handleRemoveParticipant(participantToRemove);
+
+    setIsParticipantConfirmOpen(false);
+    setParticipantToRemove(null);
+    setParticipantToRemoveName("");
+    setIsSelfRemoval(false);
   };
 
   const handleParticipantsModal = () => {
@@ -247,11 +387,17 @@ function EventDetails() {
   };
 
   const handleAddItem = () => {
+    if (!isMember && !isAdmin) {
+      return;
+    }
     setEditingItem(null);
     setIsItemModalOpen(true);
   };
 
   const handleEditItem = (item) => {
+    if (!canUserManageItem(item)) {
+      return;
+    }
     setEditingItem(item);
     setIsItemModalOpen(true);
   };
@@ -331,6 +477,9 @@ function EventDetails() {
   };
 
   const openDeleteModalForItem = (item) => {
+    if (!canUserManageItem(item)) {
+      return;
+    }
     setItemToDeleteName(item.title);
     setItemToDelete(item.id);
     setIsDeleteModalOpen(true);
@@ -363,18 +512,22 @@ function EventDetails() {
               {/* Action buttons - vertical on mobile */}
               <div className="absolute right-0 top-0">
                 <div className="flex flex-col gap-2">
-                  <button
-                    onClick={openDeleteModalForEvent}
-                    className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                  >
-                    <MdDelete className="text-lg text-white" />
-                  </button>
-                  <button
-                    onClick={() => setEditingEvent(true)}
-                    className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                  >
-                    <FiEdit className="text-lg text-white" />
-                  </button>
+                  {canManageEvent && (
+                    <>
+                      <button
+                        onClick={openDeleteModalForEvent}
+                        className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                      >
+                        <MdDelete className="text-lg text-white" />
+                      </button>
+                      <button
+                        onClick={() => setEditingEvent(true)}
+                        className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                      >
+                        <FiEdit className="text-lg text-white" />
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={handleParticipantsModal}
                     className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
@@ -382,6 +535,25 @@ function EventDetails() {
                     <BsPeople className="text-lg text-white" />
                   </button>
                   <ShareButton eventId={eventId} eventTitle={event.title} />
+                  {showSelfRemoveButton && currentUser && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openParticipantRemovalConfirm(
+                          currentUser.uid,
+                          currentUser.displayName ||
+                            currentUser.name ||
+                            currentUser.email ||
+                            "You",
+                          true,
+                        )
+                      }
+                      className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                      aria-label="Leave event"
+                    >
+                      <FiLogOut className="text-lg text-white" />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -455,6 +627,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -464,6 +637,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -473,6 +647,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -482,6 +657,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -491,6 +667,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
 
@@ -568,18 +745,22 @@ function EventDetails() {
             {/* Action buttons - horizontal on desktop */}
             <div className="flex h-44 flex-col items-end justify-between">
               <div className="flex gap-2">
-                <button
-                  onClick={openDeleteModalForEvent}
-                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                >
-                  <MdDelete className="text-lg text-white" />
-                </button>
-                <button
-                  onClick={() => setEditingEvent(true)}
-                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                >
-                  <FiEdit className="text-lg text-white" />
-                </button>
+                {canManageEvent && (
+                  <>
+                    <button
+                      onClick={openDeleteModalForEvent}
+                      className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                    >
+                      <MdDelete className="text-lg text-white" />
+                    </button>
+                    <button
+                      onClick={() => setEditingEvent(true)}
+                      className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                    >
+                      <FiEdit className="text-lg text-white" />
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={handleParticipantsModal}
                   className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
@@ -587,6 +768,25 @@ function EventDetails() {
                   <BsPeople className="text-lg text-white" />
                 </button>
                 <ShareButton eventId={eventId} eventTitle={event.title} />
+                {showSelfRemoveButton && currentUser && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openParticipantRemovalConfirm(
+                        currentUser.uid,
+                        currentUser.displayName ||
+                          currentUser.name ||
+                          currentUser.email ||
+                          "You",
+                        true,
+                      )
+                    }
+                    className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                    aria-label="Leave event"
+                  >
+                    <FiLogOut className="text-lg text-white" />
+                  </button>
+                )}
               </div>
               <button
                 onClick={handleAddItem}
@@ -607,6 +807,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -616,6 +817,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -625,6 +827,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -634,6 +837,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -643,6 +847,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
           </div>
@@ -668,6 +873,12 @@ function EventDetails() {
       </button>
 
       {/* Modals */}
+      <JoinEventPromptModal
+        isOpen={!!currentUser && !!event && !isMember}
+        onCancel={() => navigate("/events")}
+        onJoin={handleJoinEvent}
+      />
+
       <ConfirmDeleteModal
         isOpen={isDeleteModalOpen}
         closeModal={() => setIsDeleteModalOpen(false)}
@@ -679,11 +890,30 @@ function EventDetails() {
         deleteItemName={itemToDeleteName}
       />
 
+      <ConfirmDeleteModal
+        isOpen={isParticipantConfirmOpen}
+        closeModal={() => setIsParticipantConfirmOpen(false)}
+        onConfirmDelete={handleConfirmRemoveParticipant}
+        deleteItemName={participantToRemoveName}
+        title={isSelfRemoval ? "Leave Event" : "Remove Participant"}
+        confirmLabel={isSelfRemoval ? "Leave" : "Remove"}
+        description={
+          isSelfRemoval
+            ? "Are you sure you want to leave this event? Any items you are bringing will be removed."
+            : `Are you sure you want to remove ${participantToRemoveName} from this event? Any items they are bringing will be removed.`
+        }
+      />
+
       {isParticipantModalOpen && (
         <ParticipantsModal
           isOpen={isParticipantModalOpen}
           onClose={handleParticipantsModal}
-          participants={participants}
+          memberIds={memberIds}
+          items={event?.items || []}
+          currentUserId={currentUser?.uid ?? null}
+          hostId={event?.hostId || event?.createdById || null}
+          canManageEvent={canManageEvent}
+          onRemoveParticipant={openParticipantRemovalConfirm}
         />
       )}
 
@@ -701,6 +931,7 @@ function EventDetails() {
           onSubmit={handleItemSubmit}
           initialData={editingItem}
           mode={editingItem ? "edit" : "add"}
+          memberIds={event?.members || []}
         />
       )}
     </div>

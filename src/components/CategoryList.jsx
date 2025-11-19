@@ -1,7 +1,7 @@
 import React, { useMemo, useState, memo } from "react";
 import { FiChevronDown, FiChevronRight, FiEdit } from "react-icons/fi";
 import { MdDelete } from "react-icons/md";
-import AssigneeAvatar from "./AssigneeAvatar"
+import AssigneeAvatar from "./AssigneeAvatar";
 
 function CategoryList({
   categoryName, // "Main" | "Side" | "Dessert" | "Beverage" | "Miscellaneous"
@@ -10,6 +10,7 @@ function CategoryList({
   dietaryIcons = {}, // { vegan:{icon,color}, ... }
   onEditItem, // (item) => void
   onDeleteItem, // (item) => void
+  canManageItem,
   defaultExpanded = true,
 }) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
@@ -61,6 +62,10 @@ function CategoryList({
         <div className="space-y-2">
           {sortedItems.map((item) => {
             const open = expandedItems.has(item.id);
+            const canManage =
+              typeof canManageItem === "function"
+                ? !!canManageItem(item)
+                : true;
             return (
               <div
                 key={item.id}
@@ -83,7 +88,7 @@ function CategoryList({
                     </div>
                     <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
                       {item.assignee && (
-                        <AssigneeAvatar 
+                        <AssigneeAvatar
                           assigneeId={item.assigneeId}
                           displayName={item.assignee}
                           size={24}
@@ -145,26 +150,28 @@ function CategoryList({
                         )}
                       </div>
 
-                      <div className="flex w-full justify-end gap-2 p-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditItem?.(item);
-                          }}
-                          className="rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed"
-                        >
-                          <FiEdit />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteItem?.(item);
-                          }}
-                          className="rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed"
-                        >
-                          <MdDelete />
-                        </button>
-                      </div>
+                      {canManage && (
+                        <div className="flex w-full justify-end gap-2 p-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditItem?.(item);
+                            }}
+                            className="rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed"
+                          >
+                            <FiEdit />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteItem?.(item);
+                            }}
+                            className="rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed"
+                          >
+                            <MdDelete />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

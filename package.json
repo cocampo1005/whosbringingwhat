@@ -13,7 +13,7 @@
     "@tailwindcss/forms": "^0.5.9",
     "browser-image-compression": "^2.0.2",
     "firebase": "^11.0.2",
-    "firebase-admin": "^13.5.0",
+    "firebase-admin": "^13.6.0",
     "react": "^18.3.1",
     "react-calendar": "^5.1.0",
     "react-dom": "^18.3.1",
@@ -37,5 +37,18 @@
     "prettier-plugin-tailwindcss": "^0.6.9",
     "tailwindcss": "^3.4.15",
     "vite": "^5.4.10"
-  }
+  },
+  "description": "**Who's Bringing What** is a web application designed to help families and friends effortlessly organize potluck events. With features like event creation, item tracking, and dietary considerations, this app ensures no dish gets forgotten, and everyone’s needs are considered.",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cocampo1005/whosbringingwhat.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cocampo1005/whosbringingwhat/issues"
+  },
+  "homepage": "https://github.com/cocampo1005/whosbringingwhat#readme"
 }
