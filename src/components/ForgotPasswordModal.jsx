@@ -80,6 +80,7 @@ export default function ForgotPasswordModal({ onClose }) {
             </>
           )}
         </div>
+        </div>
       </div>
     </div>
   );
