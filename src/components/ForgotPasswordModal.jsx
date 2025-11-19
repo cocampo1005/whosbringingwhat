@@ -24,14 +24,17 @@ export default function ForgotPasswordModal({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-      <div className="relative mx-4 w-full rounded-lg bg-yellow-50 p-6 shadow-lg">
-        <h2 className="mb-4 text-center text-lg font-semibold">
-          Reset Password
-        </h2>
-        <IoClose
-          className="absolute right-4 top-4 cursor-pointer text-2xl"
-          onClick={onClose}
-        />
+      <div className="relative mx-4 w-full rounded-lg bg-yellow-50 p-0 shadow-lg">
+        <div className="flex w-full items-center justify-center rounded-t-lg bg-primaryRed px-4 py-2 relative">
+          <h2 className="text-center text-lg font-semibold text-white">
+            Reset Password
+          </h2>
+          <IoClose
+            className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-2xl text-white"
+            onClick={onClose}
+          />
+        </div>
+        <div className="px-6 pb-6 pt-4">
         <p className="mb-4 text-sm text-gray-600">
           Enter your email address, and we'll send you a link to reset your
           password.

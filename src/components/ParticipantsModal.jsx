@@ -76,6 +76,10 @@ export default function ParticipantsModal({
   onClose,
   memberIds = [],
   items = [],
+  currentUserId = null,
+  hostId = null,
+  canManageEvent = false,
+  onRemoveParticipant,
 }) {
   const ids = Array.from(new Set(memberIds.filter(Boolean)));
   const { users: userList, status } = useUsers(ids);
@@ -111,29 +115,50 @@ export default function ParticipantsModal({
   const isLoading = status === "loading";
 
   return (
-    <div className="fixed inset-0 z-50 bg-gray-500 bg-opacity-50">
-      <div className="flex h-full items-center justify-center">
-        <div className="relative w-full max-w-lg rounded-lg bg-white p-6 shadow-lg">
-          <h2 className="mb-4 text-lg font-semibold text-primaryDark">
-            Event participants
-          </h2>
-
-          {isLoading ? (
-            <p className="text-sm text-gray-500">Loading participants...</p>
-          ) : ids.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              No participants have joined this event yet.
-            </p>
-          ) : (
-            <ul className="space-y-4">
-              {ids.map((id) => {
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative mx-4 flex w-full max-w-xl max-h-[80vh] flex-col overflow-hidden rounded-2xl bg-yellow-50 p-0 shadow-lg md:ml-[14rem]"
+        onClick={(e) => e.stopPropagation()}
+      >
+          <div className="flex w-full items-center justify-center rounded-t-2xl bg-primaryRed px-4 py-2 relative">
+            <h2 className="text-center text-lg font-semibold text-white">
+              Event participants
+            </h2>
+            <IoClose
+              className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-2xl text-white"
+              onClick={onClose}
+            />
+          </div>
+          <div className="flex-1 px-6 pb-6 pt-4 overflow-y-auto">
+            {isLoading ? (
+              <p className="text-sm text-gray-500">Loading participants...</p>
+            ) : ids.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                No participants have joined this event yet.
+              </p>
+            ) : (
+              <ul className="space-y-4">
+                {ids.map((id) => {
                 const entry = contributions.get(id);
                 const user = entry?.user || userList[ids.indexOf(id)];
+
+                const isCurrentUser = currentUserId === id;
+                const isHostUser = hostId && hostId === id;
+                const canRemoveAny = canManageEvent;
+                const showRemoveButton =
+                  (canRemoveAny && !isHostUser) ||
+                  (!canRemoveAny && isCurrentUser);
+                const removeLabel =
+                  !canRemoveAny && isCurrentUser ? "Leave" : "Remove";
+
                 if (!user) {
                   return (
                     <li
                       key={id}
-                      className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-500"
+                      className="mx-auto flex w-full max-w-[34rem] items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 text-sm text-gray-500 shadow-sm transition hover:bg-gray-50 hover:shadow-md"
                     >
                       <div className="flex items-center gap-3">
                         <AssigneeAvatar
@@ -143,6 +168,21 @@ export default function ParticipantsModal({
                         />
                         <span>Unknown participant</span>
                       </div>
+                      {showRemoveButton && onRemoveParticipant && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onRemoveParticipant(
+                              id,
+                              "this participant",
+                              !canRemoveAny && isCurrentUser,
+                            )
+                          }
+                          className="ml-3 rounded-full border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                        >
+                          {removeLabel}
+                        </button>
+                      )}
                     </li>
                   );
                 }
@@ -154,7 +194,7 @@ export default function ParticipantsModal({
                 return (
                   <li
                     key={id}
-                    className="flex items-start justify-between gap-3 rounded-lg bg-gray-50 px-3 py-3"
+                    className="mx-auto flex w-full max-w-[34rem] items-start justify-between gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm transition hover:bg-gray-50 hover:shadow-md"
                   >
                     {/* Left: avatar, name, dietary */}
                     <div className="flex flex-1 flex-col gap-1">
@@ -219,17 +259,27 @@ export default function ParticipantsModal({
                           </span>
                         )}
                       </div>
+                      {showRemoveButton && onRemoveParticipant && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onRemoveParticipant(
+                              id,
+                              user.name,
+                              !canRemoveAny && isCurrentUser,
+                            )
+                          }
+                          className="mt-2 rounded-full border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                        >
+                          {removeLabel}
+                        </button>
+                      )}
                     </div>
                   </li>
                 );
               })}
             </ul>
           )}
-
-          <IoClose
-            className="absolute right-4 top-4 cursor-pointer text-2xl"
-            onClick={onClose}
-          />
         </div>
       </div>
     </div>

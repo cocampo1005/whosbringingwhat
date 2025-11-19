@@ -93,21 +93,22 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
       <div
-        className="relative ml-8 mr-8 w-full max-w-md overflow-y-auto rounded-2xl bg-yellow-50 p-4 shadow-lg md:ml-[236px]"
+        className="relative ml-8 mr-8 flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-yellow-50 p-0 shadow-lg md:ml-[236px]"
         style={{ maxHeight: modalHeight }}
       >
-        <div className="flex justify-center">
-          <h2 className="text-lg font-semibold">
+        <div className="flex w-full items-center justify-center rounded-t-2xl bg-primaryRed px-4 py-2 relative">
+          <h2 className="text-center text-lg font-semibold text-white">
             {initialData.title ? "Edit Event" : "Add New Event"}
           </h2>
           <IoClose
-            className="absolute right-4 top-4 cursor-pointer text-3xl"
+            className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-3xl text-white"
             onClick={closeModal}
           />
         </div>
-        <form onSubmit={handleSubmit} className="mt-4 flex flex-col">
+        <div className="flex-1 px-4 pb-4 pt-4 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="flex flex-col">
           {/* Event Name */}
           <label className="mb-2 block text-sm">Event Name</label>
           <input
@@ -171,6 +172,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
             {initialData.title ? "Save Changes" : "Add Event"}
           </button>
         </form>
+        </div>
       </div>
     </div>
   );

@@ -222,16 +222,19 @@ function ItemModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="relative mx-4 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-yellow-50 p-6 shadow-lg md:ml-[14rem]">
-        <h2 className="mb-4 text-center text-xl font-bold">
-          {mode === "add" ? "Add Item" : "Edit Item"}
-        </h2>
-        <IoClose
-          className="absolute right-4 top-4 cursor-pointer text-2xl"
-          onClick={closeModal}
-        />
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50 p-4">
+      <div className="relative mx-4 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-yellow-50 p-0 shadow-lg md:ml-[14rem]">
+        <div className="flex w-full items-center justify-center rounded-t-2xl bg-primaryRed px-4 py-2 relative">
+          <h2 className="text-center text-xl font-bold text-white">
+            {mode === "add" ? "Add Item" : "Edit Item"}
+          </h2>
+          <IoClose
+            className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-2xl text-white"
+            onClick={closeModal}
+          />
+        </div>
+        <div className="flex-1 px-6 pb-6 pt-4 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block font-bold after:ml-0.5 after:text-primaryRed after:content-['*']">
               Item Name
@@ -460,6 +463,7 @@ function ItemModal({
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

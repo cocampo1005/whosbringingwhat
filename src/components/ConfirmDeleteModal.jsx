@@ -5,6 +5,9 @@ const ConfirmDeleteModal = ({
   closeModal,
   onConfirmDelete,
   deleteItemName,
+  title = "Confirm Deletion",
+  confirmLabel = "Delete",
+  description,
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -25,17 +28,26 @@ const ConfirmDeleteModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
       <div
-        className="mx-4 w-full rounded-lg bg-yellow-50 p-6 shadow-lg md:w-[400px] md:ml-[112px] md:translate-x-[56px]"
+        className="mx-4 w-full rounded-lg bg-yellow-50 p-0 shadow-lg md:w-[400px] md:ml-[112px] md:translate-x-[56px]"
         role="dialog"
         aria-modal="true"
         aria-busy={isDeleting ? "true" : "false"}
       >
-        <h2 className="text-center text-xl font-bold">Confirm Deletion</h2>
-        <p className="mt-4 text-center">
-          Are you sure you want to delete{" "}
-          <span className="text-red-600">{deleteItemName}</span>?
+        <div className="flex w-full items-center justify-center rounded-t-lg bg-primaryRed px-4 py-2">
+          <h2 className="text-center text-xl font-bold text-white">{title}</h2>
+        </div>
+        <div className="px-6 pb-6 pt-4">
+        <p className="mt-0 text-center">
+          {description ? (
+            description
+          ) : (
+            <>
+              Are you sure you want to delete{" "}
+              <span className="text-red-600">{deleteItemName}</span>?
+            </>
+          )}
         </p>
 
         {error && (
@@ -56,7 +68,7 @@ const ConfirmDeleteModal = ({
                 Deleting…
               </>
             ) : (
-              "Delete"
+              confirmLabel
             )}
           </button>
 
@@ -66,6 +78,7 @@ const ConfirmDeleteModal = ({
           >
             Cancel
           </button>
+        </div>
         </div>
       </div>
     </div>

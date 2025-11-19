@@ -89,10 +89,14 @@ export default function ChangePasswordModal({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50 px-4">
-  <div className="w-full max-w-md rounded-2xl bg-yellow-50 p-6 shadow-lg md:ml-[300px] md:-translate-x-10">
-        <h2 className="mb-4 text-center text-lg font-semibold">
-          Change Password
-        </h2>
+      <div className="w-full max-w-md rounded-2xl bg-yellow-50 p-0 shadow-lg md:ml-[300px] md:-translate-x-10">
+        <div className="flex w-full items-center justify-center rounded-t-2xl bg-primaryRed px-4 py-2">
+          <h2 className="text-center text-lg font-semibold text-white">
+            Change Password
+          </h2>
+        </div>
+
+        <div className="px-6 pb-6 pt-4">
 
         {success && (
           <div className="mb-4 flex flex-col items-center justify-center">
@@ -235,6 +239,7 @@ export default function ChangePasswordModal({ onClose }) {
               </button>
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>
