@@ -54,7 +54,6 @@ function EventDetails() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [itemToDeleteName, setItemToDeleteName] = useState("");
-  const [participants, setParticipants] = useState([]);
   const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -73,6 +72,15 @@ function EventDetails() {
       isHost ||
       (Array.isArray(event.members) &&
         event.members.includes(currentUser.uid)));
+
+  const memberIds = useMemo(() => {
+    if (!event) return [];
+
+    const baseHostId = event.hostId || event.createdById || null;
+    const membersArray = Array.isArray(event.members) ? event.members : [];
+
+    return Array.from(new Set([baseHostId, ...membersArray].filter(Boolean)));
+  }, [event]);
 
   const canManageEvent = isAdmin || isHost;
 
@@ -107,22 +115,6 @@ function EventDetails() {
         if (docSnapshot.exists()) {
           const eventData = { id: docSnapshot.id, ...docSnapshot.data() };
           setEvent(eventData);
-
-          // Extract participants from items
-          if (eventData.items) {
-            // Prefer UID; fall back to normalized name if legacy items lack assigneeId.
-            const byKey = new Map();
-            for (const item of eventData.items) {
-              const uid = item.assigneeId || null;
-              const name = (item.assignee || "").trim();
-              const key = uid || name.toLowerCase(); // ensure dedupe
-              if (!key) continue;
-              if (!byKey.has(key)) {
-                byKey.set(key, { assigneeId: uid, assignee: name });
-              }
-            }
-            setParticipants([...byKey.values()]);
-          }
         } else {
           console.error("Event not found!");
         }
@@ -782,7 +774,8 @@ function EventDetails() {
         <ParticipantsModal
           isOpen={isParticipantModalOpen}
           onClose={handleParticipantsModal}
-          participants={participants}
+          memberIds={memberIds}
+          items={event?.items || []}
         />
       )}
 
@@ -800,6 +793,7 @@ function EventDetails() {
           onSubmit={handleItemSubmit}
           initialData={editingItem}
           mode={editingItem ? "edit" : "add"}
+          memberIds={event?.members || []}
         />
       )}
     </div>
