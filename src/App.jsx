@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import Signup from "./pages/Signup";
@@ -5,8 +6,8 @@ import Login from "./pages/Login";
 import { useAuth } from "./contexts/AuthContext";
 import Events from "./pages/Events";
 import MyItems from "./pages/MyItems";
-import Profile from "./pages/Profile";
-import EventDetails from "./pages/EventDetails";
+const EventDetails = lazy(() => import("./pages/EventDetails"));
+const Profile = lazy(() => import("./pages/Profile"));
 
 function App() {
   const { currentUser } = useAuth();
@@ -29,9 +30,23 @@ function App() {
         {/* Nested Routes */}
         <Route index element={<Navigate to="/events" replace />} />
         <Route path="events" element={<Events />} />
-        <Route path="events/:eventId" element={<EventDetails />} />
+        <Route
+          path="events/:eventId"
+          element={
+            <Suspense fallback={<div>Loading event...</div>}>
+              <EventDetails />
+            </Suspense>
+          }
+        />
         <Route path="my-items" element={<MyItems />} />
-        <Route path="profile" element={<Profile />} />
+        <Route
+          path="profile"
+          element={
+            <Suspense fallback={<div>Loading profile...</div>}>
+              <Profile />
+            </Suspense>
+          }
+        />
       </Route>
 
       {/* Public Routes */}
