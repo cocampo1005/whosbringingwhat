@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { IoClose } from "react-icons/io5";
 import Calendar from "react-calendar";
 import "../styles/Calendar.css";
@@ -6,6 +6,13 @@ import { useAuth } from "../contexts/AuthContext";
 
 export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   const { currentUser } = useAuth();
+
+  const initialHostId =
+    initialData.hostId || initialData.createdById || currentUser?.uid || null;
+
+  const initialMembers =
+    initialData.members || (initialHostId ? [initialHostId] : []);
+
   const [eventData, setEventData] = useState({
     title: initialData.title || "",
     description: initialData.description || "",
@@ -15,14 +22,17 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
     location: initialData.location || "",
     createdBy: initialData.createdBy || currentUser.name,
     createdById: initialData.createdById || currentUser?.uid || null,
+    hostId: initialHostId,
+    members: initialMembers,
   });
+
   const [modalHeight, setModalHeight] = useState("100vh");
 
   useEffect(() => {
     const updateModalHeight = () => {
       const viewportHeight =
         window.visualViewport?.height || window.innerHeight;
-      setModalHeight(`${viewportHeight - 32}px`); // 32px for 1rem padding top and bottom
+      setModalHeight(`${viewportHeight - 32}px`);
     };
 
     // Set initial height
@@ -48,7 +58,6 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
 
   // Check if the date is already formatted (as a string)
   const isFormattedDate = (date) => {
-    // Adjust the regex to match your formatted date structure
     const formattedDateRegex = /^[a-zA-Z]{3},?\s[a-zA-Z]+\s\d{1,2},\s\d{4}$/;
     return typeof date === "string" && formattedDateRegex.test(date);
   };
@@ -71,8 +80,8 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
     const formattedData = {
       ...eventData,
       date: isFormattedDate(eventData.date)
-        ? eventData.date // Use the date as-is if already formatted
-        : formatDate(eventData.date), // Format if it's not already formatted
+        ? eventData.date
+        : formatDate(eventData.date),
     };
 
     if (!eventData.date) {
@@ -86,7 +95,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div
-        className="relative ml-0 ml-8 mr-8 w-full max-w-md overflow-y-auto rounded-2xl bg-yellow-50 p-4 shadow-lg md:ml-[236px]"
+        className="relative ml-8 mr-8 w-full max-w-md overflow-y-auto rounded-2xl bg-yellow-50 p-4 shadow-lg md:ml-[236px]"
         style={{ maxHeight: modalHeight }}
       >
         <div className="flex justify-center">

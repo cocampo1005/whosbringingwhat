@@ -11,6 +11,8 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { formatTime } from "../utils/formatters";
+import { useAuth } from "../contexts/AuthContext";
+import { useRole } from "../hooks/useRole";
 import EventModal from "../components/EventModal";
 import ShareButton from "../components/ShareButton";
 import { FiEdit } from "react-icons/fi";
@@ -41,6 +43,10 @@ import { deleteAllEventItemImages } from "../utils/storageCleanup";
 
 function EventDetails() {
   const { eventId } = useParams();
+  const { currentUser } = useAuth();
+  const role = useRole();
+  const isAdmin = role === "admin";
+
   const [event, setEvent] = useState(null);
   const [editingEvent, setEditingEvent] = useState(false);
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -51,6 +57,33 @@ function EventDetails() {
   const [participants, setParticipants] = useState([]);
   const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
   const navigate = useNavigate();
+
+  const isHost =
+    !!currentUser &&
+    !!event &&
+    ((event.hostId && event.hostId === currentUser.uid) ||
+      (!event.hostId &&
+        event.createdById &&
+        event.createdById === currentUser.uid));
+
+  const isMember =
+    !!currentUser &&
+    !!event &&
+    (isAdmin ||
+      isHost ||
+      (Array.isArray(event.members) &&
+        event.members.includes(currentUser.uid)));
+
+  const canManageEvent = isAdmin || isHost;
+
+  const canUserManageItem = (item) => {
+    if (!currentUser || !event) return false;
+    if (isAdmin || isHost) return true;
+    return (
+      item.createdById === currentUser.uid ||
+      item.assigneeId === currentUser.uid
+    );
+  };
 
   // Dietary icons configuration
   const dietaryIcons = {
@@ -88,8 +121,8 @@ function EventDetails() {
                 byKey.set(key, { assigneeId: uid, assignee: name });
               }
             }
-              setParticipants([...byKey.values()]);
-            }
+            setParticipants([...byKey.values()]);
+          }
         } else {
           console.error("Event not found!");
         }
@@ -110,6 +143,29 @@ function EventDetails() {
       console.error("Error updating event:", error);
     } finally {
       setEditingEvent(false);
+    }
+  };
+
+  const handleJoinEvent = async () => {
+    if (!currentUser || !event) return;
+
+    try {
+      const eventRef = doc(db, "events", eventId);
+      await updateDoc(eventRef, {
+        members: arrayUnion(currentUser.uid),
+      });
+
+      setEvent((prev) => {
+        if (!prev) return prev;
+        const existingMembers = Array.isArray(prev.members) ? prev.members : [];
+        if (existingMembers.includes(currentUser.uid)) return prev;
+        return {
+          ...prev,
+          members: [...existingMembers, currentUser.uid],
+        };
+      });
+    } catch (error) {
+      console.error("Error joining event:", error);
     }
   };
 
@@ -247,11 +303,17 @@ function EventDetails() {
   };
 
   const handleAddItem = () => {
+    if (!isMember && !isAdmin) {
+      return;
+    }
     setEditingItem(null);
     setIsItemModalOpen(true);
   };
 
   const handleEditItem = (item) => {
+    if (!canUserManageItem(item)) {
+      return;
+    }
     setEditingItem(item);
     setIsItemModalOpen(true);
   };
@@ -331,6 +393,9 @@ function EventDetails() {
   };
 
   const openDeleteModalForItem = (item) => {
+    if (!canUserManageItem(item)) {
+      return;
+    }
     setItemToDeleteName(item.title);
     setItemToDelete(item.id);
     setIsDeleteModalOpen(true);
@@ -356,6 +421,22 @@ function EventDetails() {
       </div>
 
       <div className="p-4 md:p-6">
+        {currentUser && !isMember && (
+          <div className="mb-4 rounded-lg bg-yellow-100 p-3 text-sm text-primaryDark">
+            <p className="mb-2">
+              You are viewing this event as a guest. Join to keep it in your
+              events list and manage your items.
+            </p>
+            <button
+              type="button"
+              onClick={handleJoinEvent}
+              className="w-full rounded-lg bg-primaryRed px-3 py-1.5 text-xs font-semibold text-white hover:bg-secondaryRed md:w-auto"
+            >
+              Join this event
+            </button>
+          </div>
+        )}
+
         {/* Mobile layout */}
         <div className="md:hidden">
           <div className="mb-6">
@@ -363,18 +444,22 @@ function EventDetails() {
               {/* Action buttons - vertical on mobile */}
               <div className="absolute right-0 top-0">
                 <div className="flex flex-col gap-2">
-                  <button
-                    onClick={openDeleteModalForEvent}
-                    className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                  >
-                    <MdDelete className="text-lg text-white" />
-                  </button>
-                  <button
-                    onClick={() => setEditingEvent(true)}
-                    className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                  >
-                    <FiEdit className="text-lg text-white" />
-                  </button>
+                  {canManageEvent && (
+                    <>
+                      <button
+                        onClick={openDeleteModalForEvent}
+                        className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                      >
+                        <MdDelete className="text-lg text-white" />
+                      </button>
+                      <button
+                        onClick={() => setEditingEvent(true)}
+                        className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                      >
+                        <FiEdit className="text-lg text-white" />
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={handleParticipantsModal}
                     className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
@@ -455,6 +540,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -464,6 +550,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -473,6 +560,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -482,6 +570,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -491,6 +580,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
 
@@ -568,18 +658,22 @@ function EventDetails() {
             {/* Action buttons - horizontal on desktop */}
             <div className="flex h-44 flex-col items-end justify-between">
               <div className="flex gap-2">
-                <button
-                  onClick={openDeleteModalForEvent}
-                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                >
-                  <MdDelete className="text-lg text-white" />
-                </button>
-                <button
-                  onClick={() => setEditingEvent(true)}
-                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                >
-                  <FiEdit className="text-lg text-white" />
-                </button>
+                {canManageEvent && (
+                  <>
+                    <button
+                      onClick={openDeleteModalForEvent}
+                      className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                    >
+                      <MdDelete className="text-lg text-white" />
+                    </button>
+                    <button
+                      onClick={() => setEditingEvent(true)}
+                      className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                    >
+                      <FiEdit className="text-lg text-white" />
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={handleParticipantsModal}
                   className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
@@ -607,6 +701,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -616,6 +711,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -625,6 +721,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -634,6 +731,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
             <CategoryList
@@ -643,6 +741,7 @@ function EventDetails() {
               dietaryIcons={dietaryIcons}
               onEditItem={handleEditItem}
               onDeleteItem={openDeleteModalForItem}
+              canManageItem={canUserManageItem}
               defaultExpanded
             />
           </div>

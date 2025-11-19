@@ -13,34 +13,74 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import EventCard from "../components/EventCard";
 import { useNavigate } from "react-router-dom";
+import { useRole } from "../hooks/useRole";
 
 export default function Events() {
   const { currentUser } = useAuth();
+  const role = useRole();
+  const isAdmin = role === "admin";
+
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [events, setEvents] = useState([]);
-  const [filter, setFilter] = useState("all");
+  const [tab, setTab] = useState("upcoming");
 
   const navigate = useNavigate();
-  const normalize = (s = "") => s.trim().replace(/\s+/g, " ").toLowerCase();
 
-  const myName = normalize(currentUser?.name || "");
-
-  const filteredEvents = useMemo(() => {
-    if (filter === "all") return events;
+  const memberEvents = useMemo(() => {
     if (!currentUser) return [];
+    if (isAdmin) return events;
 
     return events.filter((ev) => {
-      const items = Array.isArray(ev.items) ? ev.items : [];
-      // “Contributed to” = at least one item that’s mine
-      return items.some((it) => {
-        const hasId = !!it?.assigneeId;
-        const idMatches = it?.assigneeId === currentUser.uid;
-        const nameMatches =
-          !hasId && myName && normalize(it?.assignee || "") === myName;
-        return idMatches || nameMatches;
-      });
+      const members = Array.isArray(ev.members) ? ev.members : [];
+      const isMember = members.includes(currentUser.uid);
+      const isHost =
+        ev.hostId === currentUser.uid || ev.createdById === currentUser.uid;
+
+      return isMember || isHost;
     });
-  }, [events, filter, currentUser, myName]);
+  }, [events, currentUser, isAdmin]);
+
+  const eventsByDate = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const upcoming = [];
+    const past = [];
+
+    memberEvents.forEach((ev) => {
+      let eventDate = null;
+
+      if (ev.date instanceof Date) {
+        eventDate = ev.date;
+      } else if (typeof ev.date === "string") {
+        const parsed = new Date(ev.date);
+        if (!Number.isNaN(parsed.getTime())) {
+          eventDate = parsed;
+        }
+      }
+
+      if (!eventDate) {
+        // If we cannot parse the date, treat it as upcoming
+        upcoming.push(ev);
+        return;
+      }
+
+      const normalized = new Date(eventDate);
+      normalized.setHours(0, 0, 0, 0);
+
+      if (normalized < today) {
+        past.push(ev);
+      } else {
+        upcoming.push(ev);
+      }
+    });
+
+    return { upcoming, past };
+  }, [memberEvents]);
+
+  const displayedEvents =
+    tab === "upcoming" ? eventsByDate.upcoming : eventsByDate.past;
+  const hasEvents = displayedEvents.length > 0;
 
   useEffect(() => {
     const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
@@ -77,63 +117,57 @@ export default function Events() {
 
   return (
     <div className="mx-auto max-w-5xl pb-8 pt-8">
-      {/* Placeholder for event content */}
-
-      {(
-        filter === "all" ? events.length === 0 : filteredEvents.length === 0
-      ) ? (
-        <p className="text-center text-gray-600">
-          {filter === "all"
-            ? "Your events will appear here."
-            : "No events with your contributions yet."}
-        </p>
-      ) : (
-        <>
-          {/* <div className="mb-12 flex items-center justify-start gap-4"> */}
-          <div className="mb-9 flex w-full items-center justify-between gap-4 sm:gap-8">
-            <div className="flex w-full items-center justify-between gap-4 md:w-auto md:justify-start">
-              <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
-                <button
-                  type="button"
-                  onClick={() => setFilter("all")}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
-                    filter === "all"
-                      ? "bg-primaryRed text-white"
-                      : "text-primaryDark hover:bg-gray-50"
-                  }`}
-                  aria-pressed={filter === "all"}
-                >
-                  All Events
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFilter("mine")}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
-                    filter === "mine"
-                      ? "bg-primaryRed text-white"
-                      : "text-primaryDark hover:bg-gray-50"
-                  }`}
-                  aria-pressed={filter === "mine"}
-                >
-                  Contributed Events
-                </button>
-              </div>
-              <span className="text-xs text-gray-500">
-                {filter === "all" ? events.length : filteredEvents.length}{" "}
-                events
-              </span>
-            </div>
+      {/* Tabs and header should always be visible */}
+      <div className="mb-9 flex w-full items-center justify-between gap-4 sm:gap-8">
+        <div className="flex w-full items-center justify-between gap-4 md:w-auto md:justify-start">
+          <div className="inline-flex rounded-xl bg-white p-1 shadow-md">
             <button
-              className="items hidden items-center gap-2 rounded-xl bg-primaryRed px-4 py-3 text-sm font-semibold text-white hover:bg-secondaryRed md:flex"
-              onClick={handleAddEvent}
+              type="button"
+              onClick={() => setTab("upcoming")}
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                tab === "upcoming"
+                  ? "bg-primaryRed text-white"
+                  : "text-primaryDark hover:bg-gray-50"
+              }`}
+              aria-pressed={tab === "upcoming"}
             >
-              <FaPlus />
-              <span>Add Event</span>
+              Upcoming
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("past")}
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                tab === "past"
+                  ? "bg-primaryRed text-white"
+                  : "text-primaryDark hover:bg-gray-50"
+              }`}
+              aria-pressed={tab === "past"}
+            >
+              Previous
             </button>
           </div>
+          <span className="text-xs text-gray-500">
+            {displayedEvents.length} events
+          </span>
+        </div>
+        <button
+          className="hidden items-center gap-2 rounded-full bg-primaryRed px-4 py-2 text-sm font-semibold text-white hover:bg-secondaryRed md:flex"
+          onClick={handleAddEvent}
+        >
+          <FaPlus />
+          <span>Add Event</span>
+        </button>
+      </div>
 
-          <EventCard events={filteredEvents} />
-        </>
+      {/* Content under the tabs */}
+      {hasEvents ? (
+        <EventCard events={displayedEvents} />
+      ) : (
+        <p className="text-center text-gray-600">
+          {tab === "upcoming"
+            ? "You do not have any upcoming events yet."
+            : "You do not have any previous events yet."}
+        </p>
       )}
 
       {showAddEventModal && (
