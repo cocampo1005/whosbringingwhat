@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { IoClose } from "react-icons/io5";
 
 const ConfirmDeleteModal = ({
   isOpen,
@@ -35,20 +36,24 @@ const ConfirmDeleteModal = ({
         aria-modal="true"
         aria-busy={isDeleting ? "true" : "false"}
       >
-        <div className="flex w-full items-center justify-center rounded-t-lg bg-primaryRed px-4 py-2">
+        <div className="flex w-full items-center justify-center rounded-t-lg bg-primaryRed px-4 py-2 relative">
           <h2 className="text-center text-xl font-bold text-white">{title}</h2>
+          <IoClose
+            className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-2xl text-white"
+            onClick={closeModal}
+          />
         </div>
         <div className="px-6 pb-6 pt-4">
-        <p className="mt-0 text-center">
-          {description ? (
-            description
-          ) : (
-            <>
-              Are you sure you want to delete{" "}
-              <span className="text-red-600">{deleteItemName}</span>?
-            </>
-          )}
-        </p>
+          <p className="mt-0 text-center">
+            {description ? (
+              description
+            ) : (
+              <>
+                Are you sure you want to delete{" "}
+                <span className="text-red-600">{deleteItemName}</span>?
+              </>
+            )}
+          </p>
 
         {error && (
           <p className="mt-3 text-center text-sm font-semibold text-secondaryRed">
@@ -56,11 +61,20 @@ const ConfirmDeleteModal = ({
           </p>
         )}
 
-        <div className="mt-6 flex justify-center space-x-4">
+        <div className="mt-6 flex justify-center gap-3">
+          <button
+            onClick={closeModal}
+            className="rounded-lg border-2 border-primaryRed bg-white px-6 py-2 text-sm font-bold text-primaryRed transition hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className={`flex items-center rounded-lg bg-primaryRed px-6 py-2 text-white transition ${isDeleting ? "cursor-not-allowed opacity-70" : "active:bg-rose-500"} `}
+            className={`flex items-center rounded-lg bg-primaryRed px-6 py-2 text-sm font-bold text-white transition ${
+              isDeleting ? "cursor-not-allowed opacity-70" : "active:bg-rose-500"
+            }`}
           >
             {isDeleting ? (
               <>
@@ -70,13 +84,6 @@ const ConfirmDeleteModal = ({
             ) : (
               confirmLabel
             )}
-          </button>
-
-          <button
-            onClick={closeModal}
-            className={`: "hover:bg-gray-50"} rounded-lg border-2 border-primaryRed bg-white px-6 py-2 font-bold text-primaryRed transition`}
-          >
-            Cancel
           </button>
         </div>
         </div>

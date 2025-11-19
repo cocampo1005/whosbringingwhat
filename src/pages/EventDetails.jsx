@@ -39,6 +39,7 @@ import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import ParticipantsModal from "../components/ParticipantsModal";
 import PieChart from "../components/PieChart";
 import CategoryList from "../components/CategoryList";
+import JoinEventPromptModal from "../components/JoinEventPromptModal";
 import { deleteAllEventItemImages } from "../utils/storageCleanup";
 
 function EventDetails() {
@@ -504,22 +505,6 @@ function EventDetails() {
       </div>
 
       <div className="p-4 md:p-6">
-        {currentUser && !isMember && (
-          <div className="mb-4 rounded-lg bg-yellow-100 p-3 text-sm text-primaryDark">
-            <p className="mb-2">
-              You are viewing this event as a guest. Join to keep it in your
-              events list and manage your items.
-            </p>
-            <button
-              type="button"
-              onClick={handleJoinEvent}
-              className="w-full rounded-lg bg-primaryRed px-3 py-1.5 text-xs font-semibold text-white hover:bg-secondaryRed md:w-auto"
-            >
-              Join this event
-            </button>
-          </div>
-        )}
-
         {/* Mobile layout */}
         <div className="md:hidden">
           <div className="mb-6">
@@ -888,6 +873,12 @@ function EventDetails() {
       </button>
 
       {/* Modals */}
+      <JoinEventPromptModal
+        isOpen={!!currentUser && !!event && !isMember}
+        onCancel={() => navigate("/events")}
+        onJoin={handleJoinEvent}
+      />
+
       <ConfirmDeleteModal
         isOpen={isDeleteModalOpen}
         closeModal={() => setIsDeleteModalOpen(false)}
