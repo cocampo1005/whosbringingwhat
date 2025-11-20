@@ -31,12 +31,12 @@ const ConfirmDeleteModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
       <div
-        className="mx-4 w-full rounded-lg bg-yellow-50 p-0 shadow-lg md:w-[400px] md:ml-[112px] md:translate-x-[56px]"
+        className="mx-4 w-full max-w-md rounded-2xl bg-yellow-50 p-0 shadow-lg"
         role="dialog"
         aria-modal="true"
         aria-busy={isDeleting ? "true" : "false"}
       >
-        <div className="flex w-full items-center justify-center rounded-t-lg bg-primaryRed px-4 py-2 relative">
+        <div className="flex w-full items-center justify-center rounded-t-2xl bg-primaryRed px-4 py-2 relative">
           <h2 className="text-center text-xl font-bold text-white">{title}</h2>
           <IoClose
             className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-2xl text-white"
@@ -73,7 +73,7 @@ const ConfirmDeleteModal = ({
             onClick={handleDelete}
             disabled={isDeleting}
             className={`flex items-center rounded-lg bg-primaryRed px-6 py-2 text-sm font-bold text-white transition ${
-              isDeleting ? "cursor-not-allowed opacity-70" : "active:bg-rose-500"
+              isDeleting ? "cursor-not-allowed opacity-70" : "hover:bg-secondaryRed"
             }`}
           >
             {isDeleting ? (

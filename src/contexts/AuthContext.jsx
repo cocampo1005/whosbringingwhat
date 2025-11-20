@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { updateProfile as firebaseUpdateProfile } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 
 const AuthContext = createContext();
@@ -15,17 +15,33 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+          const userRef = doc(db, "users", firebaseUser.uid);
+          const userDoc = await getDoc(userRef);
+          let userData;
+
           if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setCurrentUser({ ...firebaseUser, ...userData });
+            userData = userDoc.data();
           } else {
-            console.log("No user object found for this user.");
-            setCurrentUser(null);
+            const baseProfile = {
+              name:
+                firebaseUser.displayName ||
+                firebaseUser.email ||
+                "New User",
+              avatar: firebaseUser.photoURL || "",
+              email: firebaseUser.email || "",
+              dietaryRestrictions: [],
+              contributions: {},
+              createdAt: new Date(),
+            };
+
+            await setDoc(userRef, baseProfile, { merge: true });
+            userData = baseProfile;
           }
+
+          setCurrentUser({ ...firebaseUser, ...userData });
         } catch (err) {
           console.error("Error fetching user data: ", err);
-          setCurrentUser(null);
+          setCurrentUser(firebaseUser);
         }
       } else {
         setCurrentUser(null);

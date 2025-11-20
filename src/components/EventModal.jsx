@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { IoClose } from "react-icons/io5";
 import Calendar from "react-calendar";
 import "../styles/Calendar.css";
@@ -26,25 +26,11 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
     members: initialMembers,
   });
 
-  const [modalHeight, setModalHeight] = useState("100vh");
-
-  useEffect(() => {
-    const updateModalHeight = () => {
-      const viewportHeight =
-        window.visualViewport?.height || window.innerHeight;
-      setModalHeight(`${viewportHeight - 32}px`);
-    };
-
-    // Set initial height
-    updateModalHeight();
-
-    // Update height on resize
-    window.addEventListener("resize", updateModalHeight);
-
-    return () => {
-      window.removeEventListener("resize", updateModalHeight);
-    };
-  }, []);
+  const isFormValid =
+    eventData.title.trim() !== "" &&
+    !!eventData.date &&
+    eventData.time.trim() !== "" &&
+    eventData.location.trim() !== "";
 
   // Format the selected date to "Month Day, Year"
   const formatDate = (date) => {
@@ -93,21 +79,18 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-      <div
-        className="relative ml-8 mr-8 flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-yellow-50 p-0 shadow-lg md:ml-[236px]"
-        style={{ maxHeight: modalHeight }}
-      >
-        <div className="flex w-full items-center justify-center rounded-t-2xl bg-primaryRed px-4 py-2 relative">
+    <div className="fixed inset-0 z-40 flex items-stretch justify-center md:justify-end bg-gray-500 bg-opacity-50">
+      <div className="relative flex h-full w-full max-w-full md:max-w-md flex-col overflow-hidden bg-yellow-50 shadow-lg">
+        <div className="flex items-center justify-center bg-primaryRed px-4 py-3">
           <h2 className="text-center text-lg font-semibold text-white">
             {initialData.title ? "Edit Event" : "Add New Event"}
           </h2>
           <IoClose
-            className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-3xl text-white"
+            className="absolute right-4 top-3 cursor-pointer text-2xl text-white"
             onClick={closeModal}
           />
         </div>
-        <div className="flex-1 px-4 pb-4 pt-4 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto px-4 pb-4 pt-4">
           <form onSubmit={handleSubmit} className="flex flex-col">
           {/* Event Name */}
           <label className="mb-2 block text-sm">Event Name</label>
@@ -167,7 +150,12 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           {/* Submit Button */}
           <button
             type="submit"
-            className="mt-4 w-full rounded-lg bg-primaryRed py-2 text-center text-white"
+            disabled={!isFormValid}
+            className={`mt-4 w-full rounded-lg py-2 text-center text-sm font-semibold text-white ${
+              !isFormValid
+                ? "cursor-not-allowed bg-red-300"
+                : "bg-primaryRed hover:bg-secondaryRed"
+            }`}
           >
             {initialData.title ? "Save Changes" : "Add Event"}
           </button>
