@@ -10,7 +10,7 @@ function JoinEventPromptModal({ isOpen, onCancel, onJoin }) {
       onClick={onCancel}
     >
       <div
-        className="relative mx-4 w-full max-w-md rounded-2xl bg-yellow-50 p-0 shadow-lg md:ml-[14rem]"
+        className="relative mx-4 w-full max-w-md rounded-2xl bg-yellow-50 p-0 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex w-full items-center justify-center rounded-t-2xl bg-primaryRed px-4 py-2 relative">

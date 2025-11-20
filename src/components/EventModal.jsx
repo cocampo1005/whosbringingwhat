@@ -79,8 +79,8 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-stretch justify-end bg-gray-500 bg-opacity-50">
-      <div className="relative flex h-full w-full max-w-sm flex-col overflow-hidden bg-yellow-50 shadow-lg md:max-w-md">
+    <div className="fixed inset-0 z-40 flex items-stretch justify-center md:justify-end bg-gray-500 bg-opacity-50">
+      <div className="relative flex h-full w-full max-w-full md:max-w-md flex-col overflow-hidden bg-yellow-50 shadow-lg">
         <div className="flex items-center justify-center bg-primaryRed px-4 py-3">
           <h2 className="text-center text-lg font-semibold text-white">
             {initialData.title ? "Edit Event" : "Add New Event"}

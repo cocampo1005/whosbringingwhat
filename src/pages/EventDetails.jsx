@@ -501,8 +501,8 @@ function EventDetails() {
 
   return (
     <div
-      className={`relative mb-10 mt-8 max-w-7xl rounded-2xl bg-white shadow-md transition-all duration-300 ease-out ${
-        isSidePanelOpen ? "md:mr-[14rem] lg:mr-[18rem]" : ""
+      className={`relative mb-10 mt-8 max-w-7xl rounded-2xl bg-white shadow-md transition-all duration-200 ease-out ${
+        isSidePanelOpen ? "md:mr-[12rem] lg:mr-[14rem]" : ""
       }`}
     >
       <div className="flex w-full items-center justify-center rounded-tl-2xl rounded-tr-2xl bg-primaryRed px-4 py-2">
