@@ -247,6 +247,7 @@ function EventDetails() {
 
   const handleConfirmRemoveParticipant = async () => {
     if (!participantToRemove) return;
+    const isRemovingSelf = isSelfRemoval;
 
     await handleRemoveParticipant(participantToRemove);
 
@@ -254,6 +255,10 @@ function EventDetails() {
     setParticipantToRemove(null);
     setParticipantToRemoveName("");
     setIsSelfRemoval(false);
+
+    if (isRemovingSelf) {
+      navigate("/events");
+    }
   };
 
   const handleParticipantsModal = () => {
