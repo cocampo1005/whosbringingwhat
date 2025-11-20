@@ -34,7 +34,7 @@ import { PiCowFill } from "react-icons/pi";
 import { FaGlideG, FaPepperHot } from "react-icons/fa";
 import { GiChicken, GiPeanut, GiMilkCarton, GiShrimp } from "react-icons/gi";
 import { PorkIconComponent } from "../styles/svgs";
-import ItemModal from "../components/ItemModal";
+import ItemSidePanel from "../components/ItemSidePanel";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import ParticipantsModal from "../components/ParticipantsModal";
 import PieChart from "../components/PieChart";
@@ -79,6 +79,9 @@ function EventDetails() {
       isHost ||
       (Array.isArray(event.members) &&
         event.members.includes(currentUser.uid)));
+
+  const isSidePanelOpen =
+    isItemModalOpen || isParticipantModalOpen || editingEvent;
 
   const memberIds = useMemo(() => {
     if (!event) return [];
@@ -497,7 +500,11 @@ function EventDetails() {
   }
 
   return (
-    <div className="relative mb-10 mt-8 max-w-7xl rounded-2xl bg-white shadow-md">
+    <div
+      className={`relative mb-10 mt-8 max-w-7xl rounded-2xl bg-white shadow-md transition-all duration-300 ease-out ${
+        isSidePanelOpen ? "md:mr-[14rem] lg:mr-[18rem]" : ""
+      }`}
+    >
       <div className="flex w-full items-center justify-center rounded-tl-2xl rounded-tr-2xl bg-primaryRed px-4 py-2">
         <h1 className="text-center text-xl font-bold text-white">
           {event.title}
@@ -620,60 +627,102 @@ function EventDetails() {
 
           {/* Mobile items layout */}
           <div>
-            <CategoryList
-              categoryName="Main"
-              items={groupedItems.Main || []}
-              categoryColor={getCategoryTextColor("Main")}
-              dietaryIcons={dietaryIcons}
-              onEditItem={handleEditItem}
-              onDeleteItem={openDeleteModalForItem}
-              canManageItem={canUserManageItem}
-              defaultExpanded
-            />
-            <CategoryList
-              categoryName="Side"
-              items={groupedItems.Side || []}
-              categoryColor={getCategoryTextColor("Side")}
-              dietaryIcons={dietaryIcons}
-              onEditItem={handleEditItem}
-              onDeleteItem={openDeleteModalForItem}
-              canManageItem={canUserManageItem}
-              defaultExpanded
-            />
-            <CategoryList
-              categoryName="Dessert"
-              items={groupedItems.Dessert || []}
-              categoryColor={getCategoryTextColor("Dessert")}
-              dietaryIcons={dietaryIcons}
-              onEditItem={handleEditItem}
-              onDeleteItem={openDeleteModalForItem}
-              canManageItem={canUserManageItem}
-              defaultExpanded
-            />
-            <CategoryList
-              categoryName="Beverage"
-              items={groupedItems.Beverage || []}
-              categoryColor={getCategoryTextColor("Beverage")}
-              dietaryIcons={dietaryIcons}
-              onEditItem={handleEditItem}
-              onDeleteItem={openDeleteModalForItem}
-              canManageItem={canUserManageItem}
-              defaultExpanded
-            />
-            <CategoryList
-              categoryName="Miscellaneous"
-              items={groupedItems.Miscellaneous || []}
-              categoryColor={getCategoryTextColor("Miscellaneous")}
-              dietaryIcons={dietaryIcons}
-              onEditItem={handleEditItem}
-              onDeleteItem={openDeleteModalForItem}
-              canManageItem={canUserManageItem}
-              defaultExpanded
-            />
+            {groupedItems.Main?.length > 0 && (
+              <CategoryList
+                categoryName="Main"
+                items={groupedItems.Main || []}
+                categoryColor={getCategoryTextColor("Main")}
+                dietaryIcons={dietaryIcons}
+                onEditItem={handleEditItem}
+                onDeleteItem={openDeleteModalForItem}
+                canManageItem={canUserManageItem}
+                defaultExpanded
+              />
+            )}
+            {groupedItems.Side?.length > 0 && (
+              <CategoryList
+                categoryName="Side"
+                items={groupedItems.Side || []}
+                categoryColor={getCategoryTextColor("Side")}
+                dietaryIcons={dietaryIcons}
+                onEditItem={handleEditItem}
+                onDeleteItem={openDeleteModalForItem}
+                canManageItem={canUserManageItem}
+                defaultExpanded
+              />
+            )}
+            {groupedItems.Dessert?.length > 0 && (
+              <CategoryList
+                categoryName="Dessert"
+                items={groupedItems.Dessert || []}
+                categoryColor={getCategoryTextColor("Dessert")}
+                dietaryIcons={dietaryIcons}
+                onEditItem={handleEditItem}
+                onDeleteItem={openDeleteModalForItem}
+                canManageItem={canUserManageItem}
+                defaultExpanded
+              />
+            )}
+            {groupedItems.Beverage?.length > 0 && (
+              <CategoryList
+                categoryName="Beverage"
+                items={groupedItems.Beverage || []}
+                categoryColor={getCategoryTextColor("Beverage")}
+                dietaryIcons={dietaryIcons}
+                onEditItem={handleEditItem}
+                onDeleteItem={openDeleteModalForItem}
+                canManageItem={canUserManageItem}
+                defaultExpanded
+              />
+            )}
+            {groupedItems.Miscellaneous?.length > 0 && (
+              <CategoryList
+                categoryName="Miscellaneous"
+                items={groupedItems.Miscellaneous || []}
+                categoryColor={getCategoryTextColor("Miscellaneous")}
+                dietaryIcons={dietaryIcons}
+                onEditItem={handleEditItem}
+                onDeleteItem={openDeleteModalForItem}
+                canManageItem={canUserManageItem}
+                defaultExpanded
+              />
+            )}
 
             {/* Empty state */}
             {(!event.items || event.items.length === 0) && (
               <div className="py-12 text-center">
+                <div className="mb-4 text-3xl">
+                  <span
+                    className="mx-1 inline-block animate-bounce"
+                    style={{ animationDelay: "0s" }}
+                  >
+                    🍗
+                  </span>
+                  <span
+                    className="mx-1 inline-block animate-bounce"
+                    style={{ animationDelay: "0.1s" }}
+                  >
+                    🍛
+                  </span>
+                  <span
+                    className="mx-1 inline-block animate-bounce"
+                    style={{ animationDelay: "0.2s" }}
+                  >
+                    🥧
+                  </span>
+                  <span
+                    className="mx-1 inline-block animate-bounce"
+                    style={{ animationDelay: "0.3s" }}
+                  >
+                    🥗
+                  </span>
+                  <span
+                    className="mx-1 inline-block animate-bounce"
+                    style={{ animationDelay: "0.4s" }}
+                  >
+                    🍷
+                  </span>
+                </div>
                 <p className="mb-4 text-lg text-gray-500">No items added yet</p>
                 <p className="text-gray-400">
                   Click the + button to add your first item!
@@ -800,62 +849,104 @@ function EventDetails() {
 
           {/* Five column layout for categories */}
           <div className="grid grid-cols-5 gap-4">
-            <CategoryList
-              categoryName="Main"
-              items={groupedItems.Main || []}
-              categoryColor={getCategoryTextColor("Main")}
-              dietaryIcons={dietaryIcons}
-              onEditItem={handleEditItem}
-              onDeleteItem={openDeleteModalForItem}
-              canManageItem={canUserManageItem}
-              defaultExpanded
-            />
-            <CategoryList
-              categoryName="Side"
-              items={groupedItems.Side || []}
-              categoryColor={getCategoryTextColor("Side")}
-              dietaryIcons={dietaryIcons}
-              onEditItem={handleEditItem}
-              onDeleteItem={openDeleteModalForItem}
-              canManageItem={canUserManageItem}
-              defaultExpanded
-            />
-            <CategoryList
-              categoryName="Dessert"
-              items={groupedItems.Dessert || []}
-              categoryColor={getCategoryTextColor("Dessert")}
-              dietaryIcons={dietaryIcons}
-              onEditItem={handleEditItem}
-              onDeleteItem={openDeleteModalForItem}
-              canManageItem={canUserManageItem}
-              defaultExpanded
-            />
-            <CategoryList
-              categoryName="Beverage"
-              items={groupedItems.Beverage || []}
-              categoryColor={getCategoryTextColor("Beverage")}
-              dietaryIcons={dietaryIcons}
-              onEditItem={handleEditItem}
-              onDeleteItem={openDeleteModalForItem}
-              canManageItem={canUserManageItem}
-              defaultExpanded
-            />
-            <CategoryList
-              categoryName="Miscellaneous"
-              items={groupedItems.Miscellaneous || []}
-              categoryColor={getCategoryTextColor("Miscellaneous")}
-              dietaryIcons={dietaryIcons}
-              onEditItem={handleEditItem}
-              onDeleteItem={openDeleteModalForItem}
-              canManageItem={canUserManageItem}
-              defaultExpanded
-            />
+            {groupedItems.Main?.length > 0 && (
+              <CategoryList
+                categoryName="Main"
+                items={groupedItems.Main || []}
+                categoryColor={getCategoryTextColor("Main")}
+                dietaryIcons={dietaryIcons}
+                onEditItem={handleEditItem}
+                onDeleteItem={openDeleteModalForItem}
+                canManageItem={canUserManageItem}
+                defaultExpanded
+              />
+            )}
+            {groupedItems.Side?.length > 0 && (
+              <CategoryList
+                categoryName="Side"
+                items={groupedItems.Side || []}
+                categoryColor={getCategoryTextColor("Side")}
+                dietaryIcons={dietaryIcons}
+                onEditItem={handleEditItem}
+                onDeleteItem={openDeleteModalForItem}
+                canManageItem={canUserManageItem}
+                defaultExpanded
+              />
+            )}
+            {groupedItems.Dessert?.length > 0 && (
+              <CategoryList
+                categoryName="Dessert"
+                items={groupedItems.Dessert || []}
+                categoryColor={getCategoryTextColor("Dessert")}
+                dietaryIcons={dietaryIcons}
+                onEditItem={handleEditItem}
+                onDeleteItem={openDeleteModalForItem}
+                canManageItem={canUserManageItem}
+                defaultExpanded
+              />
+            )}
+            {groupedItems.Beverage?.length > 0 && (
+              <CategoryList
+                categoryName="Beverage"
+                items={groupedItems.Beverage || []}
+                categoryColor={getCategoryTextColor("Beverage")}
+                dietaryIcons={dietaryIcons}
+                onEditItem={handleEditItem}
+                onDeleteItem={openDeleteModalForItem}
+                canManageItem={canUserManageItem}
+                defaultExpanded
+              />
+            )}
+            {groupedItems.Miscellaneous?.length > 0 && (
+              <CategoryList
+                categoryName="Miscellaneous"
+                items={groupedItems.Miscellaneous || []}
+                categoryColor={getCategoryTextColor("Miscellaneous")}
+                dietaryIcons={dietaryIcons}
+                onEditItem={handleEditItem}
+                onDeleteItem={openDeleteModalForItem}
+                canManageItem={canUserManageItem}
+                defaultExpanded
+              />
+            )}
           </div>
 
           {/* Empty state for desktop */}
           {(!event.items || event.items.length === 0) && (
             <div className="py-12 text-center">
-              <p className="mb-4 text-lg text-gray-500">No items added yet</p>
+              <div className="mb-4 text-3xl">
+                <span
+                  className="mx-1 inline-block animate-bounce"
+                  style={{ animationDelay: "0s" }}
+                >
+                  🍗
+                </span>
+                <span
+                  className="mx-1 inline-block animate-bounce"
+                  style={{ animationDelay: "0.1s" }}
+                >
+                  🍛
+                </span>
+                <span
+                  className="mx-1 inline-block animate-bounce"
+                  style={{ animationDelay: "0.2s" }}
+                >
+                  🥧
+                </span>
+                <span
+                  className="mx-1 inline-block animate-bounce"
+                  style={{ animationDelay: "0.3s" }}
+                >
+                  🥗
+                </span>
+                <span
+                  className="mx-1 inline-block animate-bounce"
+                  style={{ animationDelay: "0.4s" }}
+                >
+                  🍷
+                </span>
+              </div>
+              <p className="mb-2 text-lg text-gray-500">No items added yet</p>
               <p className="text-gray-400">
                 Click the + button to add your first item!
               </p>
@@ -867,7 +958,7 @@ function EventDetails() {
       {/* Add item button */}
       <button
         onClick={handleAddItem}
-        className="fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white shadow-lg shadow-md transition-colors hover:bg-secondaryRed md:hidden"
+        className="fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white shadow-lg transition-colors hover:bg-secondaryRed md:hidden"
       >
         <FaPlus />
       </button>
@@ -926,7 +1017,7 @@ function EventDetails() {
       )}
 
       {isItemModalOpen && (
-        <ItemModal
+        <ItemSidePanel
           closeModal={() => setIsItemModalOpen(false)}
           onSubmit={handleItemSubmit}
           initialData={editingItem}

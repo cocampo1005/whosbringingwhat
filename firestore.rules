@@ -10,7 +10,9 @@ service cloud.firestore {
     }
 
     function userRole() {
-      return request.auth.token.role;
+      return isSignedIn() && ('role' in request.auth.token)
+        ? request.auth.token.role
+        : 'cook';
     }
 
     function isChef() {
@@ -38,11 +40,14 @@ service cloud.firestore {
 
       // Users can create/update their own doc, but only certain profile fields.
       // Custom role is mirrored here by Admin SDK; clients must NOT edit it.
-      allow create, update: if request.auth.uid == userId
-        && changedKeysAreOnly(['name', 'avatar', 'displayName', 'photoURL']);
+      allow create: if request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['name', 'avatar', 'displayName', 'photoURL', 'email', 'dietaryRestrictions', 'contributions', 'createdAt']);
+
+      allow update: if request.auth.uid == userId
+        && changedKeysAreOnly(['name', 'avatar', 'displayName', 'photoURL', 'dietaryRestrictions', 'email']);
 
       // (Optional) block deletes from the client
-      allow delete: if false;
+      allow delete: if request.auth.uid == userId;
     }
 
     /* ---------- Events ---------- */

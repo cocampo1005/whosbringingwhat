@@ -115,33 +115,27 @@ export default function ParticipantsModal({
   const isLoading = status === "loading";
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="relative mx-4 flex w-full max-w-xl max-h-[80vh] flex-col overflow-hidden rounded-2xl bg-yellow-50 p-0 shadow-lg md:ml-[14rem]"
-        onClick={(e) => e.stopPropagation()}
-      >
-          <div className="flex w-full items-center justify-center rounded-t-2xl bg-primaryRed px-4 py-2 relative">
-            <h2 className="text-center text-lg font-semibold text-white">
-              Event participants
-            </h2>
-            <IoClose
-              className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-2xl text-white"
-              onClick={onClose}
-            />
-          </div>
-          <div className="flex-1 px-6 pb-6 pt-4 overflow-y-auto">
-            {isLoading ? (
-              <p className="text-sm text-gray-500">Loading participants...</p>
-            ) : ids.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                No participants have joined this event yet.
-              </p>
-            ) : (
-              <ul className="space-y-4">
-                {ids.map((id) => {
+    <div className="fixed inset-0 z-40 flex items-stretch justify-end bg-gray-500 bg-opacity-50">
+      <div className="relative flex h-full w-full max-w-sm flex-col overflow-hidden bg-yellow-50 shadow-lg md:max-w-md">
+        <div className="flex items-center justify-center bg-primaryRed px-4 py-3">
+          <h2 className="text-center text-lg font-semibold text-white">
+            Event participants
+          </h2>
+          <IoClose
+            className="absolute right-4 top-3 cursor-pointer text-2xl text-white"
+            onClick={onClose}
+          />
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4">
+          {isLoading ? (
+            <p className="text-sm text-gray-500">Loading participants...</p>
+          ) : ids.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No participants have joined this event yet.
+            </p>
+          ) : (
+            <ul className="space-y-4">
+              {ids.map((id) => {
                 const entry = contributions.get(id);
                 const user = entry?.user || userList[ids.indexOf(id)];
 
@@ -178,7 +172,11 @@ export default function ParticipantsModal({
                               !canRemoveAny && isCurrentUser,
                             )
                           }
-                          className="ml-3 rounded-full border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                          className={
+                            removeLabel === "Leave"
+                              ? "ml-3 rounded-full bg-primaryRed px-3 py-1 text-xs font-semibold text-white hover:bg-secondaryRed"
+                              : "ml-3 rounded-full border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                          }
                         >
                           {removeLabel}
                         </button>
@@ -269,7 +267,11 @@ export default function ParticipantsModal({
                               !canRemoveAny && isCurrentUser,
                             )
                           }
-                          className="mt-2 rounded-full border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                          className={
+                            removeLabel === "Leave"
+                              ? "mt-2 rounded-full bg-primaryRed px-3 py-1 text-xs font-semibold text-white hover:bg-secondaryRed"
+                              : "mt-2 rounded-full border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                          }
                         >
                           {removeLabel}
                         </button>
