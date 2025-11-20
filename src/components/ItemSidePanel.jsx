@@ -389,7 +389,7 @@ function ItemSidePanel({
                         name="onBehalfOfName"
                         value={itemData.onBehalfOfName}
                         onChange={handleChange}
-                        placeholder="Name of the person who's bringing what for"
+                        placeholder="Name of the person who's bringing what"
                         className="flex-1 border-0 bg-white p-2 pl-2 text-sm focus:ring-0"
                         maxLength={30}
                       />
