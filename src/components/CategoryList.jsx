@@ -66,6 +66,11 @@ function CategoryList({
               typeof canManageItem === "function"
                 ? !!canManageItem(item)
                 : true;
+            const displayName = item.onBehalfOfName || item.assignee;
+            const assigneeIdForAvatar = item.isOnBehalfOf
+              ? null
+              : item.assigneeId;
+
             return (
               <div
                 key={item.id}
@@ -87,10 +92,10 @@ function CategoryList({
                       )}
                     </div>
                     <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
-                      {item.assignee && (
+                      {displayName && (
                         <AssigneeAvatar
-                          assigneeId={item.assigneeId}
-                          displayName={item.assignee}
+                          assigneeId={assigneeIdForAvatar}
+                          displayName={displayName}
                           size={24}
                         />
                       )}
@@ -208,6 +213,8 @@ function areEqual(prev, next) {
         imageUrl: x.imageUrl || "",
         servings: x.servings || "",
         dietary: (x.dietary || []).slice().sort().join("|"),
+        onBehalfOfName: x.onBehalfOfName || "",
+        isOnBehalfOf: !!x.isOnBehalfOf,
       }))
       .sort((x, y) => (x.id || "").localeCompare(y.id || ""));
 

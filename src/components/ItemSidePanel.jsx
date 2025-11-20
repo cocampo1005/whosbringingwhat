@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "../contexts/AuthContext";
-import { IoClose } from "react-icons/io5";
+import { IoClose, IoChevronDown, IoInformationCircleOutline } from "react-icons/io5";
 // import { collection, getDocs } from "firebase/firestore";
-// import { db } from "../firebase";
-import { IoChevronDown } from "react-icons/io5";
+// import { db } from "firebase";
 import { MdDelete, MdImage } from "react-icons/md";
 import {
   getStorage,
@@ -15,6 +14,7 @@ import {
 } from "firebase/storage";
 import imageCompression from "browser-image-compression";
 import AssigneeAvatar from "./AssigneeAvatar";
+import Tooltip from "./Tooltip";
 import { useUsers } from "../contexts/UsersContext";
 
 function ItemSidePanel({
@@ -48,12 +48,21 @@ function ItemSidePanel({
     description: initialData?.description || "",
     imageUrl: initialData?.imageUrl || "",
     servings: initialData?.servings || "",
+    onBehalfOfName: initialData?.onBehalfOfName || "",
+    isOnBehalfOf:
+      !!(initialData?.onBehalfOfName && initialData.onBehalfOfName.trim()) ||
+      !!initialData?.isOnBehalfOf,
   });
+
+  const isOnBehalfValid =
+    !itemData.isOnBehalfOf ||
+    (itemData.onBehalfOfName || "").trim() !== "";
 
   const isFormValid =
     (itemData.title || "").trim() !== "" &&
     (itemData.assignee || "").trim() !== "" &&
-    !!itemData.category;
+    !!itemData.category &&
+    isOnBehalfValid;
 
   const dietaryOptions = [
     { label: "Vegetarian", value: "vegetarian" },
@@ -108,9 +117,23 @@ function ItemSidePanel({
           avatar: "", // also reset avatar when typing a new name
         }));
       }
+    } else if (name === "onBehalfOfName") {
+      setItemData((prev) => ({ ...prev, onBehalfOfName: value }));
     } else {
       setItemData((prev) => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleToggleOnBehalfOf = () => {
+    setItemData((prev) => {
+      const nextIsOnBehalfOf = !prev.isOnBehalfOf;
+      return {
+        ...prev,
+        isOnBehalfOf: nextIsOnBehalfOf,
+        onBehalfOfName: nextIsOnBehalfOf ? prev.onBehalfOfName : "",
+      };
+    });
+    setShowSuggestions(false);
   };
 
   const handleDietaryChange = (tag) => {
@@ -208,6 +231,12 @@ function ItemSidePanel({
     const resolvedAssigneeId =
       itemData.assigneeId ?? (assigneeIsMe ? meUid : null);
 
+    const rawOnBehalfName = itemData.isOnBehalfOf
+      ? (itemData.onBehalfOfName || "").trim()
+      : "";
+    const onBehalfOfName = rawOnBehalfName || null;
+    const isOnBehalfOf = !!onBehalfOfName;
+
     const payload = {
       ...itemData,
       assignee: itemData.assignee?.trim() || "",
@@ -219,6 +248,8 @@ function ItemSidePanel({
       createdById: itemData.createdById ?? meUid,
       createdByName: itemData.createdByName ?? (currentUser?.name || ""),
       updatedAt: Date.now(),
+      onBehalfOfName,
+      isOnBehalfOf,
     };
 
     onSubmit(payload);
@@ -276,15 +307,17 @@ function ItemSidePanel({
                     setAssigneeQuery(e.target.value);
                     setShowSuggestions(true);
                   }}
-                  className="flex-1 border-0 bg-white p-2 pl-2 focus:ring-0"
+                  className={`flex-1 border-0 bg-white p-2 pl-2 focus:ring-0 ${itemData.isOnBehalfOf ? "cursor-not-allowed bg-gray-100 text-gray-500" : ""}`}
                   placeholder="Type a name..."
+                  disabled={itemData.isOnBehalfOf}
                   required
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowSuggestions((prev) => !prev)}
-                  className="rounded-r-lg px-3 text-primaryDark hover:bg-gray-50"
+                  disabled={itemData.isOnBehalfOf}
+                  className={`rounded-r-lg px-3 text-primaryDark hover:bg-gray-50 ${itemData.isOnBehalfOf ? "cursor-not-allowed opacity-50 hover:bg-white" : ""}`}
                 >
                   <IoChevronDown
                     className={`h-4 w-4 transition-transform ${
@@ -295,7 +328,7 @@ function ItemSidePanel({
               </div>
 
               {/* Suggestion dropdown */}
-              {showSuggestions && (
+              {showSuggestions && !itemData.isOnBehalfOf && (
                 <ul className="absolute z-10 mt-1 max-h-40 w-full overflow-y-auto rounded-md bg-white shadow">
                   {memberUsers
                     .filter((u) =>
@@ -330,6 +363,47 @@ function ItemSidePanel({
                     ))}
                 </ul>
               )}
+
+              <div className="mt-3 flex flex-col gap-2">
+                <label className="flex items-center text-xs font-semibold text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={!!itemData.isOnBehalfOf}
+                    onChange={handleToggleOnBehalfOf}
+                    className="mr-2 h-4 w-4 rounded border-gray-300 text-primaryRed focus:ring-0 focus:ring-offset-0"
+                  />
+                  <span>On behalf of someone else</span>
+                  <Tooltip
+                    content="Use this when someone who doesn't have an account is bringing an item."
+                    ariaLabel="What does this checkbox do?"
+                  >
+                    <IoInformationCircleOutline className="ml-[6px] h-4 w-4" />
+                  </Tooltip>
+                </label>
+
+                {itemData.isOnBehalfOf && (
+                  <div className="mt-1 ml-6">
+                    <div className="flex w-full items-stretch rounded-lg border border-gray-300 bg-white focus-within:border-primaryRed">
+                      <AssigneeAvatar
+                        assigneeId={null}
+                        displayName={itemData.onBehalfOfName}
+                        size={20}
+                        className={"ml-3 self-center"}
+                        showName={false}
+                      />
+                      <input
+                        type="text"
+                        name="onBehalfOfName"
+                        value={itemData.onBehalfOfName}
+                        onChange={handleChange}
+                        placeholder="Name of the person who's bringing what"
+                        className="flex-1 border-0 bg-white p-2 pl-2 text-sm focus:ring-0"
+                        maxLength={30}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
