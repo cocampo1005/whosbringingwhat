@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "../contexts/AuthContext";
-import { IoClose, IoChevronDown } from "react-icons/io5";
+import { IoClose, IoChevronDown, IoInformationCircleOutline } from "react-icons/io5";
 // import { collection, getDocs } from "firebase/firestore";
 // import { db } from "firebase";
 import { MdDelete, MdImage } from "react-icons/md";
@@ -14,6 +14,7 @@ import {
 } from "firebase/storage";
 import imageCompression from "browser-image-compression";
 import AssigneeAvatar from "./AssigneeAvatar";
+import Tooltip from "./Tooltip";
 import { useUsers } from "../contexts/UsersContext";
 
 function ItemSidePanel({
@@ -371,7 +372,13 @@ function ItemSidePanel({
                     onChange={handleToggleOnBehalfOf}
                     className="mr-2 h-4 w-4 rounded border-gray-300 text-primaryRed focus:ring-0 focus:ring-offset-0"
                   />
-                  On behalf of someone else
+                  <span>On behalf of someone else</span>
+                  <Tooltip
+                    content="Use this when someone who doesn't have an account is bringing an item."
+                    ariaLabel="What does this checkbox do?"
+                  >
+                    <IoInformationCircleOutline className="ml-[6px] h-4 w-4" />
+                  </Tooltip>
                 </label>
 
                 {itemData.isOnBehalfOf && (
