@@ -14,6 +14,7 @@ import { useAuth } from "../contexts/AuthContext";
 import EventCard from "../components/EventCard";
 import { useNavigate } from "react-router-dom";
 import { useRole } from "../hooks/useRole";
+import { pickRandomEventBannerColor } from "../constants/eventBannerColors";
 
 export default function Events() {
   const { currentUser } = useAuth();
@@ -23,6 +24,8 @@ export default function Events() {
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [events, setEvents] = useState([]);
   const [tab, setTab] = useState("upcoming");
+
+  const isSidePanelOpen = showAddEventModal;
 
   const navigate = useNavigate();
 
@@ -102,10 +105,56 @@ export default function Events() {
 
   const addEventToFirestore = async (eventData) => {
     try {
-      const docRef = await addDoc(collection(db, "events"), {
+      let imageUrl = (eventData.imageUrl || "").trim() || null;
+
+      if (!imageUrl) {
+        try {
+          const params = new URLSearchParams({
+            title: eventData.title || "",
+            location: eventData.location || "",
+          });
+
+          if (eventData.description) {
+            params.set("description", eventData.description);
+          }
+
+          if (eventData.date) {
+            params.set("date", eventData.date);
+          }
+
+          const baseUrl = import.meta.env.DEV
+            ? "https://us-central1-whos-bringing-what.cloudfunctions.net/randomPotluckImage"
+            : "/api/randomPotluckImage";
+
+          const response = await fetch(
+            `${baseUrl}?${params.toString()}`,
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.imageUrl) {
+              imageUrl = data.imageUrl;
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching potluck image: ", err);
+        }
+      }
+
+      const normalizedImageUrl = imageUrl || null;
+      const bannerColor =
+        eventData.bannerColor && eventData.bannerColor.trim()
+          ? eventData.bannerColor
+          : pickRandomEventBannerColor();
+
+      const payload = {
         ...eventData,
+        imageUrl: normalizedImageUrl,
+        bannerColor,
         createdAt: serverTimestamp(),
-      });
+      };
+
+      const docRef = await addDoc(collection(db, "events"), payload);
       setShowAddEventModal(false);
 
       // Navigate to the newly created event
@@ -116,7 +165,11 @@ export default function Events() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl pb-8 pt-8">
+    <div
+      className={`mx-auto max-w-5xl pb-8 pt-8 transition-all duration-200 ease-out ${
+        isSidePanelOpen ? "md:mr-[12rem] lg:mr-[14rem]" : ""
+      }`}
+    >
       {/* Tabs and header should always be visible */}
       <div className="mb-9 flex w-full items-center justify-between gap-4 sm:gap-8">
         <div className="flex w-full items-center justify-between gap-4 md:w-auto md:justify-start">

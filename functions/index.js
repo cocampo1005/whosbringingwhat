@@ -24,6 +24,8 @@ const logger = require("firebase-functions/logger");
 setGlobalOptions({ maxInstances: 10 });
 
 exports.setUserRole = require('./setUserRole').setUserRole;
+exports.randomPotluckImage = require('./potluckImageFunctions').randomPotluckImage;
+exports.backfillEventImages = require('./potluckImageFunctions').backfillEventImages;
 
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started

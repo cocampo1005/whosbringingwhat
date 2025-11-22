@@ -1,8 +1,18 @@
 import React from "react";
 import { MdOutlineIosShare } from "react-icons/md";
 
-function ShareButton({ eventId, eventTitle }) {
-  const handleShare = async () => {
+function ShareButton({
+  eventId,
+  eventTitle,
+  className = "flex items-center rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed",
+  iconClassName = "text-lg",
+}) {
+  const handleShare = async (event) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
     const shareableUrl = `${window.location.origin}/events/${eventId}`; // Generate the event link
 
     if (navigator.share) {
@@ -27,9 +37,9 @@ function ShareButton({ eventId, eventTitle }) {
   return (
     <button
       onClick={handleShare}
-      className="flex items-center rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed"
+      className={className}
     >
-      <MdOutlineIosShare className="text-lg" />
+      <MdOutlineIosShare className={iconClassName} />
     </button>
   );
 }

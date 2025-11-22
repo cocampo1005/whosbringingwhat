@@ -32,4 +32,7 @@ serviceAccountKey.json
 *.key.json
 *.private.json
 
-*-plan.md
+.env
+.env.example
+
+// *-plan.md

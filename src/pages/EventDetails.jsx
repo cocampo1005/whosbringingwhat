@@ -499,16 +499,34 @@ function EventDetails() {
     );
   }
 
+  const bannerColor = event.bannerColor || "#f94a5a";
+
   return (
     <div
       className={`relative mb-10 mt-8 max-w-7xl rounded-2xl bg-white shadow-md transition-all duration-200 ease-out ${
         isSidePanelOpen ? "md:mr-[12rem] lg:mr-[14rem]" : ""
       }`}
     >
-      <div className="flex w-full items-center justify-center rounded-tl-2xl rounded-tr-2xl bg-primaryRed px-4 py-2">
-        <h1 className="text-center text-xl font-bold text-white">
-          {event.title}
-        </h1>
+      {/* Hero header: event image or colored banner */}
+      <div className="relative w-full overflow-hidden rounded-tl-2xl rounded-tr-2xl">
+        {event.imageUrl ? (
+          <img
+            src={event.imageUrl}
+            alt={event.title || "Event image"}
+            className="h-48 w-full object-cover"
+          />
+        ) : (
+          <div
+            className="h-48 w-full"
+            style={{ backgroundColor: bannerColor }}
+          />
+        )}
+
+        <div className="absolute inset-x-0 bottom-0 px-4 py-3">
+          <h1 className="text-lg font-bold text-white md:text-xl">
+            {event.title}
+          </h1>
+        </div>
       </div>
 
       <div className="p-4 md:p-6">
