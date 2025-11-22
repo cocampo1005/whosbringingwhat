@@ -129,7 +129,7 @@ export default function ParticipantsModal({
             onClick={onClose}
           />
         </div>
-        <div className="flex-1 mt-2 overflow-y-auto px-6 pb-6 pt-4">
+        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4 mt-2">
           {isLoading ? (
             <p className="text-sm text-gray-500">Loading participants...</p>
           ) : ids.length === 0 ? (
