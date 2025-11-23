@@ -120,6 +120,7 @@ function ImageUpload({
             onChange={handleImageUpload}
             disabled={isDisabled}
             className="hidden"
+            aria-label="Click to upload photo"
           />
           <label
             htmlFor={resolvedInputId}
