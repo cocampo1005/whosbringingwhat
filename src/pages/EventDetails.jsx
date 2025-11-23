@@ -59,8 +59,7 @@ function EventDetails() {
   const [isParticipantConfirmOpen, setIsParticipantConfirmOpen] =
     useState(false);
   const [participantToRemove, setParticipantToRemove] = useState(null);
-  const [participantToRemoveName, setParticipantToRemoveName] =
-    useState("");
+  const [participantToRemoveName, setParticipantToRemoveName] = useState("");
   const [isSelfRemoval, setIsSelfRemoval] = useState(false);
   const navigate = useNavigate();
 
@@ -194,7 +193,9 @@ function EventDetails() {
       }
 
       const existingMembers = Array.isArray(data.members) ? data.members : [];
-      const updatedMembers = existingMembers.filter((id) => id !== participantId);
+      const updatedMembers = existingMembers.filter(
+        (id) => id !== participantId,
+      );
 
       const existingItems = Array.isArray(data.items) ? data.items : [];
       const updatedItems = existingItems.filter(
@@ -417,10 +418,22 @@ function EventDetails() {
   // Functions for Confirming Deleting Modal
   const handleDeleteEvent = async () => {
     try {
-      // Run through the items and clean up any images from items first
       await deleteAllEventItemImages(eventId);
+      if (event?.imageUrl) {
+        try {
+          const { getStorage, ref, deleteObject } = await import(
+            "firebase/storage"
+          );
+          const storage = getStorage();
+          const imageRef = ref(storage, event.imageUrl);
+          await deleteObject(imageRef);
+
+          console.log("Event hero image deleted from storage");
+        } catch (imageError) {
+          console.error("Error deleting event hero image:", imageError);
+        }
+      }
       const eventRef = doc(db, "events", eventId);
-      // Delete Event document
       await deleteDoc(eventRef);
       navigate("/events");
     } catch (error) {
@@ -521,6 +534,8 @@ function EventDetails() {
             style={{ backgroundColor: bannerColor }}
           />
         )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
 
         <div className="absolute inset-x-0 bottom-0 px-4 py-3">
           <h1 className="text-lg font-bold text-white md:text-xl">
