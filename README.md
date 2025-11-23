@@ -67,7 +67,19 @@ Make sure you have the following installed on your machine:
    ```bash
    yarn install
    ```
-3. Running / Development
+3. Configure Firebase Functions (Optional - only needed if working with Cloud Functions):
+   
+   If you're working with the Firebase Cloud Functions (e.g., image upload features), you need to configure environment variables:
+   
+   ```bash
+   cd functions
+   cp .env.example .env
+   # Edit .env and add your API keys
+   ```
+   
+   See [`functions/README.md`](functions/README.md) for detailed setup instructions including how to obtain API keys.
+
+4. Running / Development
    ```bash
    npm run dev
    ```
