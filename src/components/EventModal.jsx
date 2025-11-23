@@ -3,6 +3,7 @@ import { IoClose } from "react-icons/io5";
 import Calendar from "react-calendar";
 import "../styles/Calendar.css";
 import { useAuth } from "../contexts/AuthContext";
+import ImageUpload from "./ImageUpload";
 
 export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   const { currentUser } = useAuth();
@@ -24,7 +25,11 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
     createdById: initialData.createdById || currentUser?.uid || null,
     hostId: initialHostId,
     members: initialMembers,
+    imageUrl: initialData.imageUrl || "",
+    bannerColor: initialData.bannerColor || "",
   });
+
+  const [uploading, setUploading] = useState(false);
 
   const isFormValid =
     eventData.title.trim() !== "" &&
@@ -114,6 +119,22 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
             className="mb-4 block min-h-16 w-full rounded-lg border-gray-300 py-1.5 shadow-sm focus:border-primaryRed focus:ring-0"
           />
 
+          {/* Event Photo */}
+          <div className="mb-4">
+            <ImageUpload
+              label="Add Event Photo"
+              imageUrl={eventData.imageUrl}
+              onImageChange={(url) =>
+                setEventData((prev) => ({ ...prev, imageUrl: url }))
+              }
+              storageFolder="event-images"
+              objectId={initialData.id || eventData.createdById || currentUser?.uid || "event"}
+              imageAlt="Event photo preview"
+              onUploadingChange={setUploading}
+              inputId="event-image-upload"
+            />
+          </div>
+
           {/* Event Date */}
           <label className="mb-2 block text-sm">Date</label>
           <Calendar
@@ -150,14 +171,18 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={!isFormValid}
+            disabled={!isFormValid || uploading}
             className={`mt-4 w-full rounded-lg py-2 text-center text-sm font-semibold text-white ${
-              !isFormValid
+              !isFormValid || uploading
                 ? "cursor-not-allowed bg-red-300"
                 : "bg-primaryRed hover:bg-secondaryRed"
             }`}
           >
-            {initialData.title ? "Save Changes" : "Add Event"}
+            {uploading
+              ? "Uploading..."
+              : initialData.title
+                ? "Save Changes"
+                : "Add Event"}
           </button>
         </form>
         </div>

@@ -14,12 +14,16 @@ export default function AssigneeAvatar({ assigneeId, displayName, size=24, class
   if (user?.avatar) {
     return (
       <>
-        <img 
-          src={user.avatar}
-          alt={`${name || "User"} avatar`}
-          className={`rounded-full object-cover ${className}`}
+        <div
+          className={`overflow-hidden rounded-full ${className}`}
           style={{ width: size, height: size }}
-        />
+        >
+          <img
+            src={user.avatar}
+            alt={`${name || "User"} avatar`}
+            className="h-full w-full object-cover"
+          />
+        </div>
         {showName && <span className={`${className}`}>{user.name}</span>}
       </>
     )
@@ -28,7 +32,7 @@ export default function AssigneeAvatar({ assigneeId, displayName, size=24, class
   return (
     <>
       <div
-        className={`flex items-center justify-center rounded-full bg-primaryRed text-white text-[10px] font-medium ${className}`}
+        className={`flex items-center justify-center rounded-full bg-primaryRed text-white text-[10px] font-medium overflow-hidden ${className}`}
         style={{ width: size, height: size }}
         title={name}
       >

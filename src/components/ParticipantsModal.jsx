@@ -1,5 +1,6 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { IoClose } from "react-icons/io5";
+import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 import { useUsers } from "../contexts/UsersContext";
 import AssigneeAvatar from "./AssigneeAvatar";
 
@@ -84,6 +85,8 @@ export default function ParticipantsModal({
   const ids = Array.from(new Set(memberIds.filter(Boolean)));
   const { users: userList, status } = useUsers(ids);
 
+  const [openDietaryByUser, setOpenDietaryByUser] = useState({});
+
   const contributions = useMemo(() => {
     const byUser = new Map();
 
@@ -126,7 +129,7 @@ export default function ParticipantsModal({
             onClick={onClose}
           />
         </div>
-        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4">
+        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4 mt-2">
           {isLoading ? (
             <p className="text-sm text-gray-500">Loading participants...</p>
           ) : ids.length === 0 ? (
@@ -192,71 +195,105 @@ export default function ParticipantsModal({
                 return (
                   <li
                     key={id}
-                    className="mx-auto flex w-full max-w-[34rem] items-start justify-between gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm transition hover:bg-gray-50 hover:shadow-md"
+                    className="mx-auto flex w-full max-w-[34rem] items-stretch justify-between gap-2 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm transition hover:bg-gray-50 hover:shadow-md"
                   >
-                    {/* Left: avatar, name, dietary */}
+                    {/* Left: avatar, name, dietary row under name */}
                     <div className="flex flex-1 flex-col gap-1">
-                      <div className="flex flex-1 items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <AssigneeAvatar
                           assigneeId={id}
                           displayName={user.name}
                           size={36}
+                          showName={false}
                         />
+                        <span className="block whitespace-nowrap text-lg font-medium text-gray-900">
+                          {user.name}
+                        </span>
                       </div>
-                      {/* Dietary chips directly under name */}
-                      <div className="flex flex-wrap gap-1.5">
-                        {dietary.length > 0 ? (
-                          dietary.map((key) => {
-                            const meta = DIETARY_RESTRICTIONS_META[key];
-                            if (!meta) return null;
-                            return (
-                              <span
-                                key={key}
-                                className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[11px] text-gray-700 shadow-sm"
-                              >
-                                <span className={meta.color}>{meta.icon}</span>
-                                <span>{meta.label}</span>
-                              </span>
-                            );
-                          })
-                        ) : (
+                      {/* Dietary info directly under name, collapsible when present */}
+                      <div className="mt-0.5">
+                        {dietary.length === 0 ? (
                           <span className="text-[11px] text-gray-400">
                             No dietary restrictions set
                           </span>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setOpenDietaryByUser((prev) => ({
+                                  ...prev,
+                                  [id]: !prev[id],
+                                }))
+                              }
+                              className="flex items-center text-[11px] text-gray-500 hover:text-gray-700"
+                            >
+                              <span>Dietary restrictions</span>
+                              {openDietaryByUser[id] ? (
+                                <FiChevronDown className="ml-2 h-4 w-4" />
+                              ) : (
+                                <FiChevronRight className="ml-2 h-4 w-4" />
+                              )}
+                            </button>
+                            {openDietaryByUser[id] && (
+                              <div className="mt-1 flex flex-wrap gap-1.5">
+                                {dietary.map((key) => {
+                                  const meta = DIETARY_RESTRICTIONS_META[key];
+                                  if (!meta) return null;
+                                  return (
+                                    <span
+                                      key={key}
+                                      className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[11px] text-gray-700 shadow-sm"
+                                    >
+                                      <span className={meta.color}>{meta.icon}</span>
+                                      <span>{meta.label}</span>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
 
-                    {/* Right: item count + category chips, right aligned */}
-                    <div className="flex w-[200px] flex-col items-end text-xs text-gray-600">
-                      <span>
-                        {totalItems > 0
-                          ? `${totalItems} item${totalItems === 1 ? "" : "s"}`
-                          : "No items yet"}
-                      </span>
-
-                      <div className="mt-1 flex flex-wrap justify-end gap-1.5">
-                        {Object.keys(categoryCounts).length > 0 ? (
-                          Object.entries(categoryCounts).map(
-                            ([category, count]) => (
-                              <span
-                                key={category}
-                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                                  CATEGORY_BADGES[category] ||
-                                  "bg-gray-100 text-gray-700"
-                                }`}
-                              >
-                                <span>{category}</span>
-                                <span>· {count}</span>
-                              </span>
-                            ),
-                          )
-                        ) : (
-                          <span className="text-[11px] text-gray-400">
-                            No contributions yet
+                    {/* Right: item count, category chips, and remove button, right aligned */}
+                    <div className="flex w-[160px] flex-col items-end justify-between text-xs text-gray-600">
+                      {/* Top: item count + category chips */}
+                      <div className="w-full">
+                        <div className="flex justify-end mt-3 mb-[17px]">
+                          <span>
+                            {totalItems > 0
+                              ? `${totalItems} item${totalItems === 1 ? "" : "s"}`
+                              : "No items yet"}
                           </span>
-                        )}
+                        </div>
+
+                        <div className="mt-1 flex flex-wrap justify-end gap-1.5">
+                          {Object.keys(categoryCounts).length > 0 ? (
+                            Object.entries(categoryCounts).map(
+                              ([category, count]) => (
+                                <span
+                                  key={`cat-${category}`}
+                                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                                    CATEGORY_BADGES[category] ||
+                                    "bg-gray-100 text-gray-700"
+                                  }`}
+                                >
+                                  <span>{category}</span>
+                                  <span>· {count}</span>
+                                </span>
+                              ),
+                            )
+                          ) : (
+                            <span className="text-[11px] text-gray-400">
+                              No contributions yet
+                            </span>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Bottom: fixed Leave/Remove button */}
                       {showRemoveButton && onRemoveParticipant && (
                         <button
                           type="button"

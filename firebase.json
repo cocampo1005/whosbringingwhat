@@ -12,6 +12,14 @@
     ],
     "rewrites": [
       {
+        "source": "/api/randomPotluckImage",
+        "function": "randomPotluckImage"
+      },
+      {
+        "source": "/internal/backfillEventImages",
+        "function": "backfillEventImages"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

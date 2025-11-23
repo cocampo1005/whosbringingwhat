@@ -23,6 +23,17 @@ service cloud.firestore {
       return isSignedIn() && (userRole() == 'cook' || userRole() == 'chef');
     }
 
+    function isChefRole() {
+      return isSignedIn() && userRole() == 'chef';
+    }
+
+    function isEventOwner() {
+      return isSignedIn() && (
+        (('hostId' in resource.data) && resource.data.hostId == request.auth.uid) ||
+        (!('hostId' in resource.data) && ('createdById' in resource.data) && resource.data.createdById == request.auth.uid)
+      );
+    }
+
     // Prevent changing a field after creation
     function unchanged(field) {
       return !(''+field in resource.data) || request.resource.data[field] == resource.data[field];
@@ -53,8 +64,18 @@ service cloud.firestore {
     /* ---------- Events ---------- */
     match /events/{eventId} {
       allow read: if isSignedIn();
-      // Cooks & chefs can create/update/delete events
-      allow create, update, delete: if isCook();
+
+      // Create: any cook/chef can create an event they own
+      allow create: if isCook()
+        && request.resource.data.createdById == request.auth.uid
+        && (!('hostId' in request.resource.data) || request.resource.data.hostId == request.auth.uid);
+
+      // Update/Delete: only the event owner (host/creator) or a chef can modify
+      allow update, delete: if isSignedIn()
+        && (isEventOwner() || isChefRole())
+        && unchanged('createdById')
+        && unchanged('hostId')
+        && changedKeysAreOnly(['title', 'description', 'date', 'time', 'location', 'items', 'members', 'imageUrl', 'bannerColor', 'createdAt', 'updatedAt', 'hostId', 'createdById']);
     }
 
     /* ---------- Categories (under each event) ---------- */
