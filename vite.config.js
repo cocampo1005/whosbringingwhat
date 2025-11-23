@@ -11,6 +11,9 @@ export default defineConfig({
     globals: true,
     include: ['src/unit-tests/**/*.{test,spec}.{js,jsx,ts,tsx}'],
     exclude: [...configDefaults.exclude, 'functions/**'],
+    environmentMatchGlobs: [
+      ['src/unit-tests/firestore/**/*.{test,spec}.{js,jsx,ts,tsx}', 'node'],
+    ],
   },
   build: {
     chunkSizeWarningLimit: 1500,
