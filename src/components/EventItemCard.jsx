@@ -5,6 +5,14 @@ import AssigneeAvatar from "./AssigneeAvatar";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
+const CATEGORY_FOCUS_RING = {
+  Main: "focus-visible:ring-rose-300",
+  Side: "focus-visible:ring-yellow-300",
+  Dessert: "focus-visible:ring-purple-300",
+  Beverage: "focus-visible:ring-blue-300",
+  Miscellaneous: "focus-visible:ring-emerald-300",
+};
+
 const CATEGORY_CHEVRON_BG = {
   Main: "bg-rose-100 hover:bg-rose-200",
   Side: "bg-yellow-100 hover:bg-yellow-200",
@@ -39,6 +47,7 @@ function EventItemCard({
   const reactionEntries = Object.entries(item.reactions || {}).filter(
     ([, info]) => (info?.count ?? 0) > 0,
   );
+  const hasReactions = reactionEntries.length > 0;
 
   const handleToggleReaction = (emoji) => {
     if (!emoji || !item?.id || !onToggleReaction) return;
@@ -92,7 +101,9 @@ function EventItemCard({
 
   return (
     <div
-      className={`relative rounded-lg ${categoryBgClass} shadow-md group`}
+      className={`relative rounded-lg ${categoryBgClass} shadow-md group ${
+        hasReactions ? "mb-5" : ""
+      }`}
     >
       {/* Header: title left, chevron right */}
       <div className="flex items-center justify-between p-[16px_16px_0px_16px]">
@@ -102,9 +113,9 @@ function EventItemCard({
         <button
           type="button"
           onClick={handleChevronClick}
-          className={`rounded-full p-1 text-primaryDark shadow-sm transition-colors ${
+          className={`rounded-full p-1 text-primaryDark shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 ${
             CATEGORY_CHEVRON_BG[categoryName] ?? "bg-white/70 hover:bg-white"
-          }`}
+          } ${CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"}`}
           aria-label={open ? "Collapse item" : "Expand item"}
         >
           {open ? (
@@ -160,7 +171,9 @@ function EventItemCard({
                       handleToggleReaction(emoji);
                       setShowQuickBar(false);
                     }}
-                    className="text-xl hover:bg-gray-800 rounded-full px-1"
+                    className={`rounded-full px-1 text-xl hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 ${
+                      CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"
+                    }`}
                   >
                     {emoji}
                   </button>
@@ -169,7 +182,9 @@ function EventItemCard({
                 <button
                   type="button"
                   onClick={handleOpenFullPicker}
-                  className="ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-gray-800 text-gray-100 hover:bg-gray-700"
+                  className={`ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-gray-800 text-gray-100 hover:bg-gray-700 focus-visible:outline-none focus-visible:ring-2 ${
+                    CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"
+                  }`}
                 >
                   +
                 </button>
@@ -180,7 +195,9 @@ function EventItemCard({
               type="button"
               onClick={handleOpenQuickBar}
               ref={reactionButtonRef}
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-gray-100 hover:bg-black/60"
+              className={`flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-gray-100 hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 ${
+                CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"
+              }`}
               aria-label="Add reaction"
             >
               <FiSmile />
@@ -194,7 +211,9 @@ function EventItemCard({
                     e.stopPropagation();
                     onEditItem?.(item);
                   }}
-                  className="flex h-7 w-7 items-center justify-center rounded-full bg-primaryRed text-white hover:bg-secondaryRed"
+                  className={`flex h-7 w-7 items-center justify-center rounded-full bg-primaryRed text-white hover:bg-secondaryRed focus-visible:outline-none focus-visible:ring-2 ${
+                    CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"
+                  }`}
                   aria-label="Edit item"
                 >
                   <FiEdit />
@@ -206,7 +225,9 @@ function EventItemCard({
                     e.stopPropagation();
                     onDeleteItem?.(item);
                   }}
-                  className="flex h-7 w-7 items-center justify-center rounded-full bg-primaryRed text-white hover:bg-secondaryRed"
+                  className={`flex h-7 w-7 items-center justify-center rounded-full bg-primaryRed text-white hover:bg-secondaryRed focus-visible:outline-none focus-visible:ring-2 ${
+                    CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"
+                  }`}
                   aria-label="Delete item"
                 >
                   <MdDelete />
@@ -251,25 +272,25 @@ function EventItemCard({
         </div>
       )}
 
-      {/* Reactions row at bottom */}
+      {/* Reactions chip cluster anchored near bottom border */}
       {reactionEntries.length > 0 && (
-        <div className="border-t border-rose-100 px-4 pb-3">
-          <div className="mt-1 flex flex-wrap gap-1">
-            {reactionEntries.map(([emoji, info]) => (
-              <button
-                key={emoji}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleToggleReaction(emoji);
-                }}
-                className="flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-xs shadow-sm hover:bg-white"
-              >
-                <span className="text-base">{emoji}</span>
-                <span className="text-gray-700">{info?.count ?? 0}</span>
-              </button>
-            ))}
-          </div>
+        <div className="pointer-events-auto absolute -bottom-3 left-4 z-10 flex flex-wrap gap-1">
+          {reactionEntries.map(([emoji, info]) => (
+            <button
+              key={emoji}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleReaction(emoji);
+              }}
+              className={`flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-xs shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 ${
+                CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"
+              }`}
+            >
+              <span className="text-base">{emoji}</span>
+              <span className="text-gray-700">{info?.count ?? 0}</span>
+            </button>
+          ))}
         </div>
       )}
 
