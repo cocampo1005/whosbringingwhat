@@ -4,6 +4,9 @@ import { MdDelete } from "react-icons/md";
 import AssigneeAvatar from "./AssigneeAvatar";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
+import { useAuth } from "../contexts/AuthContext";
+import { useUsers } from "../contexts/UsersContext";
+import ReactionTooltip from "./ReactionTooltip";
 
 const CATEGORY_FOCUS_RING = {
   Main: "focus-visible:ring-rose-300",
@@ -35,6 +38,13 @@ function EventItemCard({
 }) {
   const [showQuickBar, setShowQuickBar] = useState(false);
   const [showFullPicker, setShowFullPicker] = useState(false);
+  const [hoveredEmoji, setHoveredEmoji] = useState(null);
+  const [canHover, setCanHover] = useState(true);
+  const longPressTimerRef = useRef(null);
+  const longPressEmojiRef = useRef(null);
+  const suppressClickRef = useRef(false);
+  const isTouchInteractionRef = useRef(false);
+  const LONG_PRESS_MS = 1100;
 
   const quickBarRef = useRef(null);
   const reactionButtonRef = useRef(null);
@@ -48,6 +58,79 @@ function EventItemCard({
     ([, info]) => (info?.count ?? 0) > 0,
   );
   const hasReactions = reactionEntries.length > 0;
+
+  const { currentUser } = useAuth() || {};
+  const currentUserId = currentUser?.uid || null;
+
+  // Collect all unique userIds that have reacted on this item
+  const allReactionUserIds = [];
+  reactionEntries.forEach(([, info]) => {
+    const ids = Array.isArray(info?.userIds) ? info.userIds : [];
+    ids.forEach((id) => {
+      if (id && !allReactionUserIds.includes(id)) {
+        allReactionUserIds.push(id);
+      }
+    });
+  });
+
+  const { users: reactionUsers = [], status: reactionUsersStatus } =
+    useUsers(allReactionUserIds);
+
+  const reactionUserById = {};
+  allReactionUserIds.forEach((id, index) => {
+    const user = reactionUsers[index];
+    if (user) {
+      reactionUserById[id] = user;
+    }
+  });
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    longPressEmojiRef.current = null;
+  };
+
+  const handleReactionPointerDown = (event, emoji) => {
+    if (event.pointerType === "touch" || event.pointerType === "pen") {
+      isTouchInteractionRef.current = true;
+      // If tooltip already open for this emoji, treat as a close tap.
+      if (hoveredEmoji === emoji) {
+        setHoveredEmoji(null);
+        clearLongPressTimer();
+        suppressClickRef.current = true;
+        return;
+      }
+
+      clearLongPressTimer();
+      longPressEmojiRef.current = emoji;
+      longPressTimerRef.current = setTimeout(() => {
+        setHoveredEmoji(emoji);
+        suppressClickRef.current = true; // prevent toggle on long-press
+        longPressTimerRef.current = null;
+      }, LONG_PRESS_MS);
+    } else if (event.pointerType === "mouse") {
+      // Desktop mouse interaction; allow hover to control tooltip.
+      isTouchInteractionRef.current = false;
+    }
+  };
+
+  const handleReactionPointerUp = (event) => {
+    if (event.pointerType === "touch" || event.pointerType === "pen") {
+      // If timer is still running, this was a tap: allow click to toggle.
+      if (longPressTimerRef.current) {
+        clearLongPressTimer();
+        suppressClickRef.current = false;
+      }
+    }
+  };
+
+  const handleReactionPointerLeave = (event) => {
+    if (event.pointerType === "touch" || event.pointerType === "pen") {
+      clearLongPressTimer();
+    }
+  };
 
   const handleToggleReaction = (emoji) => {
     if (!emoji || !item?.id || !onToggleReaction) return;
@@ -74,6 +157,17 @@ function EventItemCard({
     setShowFullPicker(false);
     setShowQuickBar(false);
   };
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia) {
+      try {
+        const mq = window.matchMedia("(hover: hover)");
+        setCanHover(mq.matches);
+      } catch {
+        setCanHover(true);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!showQuickBar) return;
@@ -274,23 +368,101 @@ function EventItemCard({
 
       {/* Reactions chip cluster anchored near bottom border */}
       {reactionEntries.length > 0 && (
-        <div className="pointer-events-auto absolute -bottom-3 left-4 z-10 flex flex-wrap gap-1">
-          {reactionEntries.map(([emoji, info]) => (
-            <button
-              key={emoji}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleReaction(emoji);
-              }}
-              className={`flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-xs shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 ${
-                CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"
-              }`}
-            >
-              <span className="text-base">{emoji}</span>
-              <span className="text-gray-700">{info?.count ?? 0}</span>
-            </button>
-          ))}
+        <div className="pointer-events-auto absolute -bottom-2 left-4 z-10 flex flex-wrap gap-1">
+          {reactionEntries.map(([emoji, info]) => {
+            const userIds = Array.isArray(info?.userIds)
+              ? info.userIds.filter(Boolean)
+              : [];
+
+            const emojiUsers = userIds
+              .map((id) => reactionUserById[id])
+              .filter(Boolean);
+
+            const names = emojiUsers.map((u) => {
+              if (currentUserId && u.id === currentUserId) return "You";
+              return (
+                u.name ||
+                u.displayName ||
+                u.email ||
+                "Unknown guest"
+              );
+            });
+
+            const total =
+              names.length > 0
+                ? names.length
+                : info?.count ?? userIds.length ?? 0;
+
+            let summary = "";
+            if (reactionUsersStatus === "loading" && userIds.length > 0) {
+              summary = "Loading names...";
+            } else if (names.length === 1) {
+              summary = names[0];
+            } else if (names.length === 2) {
+              summary = `${names[0]} and ${names[1]}`;
+            } else if (names.length > 2) {
+              const others = names.length - 2;
+              summary = `${names[0]}, ${names[1]} and ${others} other${
+                others === 1 ? "" : "s"
+              }`;
+            }
+
+            const reactionsLabel =
+              total === 1 ? "1 reaction" : `${total} reactions`;
+            const isHovered = hoveredEmoji === emoji;
+
+            return (
+              <div
+                key={emoji}
+                className="relative"
+                onMouseEnter={() => {
+                  if (!canHover) return;
+                  setHoveredEmoji(emoji);
+                }}
+                onMouseLeave={() =>
+                  setHoveredEmoji((prev) => (prev === emoji ? null : prev))
+                }
+                onFocus={() => {
+                  if (!canHover) return;
+                  setHoveredEmoji(emoji);
+                }}
+                onBlur={() =>
+                  setHoveredEmoji((prev) => (prev === emoji ? null : prev))
+                }
+                onPointerDown={(event) => handleReactionPointerDown(event, emoji)}
+                onPointerUp={handleReactionPointerUp}
+                onPointerLeave={handleReactionPointerLeave}
+                onPointerCancel={handleReactionPointerLeave}
+              >
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (suppressClickRef.current) {
+                      suppressClickRef.current = false;
+                      return;
+                    }
+                    handleToggleReaction(emoji);
+                  }}
+                  className={`flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-xs shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 ${
+                    CATEGORY_FOCUS_RING[categoryName] ??
+                    "focus-visible:ring-white"
+                  }`}
+                >
+                  <span className="text-base">{emoji}</span>
+                  <span className="text-gray-700">{info?.count ?? 0}</span>
+                </button>
+
+                {isHovered && (
+                  <ReactionTooltip
+                    emoji={emoji}
+                    label={reactionsLabel}
+                    summary={summary}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

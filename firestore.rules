@@ -34,6 +34,13 @@ service cloud.firestore {
       );
     }
 
+    function isEventMember() {
+      return isSignedIn() && (
+        isEventOwner() ||
+        (("members" in resource.data) && request.auth.uid in resource.data.members)
+      );
+    }
+
     // Prevent changing a field after creation
     function unchanged(field) {
       return !(''+field in resource.data) || request.resource.data[field] == resource.data[field];
@@ -76,6 +83,10 @@ service cloud.firestore {
         && unchanged('createdById')
         && unchanged('hostId')
         && changedKeysAreOnly(['title', 'description', 'date', 'time', 'location', 'items', 'members', 'imageUrl', 'bannerColor', 'createdAt', 'updatedAt', 'hostId', 'createdById']);
+
+      // Allow event members to update only the items array (e.g., emoji reactions)
+      allow update: if isEventMember()
+        && changedKeysAreOnly(['items']);
 
       allow delete: if isSignedIn()
         && (isEventOwner() || isChefRole());
