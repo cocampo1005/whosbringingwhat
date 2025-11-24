@@ -1,7 +1,6 @@
 import React, { useMemo, useState, memo } from "react";
-import { FiChevronDown, FiChevronRight, FiEdit } from "react-icons/fi";
-import { MdDelete } from "react-icons/md";
-import AssigneeAvatar from "./AssigneeAvatar";
+import { FiChevronDown, FiChevronRight } from "react-icons/fi";
+import EventItemCard from "./EventItemCard";
 
 function CategoryList({
   categoryName, // "Main" | "Side" | "Dessert" | "Beverage" | "Miscellaneous"
@@ -10,6 +9,7 @@ function CategoryList({
   dietaryIcons = {}, // { vegan:{icon,color}, ... }
   onEditItem, // (item) => void
   onDeleteItem, // (item) => void
+  onToggleReaction,
   canManageItem,
   defaultExpanded = true,
 }) {
@@ -66,121 +66,21 @@ function CategoryList({
               typeof canManageItem === "function"
                 ? !!canManageItem(item)
                 : true;
-            const displayName = item.onBehalfOfName || item.assignee;
-            const assigneeIdForAvatar = item.isOnBehalfOf
-              ? null
-              : item.assigneeId;
 
             return (
-              <div
+              <EventItemCard
                 key={item.id}
-                className={`rounded-lg ${CATEGORY_BG[categoryName] ?? "bg-gray-50"} shadow-md`}
-              >
-                <div
-                  className="flex cursor-pointer items-center justify-between p-4"
-                  onClick={() => toggleItem(item.id)}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-primaryDark">
-                        {item.title}
-                      </h4>
-                      {open ? (
-                        <FiChevronDown className="text-primaryDark" />
-                      ) : (
-                        <FiChevronRight className="text-primaryDark" />
-                      )}
-                    </div>
-                    <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
-                      {displayName && (
-                        <AssigneeAvatar
-                          assigneeId={assigneeIdForAvatar}
-                          displayName={displayName}
-                          size={24}
-                        />
-                      )}
-                    </div>
-                    {item.dietary && item.dietary.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {item.dietary.map((restriction, i) => {
-                          const d = dietaryIcons[restriction?.toLowerCase?.()];
-                          return d ? (
-                            <span
-                              key={i}
-                              className={`flex items-center text-lg ${d.color}`}
-                              title={restriction}
-                            >
-                              {d.icon}
-                            </span>
-                          ) : null;
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {open && (
-                  <div className="border-t border-rose-200 px-4 pb-4">
-                    <div className="mt-3 flex flex-col items-start justify-between">
-                      <div className="flex-1">
-                        {item.description && (
-                          <div className="mb-3">
-                            <h5 className="mb-1 font-medium text-gray-700">
-                              Description:
-                            </h5>
-                            <p className="text-sm text-gray-600">
-                              {item.description}
-                            </p>
-                          </div>
-                        )}
-
-                        {item.imageUrl && (
-                          <div className="mb-3">
-                            <h5 className="mb-1 font-medium text-gray-700">
-                              Photo:
-                            </h5>
-                            <img
-                              src={item.imageUrl}
-                              alt={item.title}
-                              className="h-32 w-32 rounded-lg object-cover"
-                            />
-                          </div>
-                        )}
-
-                        {item.servings && (
-                          <p className="mb-2 text-sm text-gray-600">
-                            <span className="font-medium">Servings:</span>{" "}
-                            {item.servings}
-                          </p>
-                        )}
-                      </div>
-
-                      {canManage && (
-                        <div className="flex w-full justify-end gap-2 p-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEditItem?.(item);
-                            }}
-                            className="rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed"
-                          >
-                            <FiEdit />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteItem?.(item);
-                            }}
-                            className="rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed"
-                          >
-                            <MdDelete />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+                item={item}
+                categoryName={categoryName}
+                categoryBgClass={CATEGORY_BG[categoryName] ?? "bg-gray-50"}
+                dietaryIcons={dietaryIcons}
+                canManage={canManage}
+                open={open}
+                onToggleOpen={() => toggleItem(item.id)}
+                onEditItem={onEditItem}
+                onDeleteItem={onDeleteItem}
+                onToggleReaction={onToggleReaction}
+              />
             );
           })}
         </div>
@@ -215,6 +115,7 @@ function areEqual(prev, next) {
         dietary: (x.dietary || []).slice().sort().join("|"),
         onBehalfOfName: x.onBehalfOfName || "",
         isOnBehalfOf: !!x.isOnBehalfOf,
+        reactions: JSON.stringify(x.reactions || {}),
       }))
       .sort((x, y) => (x.id || "").localeCompare(y.id || ""));
 
