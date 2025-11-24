@@ -8,6 +8,46 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 /**
+ * Validate required environment variables at startup.
+ * Logs prominent warnings if configuration is missing.
+ */
+(function validateEnvironmentVariables() {
+  const missingVars = [];
+  
+  if (!process.env.PEXELS_API_KEY) {
+    missingVars.push("PEXELS_API_KEY");
+  }
+  
+  if (!process.env.BACKFILL_SECRET) {
+    missingVars.push("BACKFILL_SECRET");
+  }
+  
+  if (missingVars.length > 0) {
+    functions.logger.warn(
+      "═══════════════════════════════════════════════════════════════════",
+    );
+    functions.logger.warn(
+      "⚠️  MISSING REQUIRED ENVIRONMENT VARIABLES",
+    );
+    functions.logger.warn(
+      "═══════════════════════════════════════════════════════════════════",
+    );
+    functions.logger.warn(
+      `The following environment variables are not configured: ${missingVars.join(", ")}`,
+    );
+    functions.logger.warn(
+      "Functions that depend on these variables will fail at runtime.",
+    );
+    functions.logger.warn(
+      "Please see functions/README.md for setup instructions.",
+    );
+    functions.logger.warn(
+      "═══════════════════════════════════════════════════════════════════",
+    );
+  }
+})();
+
+/**
  * Infer a simple "theme" (e.g. thanksgiving, christmas, bbq) from the
  * event's title/description/date. This is deliberately heuristic and
  * only meant to bias image selection toward the right vibe.

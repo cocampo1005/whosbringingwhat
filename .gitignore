@@ -33,6 +33,6 @@ serviceAccountKey.json
 *.private.json
 
 .env
-.env.example
+!.env.example
 
 *-plan.md
