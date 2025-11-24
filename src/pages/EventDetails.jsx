@@ -408,10 +408,16 @@ function EventDetails() {
 
         const hasAnyEmoji = Object.keys(reactions).length > 0;
 
-        return {
-          ...item,
-          reactions: hasAnyEmoji ? reactions : undefined,
-        };
+        // Important: Firestore does not allow fields with value `undefined`.
+        // Build a new item object and conditionally include/remove `reactions`.
+        const nextItem = { ...item };
+        if (hasAnyEmoji) {
+          nextItem.reactions = reactions;
+        } else {
+          delete nextItem.reactions;
+        }
+
+        return nextItem;
       });
 
       tx.update(eventRef, { items: updatedItems });

@@ -1,9 +1,17 @@
-import React, { useState, memo } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import { FiChevronDown, FiChevronRight, FiEdit, FiSmile } from "react-icons/fi";
 import { MdDelete } from "react-icons/md";
 import AssigneeAvatar from "./AssigneeAvatar";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
+
+const CATEGORY_CHEVRON_BG = {
+  Main: "bg-rose-100 hover:bg-rose-200",
+  Side: "bg-yellow-100 hover:bg-yellow-200",
+  Dessert: "bg-purple-100 hover:bg-purple-200",
+  Beverage: "bg-blue-100 hover:bg-blue-200",
+  Miscellaneous: "bg-emerald-100 hover:bg-emerald-200",
+};
 
 function EventItemCard({
   item,
@@ -20,12 +28,17 @@ function EventItemCard({
   const [showQuickBar, setShowQuickBar] = useState(false);
   const [showFullPicker, setShowFullPicker] = useState(false);
 
+  const quickBarRef = useRef(null);
+  const reactionButtonRef = useRef(null);
+
   const quickEmojis = ["👍", "❤️", "😂", "😮", "😢", "🙏", "‼️"];
 
   const displayName = item.onBehalfOfName || item.assignee;
   const assigneeIdForAvatar = item.isOnBehalfOf ? null : item.assigneeId;
 
-  const reactionEntries = Object.entries(item.reactions || {});
+  const reactionEntries = Object.entries(item.reactions || {}).filter(
+    ([, info]) => (info?.count ?? 0) > 0,
+  );
 
   const handleToggleReaction = (emoji) => {
     if (!emoji || !item?.id || !onToggleReaction) return;
@@ -53,47 +66,45 @@ function EventItemCard({
     setShowQuickBar(false);
   };
 
+  useEffect(() => {
+    if (!showQuickBar) return;
+
+    const handleOutsideClick = (event) => {
+      const barEl = quickBarRef.current;
+      const buttonEl = reactionButtonRef.current;
+
+      if (!barEl && !buttonEl) return;
+
+      const clickedInsideBar = barEl?.contains(event.target);
+      const clickedOnButton = buttonEl?.contains(event.target);
+
+      if (!clickedInsideBar && !clickedOnButton) {
+        setShowQuickBar(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handleOutsideClick);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleOutsideClick);
+    };
+  }, [showQuickBar]);
+
   return (
     <div
       className={`relative rounded-lg ${categoryBgClass} shadow-md group`}
     >
-      {/* Quick reactions bar */}
-      {showQuickBar && (
-        <div className="absolute -top-8 right-4 z-30 flex items-center gap-1 rounded-full bg-[#202c33] px-3 py-1 text-white shadow-lg">
-          {quickEmojis.map((emoji) => (
-            <button
-              key={emoji}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleReaction(emoji);
-                setShowQuickBar(false);
-              }}
-              className="text-xl hover:bg-gray-800 rounded-full px-1"
-            >
-              {emoji}
-            </button>
-          ))}
-
-          <button
-            type="button"
-            onClick={handleOpenFullPicker}
-            className="ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-gray-800 text-gray-100 hover:bg-gray-700"
-          >
-            +
-          </button>
-        </div>
-      )}
-
       {/* Header: title left, chevron right */}
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between p-[16px_16px_0px_16px]">
         <h4 className="truncate font-semibold text-primaryDark">
           {item.title}
         </h4>
         <button
           type="button"
           onClick={handleChevronClick}
-          className="rounded-full p-1 hover:bg-rose-100"
+          className={`rounded-full p-1 text-primaryDark shadow-sm transition-colors ${
+            CATEGORY_CHEVRON_BG[categoryName] ?? "bg-white/70 hover:bg-white"
+          }`}
           aria-label={open ? "Collapse item" : "Expand item"}
         >
           {open ? (
@@ -106,23 +117,70 @@ function EventItemCard({
 
       {/* Assignee, actions, and dietary info */}
       <div className="px-4 pb-4">
-        <div className="mt-1 flex items-center justify-between text-sm text-gray-500">
-          <div className="flex items-center gap-2">
-            {displayName && (
-              <AssigneeAvatar
-                assigneeId={assigneeIdForAvatar}
-                displayName={displayName}
-                size={24}
-              />
-            )}
-          </div>
+        <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
+          {displayName && (
+            <AssigneeAvatar
+              assigneeId={assigneeIdForAvatar}
+              displayName={displayName}
+              size={24}
+            />
+          )}
+        </div>
 
-          <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-            {/* Reaction entry button */}
+        <div className="mt-2 flex items-start justify-between gap-2">
+          <div className="flex flex-wrap gap-2">
+            {item.dietary &&
+              item.dietary.length > 0 &&
+              item.dietary.map((restriction, i) => {
+                const d = dietaryIcons[restriction?.toLowerCase?.()];
+                return d ? (
+                  <span
+                    key={i}
+                    className={`flex items-center text-lg ${d.color}`}
+                    title={restriction}
+                  >
+                    {d.icon}
+                  </span>
+                ) : null;
+              })}
+          </div>
+          <div className="relative flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            {/* Quick reactions bar */}
+            {showQuickBar && (
+              <div
+                ref={quickBarRef}
+                className="absolute -top-10 -right-12 z-30 flex items-center gap-1 rounded-full bg-[#202c33] px-3 py-1 text-white shadow-lg"
+              >
+                {quickEmojis.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleReaction(emoji);
+                      setShowQuickBar(false);
+                    }}
+                    className="text-xl hover:bg-gray-800 rounded-full px-1"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={handleOpenFullPicker}
+                  className="ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-gray-800 text-gray-100 hover:bg-gray-700"
+                >
+                  +
+                </button>
+              </div>
+            )}
+
             <button
               type="button"
               onClick={handleOpenQuickBar}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-gray-100 hover:bg-black/60"
+              ref={reactionButtonRef}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-gray-100 hover:bg-black/60"
               aria-label="Add reaction"
             >
               <FiSmile />
@@ -136,7 +194,7 @@ function EventItemCard({
                     e.stopPropagation();
                     onEditItem?.(item);
                   }}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-primaryRed text-white hover:bg-secondaryRed"
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-primaryRed text-white hover:bg-secondaryRed"
                   aria-label="Edit item"
                 >
                   <FiEdit />
@@ -148,7 +206,7 @@ function EventItemCard({
                     e.stopPropagation();
                     onDeleteItem?.(item);
                   }}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-primaryRed text-white hover:bg-secondaryRed"
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-primaryRed text-white hover:bg-secondaryRed"
                   aria-label="Delete item"
                 >
                   <MdDelete />
@@ -157,23 +215,6 @@ function EventItemCard({
             )}
           </div>
         </div>
-
-        {item.dietary && item.dietary.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {item.dietary.map((restriction, i) => {
-              const d = dietaryIcons[restriction?.toLowerCase?.()];
-              return d ? (
-                <span
-                  key={i}
-                  className={`flex items-center text-lg ${d.color}`}
-                  title={restriction}
-                >
-                  {d.icon}
-                </span>
-              ) : null;
-            })}
-          </div>
-        )}
       </div>
 
       {/* Expanded body */}
