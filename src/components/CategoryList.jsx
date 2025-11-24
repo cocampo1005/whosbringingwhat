@@ -59,7 +59,7 @@ function CategoryList({
 
       {/* Items */}
       {isExpanded && sortedItems.length > 0 && (
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           {sortedItems.map((item) => {
             const open = expandedItems.has(item.id);
             const canManage =

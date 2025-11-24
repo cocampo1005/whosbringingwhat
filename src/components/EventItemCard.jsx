@@ -25,6 +25,14 @@ const CATEGORY_CHEVRON_BG = {
   Miscellaneous: "bg-emerald-100 hover:bg-emerald-200",
 };
 
+const CATEGORY_ACTION_GHOST = {
+  Main: "bg-rose-500/10 text-rose-700 hover:bg-rose-500/20",
+  Side: "bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20",
+  Dessert: "bg-purple-500/10 text-purple-700 hover:bg-purple-500/20",
+  Beverage: "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20",
+  Miscellaneous: "bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20",
+};
+
 function EventItemCard({
   item,
   categoryName,
@@ -220,12 +228,12 @@ function EventItemCard({
   return (
     <div
       className={`relative rounded-lg ${categoryBgClass} shadow-md group ${
-        hasManyReactions ? "mb-12" : hasReactions ? "mb-5" : ""
+        hasManyReactions ? "mb-12" : hasReactions ? "mb-4" : ""
       }`}
     >
       {/* Header: title left, chevron right */}
-      <div className="flex items-center justify-between p-[16px_9px_0px_16px]">
-        <h4 className="truncate font-semibold text-primaryDark">
+      <div className="flex items-start justify-between p-[16px_9px_0px_16px]">
+        <h4 className={`${open ? "" : "line-clamp-2"} font-semibold text-primaryDark`}>
           {item.title}
         </h4>
         <button
@@ -313,7 +321,10 @@ function EventItemCard({
               type="button"
               onClick={handleOpenQuickBar}
               ref={reactionButtonRef}
-              className={`flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-gray-100 hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 ${
+              className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                CATEGORY_ACTION_GHOST[categoryName] ??
+                "bg-black/10 text-black/70 hover:bg-black/20"
+              } focus-visible:outline-none focus-visible:ring-2 ${
                 CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"
               }`}
               aria-label="Add reaction"
@@ -329,8 +340,12 @@ function EventItemCard({
                     e.stopPropagation();
                     onEditItem?.(item);
                   }}
-                  className={`flex h-7 w-7 items-center justify-center rounded-full bg-primaryRed text-white hover:bg-secondaryRed focus-visible:outline-none focus-visible:ring-2 ${
-                    CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"
+                  className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                    CATEGORY_ACTION_GHOST[categoryName] ??
+                    "bg-black/10 text-black/70 hover:bg-black/20"
+                  } focus-visible:outline-none focus-visible:ring-2 ${
+                    CATEGORY_FOCUS_RING[categoryName] ??
+                    "focus-visible:ring-white"
                   }`}
                   aria-label="Edit item"
                 >
@@ -343,8 +358,12 @@ function EventItemCard({
                     e.stopPropagation();
                     onDeleteItem?.(item);
                   }}
-                  className={`flex h-7 w-7 items-center justify-center rounded-full bg-primaryRed text-white hover:bg-secondaryRed focus-visible:outline-none focus-visible:ring-2 ${
-                    CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"
+                  className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                    CATEGORY_ACTION_GHOST[categoryName] ??
+                    "bg-black/10 text-black/70 hover:bg-black/20"
+                  } focus-visible:outline-none focus-visible:ring-2 ${
+                    CATEGORY_FOCUS_RING[categoryName] ??
+                    "focus-visible:ring-white"
                   }`}
                   aria-label="Delete item"
                 >
