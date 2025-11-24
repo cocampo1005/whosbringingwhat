@@ -41,6 +41,24 @@ service cloud.firestore {
       );
     }
 
+    function membersSize(d) {
+      return ("members" in d && d.members != null) ? d.members.size() : 0;
+    }
+
+    function isSelfJoiningEvent() {
+      return isSignedIn()
+        && !(("members" in resource.data) && request.auth.uid in resource.data.members)
+        && (("members" in request.resource.data) && request.auth.uid in request.resource.data.members)
+        && membersSize(request.resource.data) == membersSize(resource.data) + 1;
+    }
+
+    function isSelfLeavingEvent() {
+      return isSignedIn()
+        && (("members" in resource.data) && request.auth.uid in resource.data.members)
+        && (!("members" in request.resource.data) || !(request.auth.uid in request.resource.data.members))
+        && membersSize(resource.data) == membersSize(request.resource.data) + 1;
+    }
+
     // Prevent changing a field after creation
     function unchanged(field) {
       return !(''+field in resource.data) || request.resource.data[field] == resource.data[field];
@@ -87,6 +105,14 @@ service cloud.firestore {
       // Allow event members to update only the items array (e.g., emoji reactions)
       allow update: if isEventMember()
         && changedKeysAreOnly(['items']);
+
+      // Allow any signed-in user to join an event by adding themselves to members
+      allow update: if isSelfJoiningEvent()
+        && changedKeysAreOnly(['members']);
+
+      // Allow a member to leave an event and update items (e.g., remove their items)
+      allow update: if isSelfLeavingEvent()
+        && changedKeysAreOnly(['members', 'items']);
 
       allow delete: if isSignedIn()
         && (isEventOwner() || isChefRole());

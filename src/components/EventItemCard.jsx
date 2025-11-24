@@ -7,6 +7,7 @@ import Picker from "@emoji-mart/react";
 import { useAuth } from "../contexts/AuthContext";
 import { useUsers } from "../contexts/UsersContext";
 import ReactionTooltip from "./ReactionTooltip";
+import ReactionsModal from "./ReactionsModal";
 
 const CATEGORY_FOCUS_RING = {
   Main: "focus-visible:ring-rose-300",
@@ -38,6 +39,7 @@ function EventItemCard({
 }) {
   const [showQuickBar, setShowQuickBar] = useState(false);
   const [showFullPicker, setShowFullPicker] = useState(false);
+  const [showAllReactions, setShowAllReactions] = useState(false);
   const [hoveredEmoji, setHoveredEmoji] = useState(null);
   const [canHover, setCanHover] = useState(true);
   const longPressTimerRef = useRef(null);
@@ -54,10 +56,16 @@ function EventItemCard({
   const displayName = item.onBehalfOfName || item.assignee;
   const assigneeIdForAvatar = item.isOnBehalfOf ? null : item.assigneeId;
 
-  const reactionEntries = Object.entries(item.reactions || {}).filter(
-    ([, info]) => (info?.count ?? 0) > 0,
-  );
+  const reactionEntries = Object.entries(item.reactions || {})
+    .filter(([, info]) => (info?.count ?? 0) > 0)
+    .sort(([a], [b]) => (a || "").localeCompare(b || ""));
+
+  const MAX_VISIBLE_REACTIONS = 7;
+  const visibleReactions = reactionEntries.slice(0, MAX_VISIBLE_REACTIONS);
+  const hiddenReactionsCount = reactionEntries.length - visibleReactions.length;
+
   const hasReactions = reactionEntries.length > 0;
+  const hasManyReactions = reactionEntries.length > 4;
 
   const { currentUser } = useAuth() || {};
   const currentUserId = currentUser?.uid || null;
@@ -82,6 +90,22 @@ function EventItemCard({
     if (user) {
       reactionUserById[id] = user;
     }
+  });
+
+  const reactionRows = [];
+  reactionEntries.forEach(([emoji, info]) => {
+    const userIds = Array.isArray(info?.userIds)
+      ? info.userIds.filter(Boolean)
+      : [];
+
+    userIds.forEach((userId) => {
+      reactionRows.push({
+        key: `${emoji}-${userId}`,
+        emoji,
+        userId,
+        user: reactionUserById[userId] || null,
+      });
+    });
   });
 
   const clearLongPressTimer = () => {
@@ -196,11 +220,11 @@ function EventItemCard({
   return (
     <div
       className={`relative rounded-lg ${categoryBgClass} shadow-md group ${
-        hasReactions ? "mb-5" : ""
+        hasManyReactions ? "mb-12" : hasReactions ? "mb-5" : ""
       }`}
     >
       {/* Header: title left, chevron right */}
-      <div className="flex items-center justify-between p-[16px_16px_0px_16px]">
+      <div className="flex items-center justify-between p-[16px_9px_0px_16px]">
         <h4 className="truncate font-semibold text-primaryDark">
           {item.title}
         </h4>
@@ -366,10 +390,23 @@ function EventItemCard({
         </div>
       )}
 
+      {showAllReactions && (
+        <ReactionsModal
+          isOpen={showAllReactions}
+          onClose={() => setShowAllReactions(false)}
+          reactionEntries={reactionEntries}
+          reactionRows={reactionRows}
+          currentUserId={currentUserId}
+          onToggleReaction={handleToggleReaction}
+        />
+      )}
+
       {/* Reactions chip cluster anchored near bottom border */}
       {reactionEntries.length > 0 && (
-        <div className="pointer-events-auto absolute -bottom-2 left-4 z-10 flex flex-wrap gap-1">
-          {reactionEntries.map(([emoji, info]) => {
+        <div
+          className="pointer-events-auto absolute left-4 top-full -translate-y-4 z-0 flex flex-wrap gap-1"
+        >
+          {visibleReactions.map(([emoji, info]) => {
             const userIds = Array.isArray(info?.userIds)
               ? info.userIds.filter(Boolean)
               : [];
@@ -463,6 +500,28 @@ function EventItemCard({
               </div>
             );
           })}
+
+          {hiddenReactionsCount > 0 && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAllReactions(true);
+                }}
+                className={`flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-xs shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 ${
+                  CATEGORY_FOCUS_RING[categoryName] ??
+                  "focus-visible:ring-white"
+                }`}
+              >
+                <span className="text-gray-700">
+                  {hiddenReactionsCount === 1
+                    ? "1 more"
+                    : `${hiddenReactionsCount} more`}
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       )}
 

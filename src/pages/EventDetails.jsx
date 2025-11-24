@@ -951,8 +951,8 @@ function EventDetails() {
             </div>
           </div>
 
-          {/* Five column layout for categories */}
-          <div className="grid grid-cols-5 gap-4">
+          {/* Five column layout for categories on desktop (slightly wider cards) */}
+          <div className="grid grid-cols-5 gap-3">
             {groupedItems.Main?.length > 0 && (
               <CategoryList
                 categoryName="Main"

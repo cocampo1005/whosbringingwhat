@@ -115,7 +115,11 @@ function areEqual(prev, next) {
         dietary: (x.dietary || []).slice().sort().join("|"),
         onBehalfOfName: x.onBehalfOfName || "",
         isOnBehalfOf: !!x.isOnBehalfOf,
-        reactions: JSON.stringify(x.reactions || {}),
+        reactions: JSON.stringify(
+          Object.entries(x.reactions || {}).sort(([a], [b]) =>
+            (a || "").localeCompare(b || ""),
+          ),
+        ),
       }))
       .sort((x, y) => (x.id || "").localeCompare(y.id || ""));
 
