@@ -7,6 +7,7 @@ import {
   doc,
   getDoc,
   onSnapshot,
+  runTransaction,
   updateDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
@@ -370,6 +371,73 @@ function EventDetails() {
   };
 
   // Functions for item CRUD operations
+  const toggleReactionOnEventItem = async (eventId, itemId, emoji, userId) => {
+    const eventRef = doc(db, "events", eventId);
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(eventRef);
+      if (!snap.exists()) return;
+
+      const data = snap.data() || {};
+      const items = Array.isArray(data.items) ? data.items : [];
+
+      const updatedItems = items.map((item) => {
+        if (!item || item.id !== itemId) return item;
+
+        const reactions = { ...(item.reactions || {}) };
+        const current = reactions[emoji] || { count: 0, userIds: [], order: undefined };
+        const existingUserIds = Array.isArray(current.userIds)
+          ? current.userIds
+          : [];
+        const userIdSet = new Set(existingUserIds);
+
+        if (userIdSet.has(userId)) {
+          userIdSet.delete(userId);
+        } else {
+          userIdSet.add(userId);
+        }
+
+        const nextUserIds = Array.from(userIdSet);
+
+        if (nextUserIds.length === 0) {
+          delete reactions[emoji];
+        } else {
+          let order =
+            typeof current.order === "number" ? current.order : null;
+
+          if (order === null) {
+            const existingOrders = Object.values(reactions).map((value) =>
+              typeof value?.order === "number" ? value.order : 0,
+            );
+            const maxOrder =
+              existingOrders.length > 0 ? Math.max(...existingOrders) : 0;
+            order = maxOrder + 1;
+          }
+
+          reactions[emoji] = {
+            count: nextUserIds.length,
+            userIds: nextUserIds,
+            order,
+          };
+        }
+
+        const hasAnyEmoji = Object.keys(reactions).length > 0;
+
+        // Important: Firestore does not allow fields with value `undefined`.
+        // Build a new item object and conditionally include/remove `reactions`.
+        const nextItem = { ...item };
+        if (hasAnyEmoji) {
+          nextItem.reactions = reactions;
+        } else {
+          delete nextItem.reactions;
+        }
+
+        return nextItem;
+      });
+
+      tx.update(eventRef, { items: updatedItems });
+    });
+  };
+
   const addItemToEvent = async (eventId, newItem) => {
     const eventRef = doc(db, "events", eventId);
     await updateDoc(eventRef, {
@@ -383,9 +451,18 @@ function EventDetails() {
 
     if (eventDoc.exists()) {
       const { items } = eventDoc.data();
-      const updatedItems = items.map((item) =>
-        item.id === updatedItem.id ? updatedItem : item,
-      );
+      const updatedItems = items.map((item) => {
+        if (!item || item.id !== updatedItem.id) return item;
+
+        // Merge new fields into existing item but always preserve reactions.
+        const merged = { ...item, ...updatedItem };
+
+        if (item.reactions && !merged.reactions) {
+          merged.reactions = item.reactions;
+        }
+
+        return merged;
+      });
 
       await updateDoc(eventRef, { items: updatedItems });
     }
@@ -414,6 +491,17 @@ function EventDetails() {
       await addItemToEvent(event.id, itemData);
     }
     setIsItemModalOpen(false);
+  };
+
+  const handleToggleReaction = async (itemId, emoji) => {
+    if (!currentUser || !event) return;
+    if (!itemId || !emoji) return;
+
+    try {
+      await toggleReactionOnEventItem(event.id, itemId, emoji, currentUser.uid);
+    } catch (error) {
+      console.error("Error toggling reaction:", error);
+    }
   };
 
   // Functions for Confirming Deleting Modal
@@ -666,6 +754,7 @@ function EventDetails() {
                 dietaryIcons={dietaryIcons}
                 onEditItem={handleEditItem}
                 onDeleteItem={openDeleteModalForItem}
+                onToggleReaction={handleToggleReaction}
                 canManageItem={canUserManageItem}
                 defaultExpanded
               />
@@ -678,6 +767,7 @@ function EventDetails() {
                 dietaryIcons={dietaryIcons}
                 onEditItem={handleEditItem}
                 onDeleteItem={openDeleteModalForItem}
+                onToggleReaction={handleToggleReaction}
                 canManageItem={canUserManageItem}
                 defaultExpanded
               />
@@ -690,6 +780,7 @@ function EventDetails() {
                 dietaryIcons={dietaryIcons}
                 onEditItem={handleEditItem}
                 onDeleteItem={openDeleteModalForItem}
+                onToggleReaction={handleToggleReaction}
                 canManageItem={canUserManageItem}
                 defaultExpanded
               />
@@ -702,6 +793,7 @@ function EventDetails() {
                 dietaryIcons={dietaryIcons}
                 onEditItem={handleEditItem}
                 onDeleteItem={openDeleteModalForItem}
+                onToggleReaction={handleToggleReaction}
                 canManageItem={canUserManageItem}
                 defaultExpanded
               />
@@ -714,6 +806,7 @@ function EventDetails() {
                 dietaryIcons={dietaryIcons}
                 onEditItem={handleEditItem}
                 onDeleteItem={openDeleteModalForItem}
+                onToggleReaction={handleToggleReaction}
                 canManageItem={canUserManageItem}
                 defaultExpanded
               />
@@ -878,8 +971,8 @@ function EventDetails() {
             </div>
           </div>
 
-          {/* Five column layout for categories */}
-          <div className="grid grid-cols-5 gap-4">
+          {/* Five column layout for categories on desktop (slightly wider cards) */}
+          <div className="grid grid-cols-5 gap-3">
             {groupedItems.Main?.length > 0 && (
               <CategoryList
                 categoryName="Main"
@@ -888,6 +981,7 @@ function EventDetails() {
                 dietaryIcons={dietaryIcons}
                 onEditItem={handleEditItem}
                 onDeleteItem={openDeleteModalForItem}
+                onToggleReaction={handleToggleReaction}
                 canManageItem={canUserManageItem}
                 defaultExpanded
               />
@@ -900,6 +994,7 @@ function EventDetails() {
                 dietaryIcons={dietaryIcons}
                 onEditItem={handleEditItem}
                 onDeleteItem={openDeleteModalForItem}
+                onToggleReaction={handleToggleReaction}
                 canManageItem={canUserManageItem}
                 defaultExpanded
               />
@@ -912,6 +1007,7 @@ function EventDetails() {
                 dietaryIcons={dietaryIcons}
                 onEditItem={handleEditItem}
                 onDeleteItem={openDeleteModalForItem}
+                onToggleReaction={handleToggleReaction}
                 canManageItem={canUserManageItem}
                 defaultExpanded
               />
@@ -924,6 +1020,7 @@ function EventDetails() {
                 dietaryIcons={dietaryIcons}
                 onEditItem={handleEditItem}
                 onDeleteItem={openDeleteModalForItem}
+                onToggleReaction={handleToggleReaction}
                 canManageItem={canUserManageItem}
                 defaultExpanded
               />
@@ -936,6 +1033,7 @@ function EventDetails() {
                 dietaryIcons={dietaryIcons}
                 onEditItem={handleEditItem}
                 onDeleteItem={openDeleteModalForItem}
+                onToggleReaction={handleToggleReaction}
                 canManageItem={canUserManageItem}
                 defaultExpanded
               />
