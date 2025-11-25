@@ -1,7 +1,7 @@
 export default function CookingLoader() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center">
-      <style jsx>{`
+      <style>{`
         @keyframes cooking {
           0% {
             transform: rotate(0deg);
