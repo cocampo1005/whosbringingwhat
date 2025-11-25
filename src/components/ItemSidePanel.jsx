@@ -8,6 +8,8 @@ import AssigneeAvatar from "./AssigneeAvatar";
 import Tooltip from "./Tooltip";
 import { useUsers } from "../contexts/UsersContext";
 import ImageUpload from "./ImageUpload";
+import useEscapeKey from "../hooks/useEscapeKey";
+import UnsavedChangesPrompt from "./UnsavedChangesPrompt";
 
 function ItemSidePanel({
   closeModal,
@@ -45,6 +47,8 @@ function ItemSidePanel({
       !!(initialData?.onBehalfOfName && initialData.onBehalfOfName.trim()) ||
       !!initialData?.isOnBehalfOf,
   });
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
 
   useEffect(() => {
     setAssigneeQuery(itemData.assignee || "");
@@ -94,6 +98,7 @@ function ItemSidePanel({
 
   // Handler when selecting from dropdown
   const handleSelectUser = (user) => {
+    setHasInteracted(true);
     setItemData((prev) => ({
       ...prev,
       assignee: user.name,
@@ -103,6 +108,7 @@ function ItemSidePanel({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setHasInteracted(true);
     if (name === "onBehalfOfName") {
       setItemData((prev) => ({ ...prev, onBehalfOfName: value }));
     } else {
@@ -111,6 +117,7 @@ function ItemSidePanel({
   };
 
   const handleToggleOnBehalfOf = () => {
+    setHasInteracted(true);
     setItemData((prev) => {
       const nextIsOnBehalfOf = !prev.isOnBehalfOf;
       return {
@@ -123,6 +130,7 @@ function ItemSidePanel({
   };
 
   const handleDietaryChange = (tag) => {
+    setHasInteracted(true);
     setItemData((prev) => {
       if (prev.dietary.includes(tag)) {
         // Remove the tag if already selected
@@ -166,8 +174,35 @@ function ItemSidePanel({
     closeModal();
   };
 
+  const requestClose = () => {
+    if (hasInteracted) {
+      setShowUnsavedPrompt(true);
+    } else {
+      closeModal();
+    }
+  };
+
+  useEscapeKey(
+    () => {
+      if (showUnsavedPrompt) {
+        setShowUnsavedPrompt(false);
+        return;
+      }
+      requestClose();
+    },
+    true,
+  );
+
+  const handleBackdropClick = (e) => {
+    if (e.target !== e.currentTarget) return;
+    requestClose();
+  };
+
   return (
-    <div className="fixed inset-0 z-40 flex items-stretch justify-center md:justify-end bg-gray-500 bg-opacity-50">
+    <div
+      className="fixed inset-0 z-40 flex items-stretch justify-center md:justify-end bg-gray-500 bg-opacity-50"
+      onClick={handleBackdropClick}
+    >
       <div className="relative flex h-full w-full max-w-full md:max-w-md flex-col overflow-hidden bg-yellow-50 shadow-lg">
         <div className="flex items-center justify-center bg-primaryRed px-4 py-3">
           <h2 className="text-center text-lg font-semibold text-white">
@@ -175,7 +210,7 @@ function ItemSidePanel({
           </h2>
           <IoClose
             className="absolute right-4 top-3 cursor-pointer text-2xl text-white"
-            onClick={closeModal}
+            onClick={requestClose}
           />
         </div>
         <div className="flex-1 overflow-y-auto p-6">
@@ -213,6 +248,7 @@ function ItemSidePanel({
                   name="assignee"
                   value={assigneeQuery}
                   onChange={(e) => {
+                    setHasInteracted(true);
                     const value = e.target.value;
                     setAssigneeQuery(value);
                     setShowSuggestions(true);
@@ -260,6 +296,7 @@ function ItemSidePanel({
                       <li
                         key={u.id}
                         onClick={() => {
+                          setHasInteracted(true);
                           setItemData((prev) => ({
                             ...prev,
                             assignee: u.name,
@@ -377,9 +414,10 @@ function ItemSidePanel({
               <ImageUpload
                 label="Photo"
                 imageUrl={itemData.imageUrl}
-                onImageChange={(url) =>
-                  setItemData((prev) => ({ ...prev, imageUrl: url }))
-                }
+                onImageChange={(url) => {
+                  setHasInteracted(true);
+                  setItemData((prev) => ({ ...prev, imageUrl: url }));
+                }}
                 storageFolder="item-images"
                 objectId={itemData.id}
                 imageAlt="Item preview"
@@ -428,6 +466,16 @@ function ItemSidePanel({
           </form>
         </div>
       </div>
+      <UnsavedChangesPrompt
+        isOpen={showUnsavedPrompt}
+        title="Discard changes?"
+        description="You have unsaved changes for this item. Are you sure you want to close without saving?"
+        onCancel={() => setShowUnsavedPrompt(false)}
+        onConfirm={() => {
+          setShowUnsavedPrompt(false);
+          closeModal();
+        }}
+      />
     </div>
   );
 }
