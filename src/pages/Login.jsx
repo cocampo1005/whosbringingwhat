@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import logo from "../assets/logoBorderless.png";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
@@ -10,8 +10,8 @@ import {
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { useAuth } from "../contexts/AuthContext";
 import ForgotPasswordModal from "../components/ForgotPasswordModal";
+import CookingLoader from "../components/CookingLoader";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,11 +21,13 @@ export default function Login() {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [redirectHome, setRedirectHome] = useState(false);
   const [isForgotPasswordModalOpen, setForgotPasswordModalOpen] =
     useState(false);
-  const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const redirectTo = searchParams.get("redirect") || "/events";
+  const search = location.search || "";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,12 +37,11 @@ export default function Login() {
     }));
 
     // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+      submit: "",
+    }));
   };
 
   const validateForm = () => {
@@ -78,7 +79,8 @@ export default function Login() {
       // Get the user from Firebase
       const user = userCredential.user;
 
-      setRedirectHome(true);
+      // Go to redirect target or default events page
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       const errorCode = error.code;
       const errorMessage = error.message;
@@ -95,7 +97,20 @@ export default function Login() {
         case "auth/invalid-credential":
           setErrors((prev) => ({
             ...prev,
-            password: "Password or email are incorrect",
+            submit: "Incorrect email or password. Please try again.",
+          }));
+          break;
+        case "auth/wrong-password":
+          setErrors((prev) => ({
+            ...prev,
+            password: "Incorrect password",
+          }));
+          break;
+        case "auth/too-many-requests":
+          setErrors((prev) => ({
+            ...prev,
+            submit:
+              "Too many unsuccessful login attempts. Please try again later.",
           }));
           break;
         default:
@@ -109,9 +124,10 @@ export default function Login() {
   };
 
   const provider = new GoogleAuthProvider();
-  const handleGoogleAuth = async (e) => {
+  const handleGoogleAuth = async () => {
     try {
       setLoading(true);
+
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
@@ -120,18 +136,27 @@ export default function Login() {
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        // If the document doesn't exist, create it with the user data
+        // If the document does not exist, create it with the user data
         await setDoc(userDocRef, {
-          name: user.displayName || "New User",
-          email: user.email,
-          avatar: user.photoURL || "",
+          name: user.displayName || null,
+          displayName: user.displayName || null,
+          email: user.email || null,
+          avatar: user.photoURL || null,
+          photoURL: user.photoURL || null,
           dietaryRestrictions: [],
           contributions: {},
           createdAt: new Date(),
         });
       }
 
-      setRedirectHome(true);
+      // Full reload to avoid auth race conditions on first Google sign-in
+      const targetPath = redirectTo || "/events";
+      const targetUrl =
+        targetPath.startsWith("http") || targetPath.startsWith("/")
+          ? targetPath
+          : `/${targetPath}`;
+
+      window.location.assign(targetUrl);
     } catch (error) {
       setLoading(false);
       console.error("Error during Google sign-in:", error.message);
@@ -142,20 +167,10 @@ export default function Login() {
     setForgotPasswordModalOpen(true);
   };
 
-  useEffect(() => {
-    if (redirectHome && currentUser) {
-      navigate("/");
-      setLoading(false);
-    }
-  });
-
   if (loading) {
     return (
       <div className="flex h-screen flex-col items-center justify-center text-center">
-        <div className="mb-4 h-16 w-16 animate-spin rounded-full border-t-4 border-primaryRed"></div>
-        <p className="text-lg font-medium text-primaryDark">
-          Logging you in, please wait...
-        </p>
+        <CookingLoader />
       </div>
     );
   }
@@ -179,9 +194,9 @@ export default function Login() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm/6 text-primaryDark"
+                className="block text-sm/6 font-medium text-primaryDark"
               >
-                Email
+                Email address
               </label>
               <div className="mt-2">
                 <input
@@ -191,9 +206,17 @@ export default function Login() {
                   autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="block w-full rounded-lg border-0 py-1.5 text-primaryDark shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primaryRed sm:text-sm/6"
+                  className={`block w-full rounded-md border-0 px-3 py-1.5 text-base text-primaryDark shadow-sm ring-1 ring-inset focus:outline-none focus:ring-primaryRed sm:text-sm/6 ${
+                    errors.email
+                      ? "ring-secondaryRed"
+                      : "ring-primaryDark/10 focus:ring-primaryRed"
+                  }`}
                 />
-                {errors.email && <p className="text-red-500">{errors.email}</p>}
+                {errors.email && (
+                  <p className="mt-2 text-sm text-secondaryRed">
+                    {errors.email}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -201,19 +224,20 @@ export default function Login() {
               <div className="flex items-center justify-between">
                 <label
                   htmlFor="password"
-                  className="block text-sm/6 text-primaryDark"
+                  className="block text-sm/6 font-medium text-primaryDark"
                 >
                   Password
                 </label>
-                <p
+                <button
+                  type="button"
                   onClick={handleResetPassword}
-                  className="cursor-pointer text-xs font-bold text-primaryRed"
+                  className="text-sm font-semibold text-primaryRed hover:text-secondaryRed"
                 >
-                  Forgot Password?
-                </p>
+                  Forgot password?
+                </button>
               </div>
-              <div>
-                <div className="relative mt-2">
+              <div className="mt-2">
+                <div className="relative">
                   <input
                     id="password"
                     name="password"
@@ -221,39 +245,48 @@ export default function Login() {
                     autoComplete="current-password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="block w-full rounded-lg border-0 py-1.5 pr-10 text-primaryDark shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primaryRed sm:text-sm/6"
+                    className={`block w-full rounded-md border-0 px-3 py-1.5 text-base text-primaryDark shadow-sm ring-1 ring-inset focus:outline-none focus:ring-primaryRed sm:text-sm/6 ${
+                      errors.password
+                        ? "ring-secondaryRed"
+                        : "ring-primaryDark/10 focus:ring-primaryRed"
+                    }`}
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-primaryDark"
                   >
-                    {showPassword ? (
-                      <FaRegEyeSlash className="h-5 w-5 text-gray-500" />
-                    ) : (
-                      <FaRegEye className="h-5 w-5 text-gray-500" />
-                    )}
+                    {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-red-500">{errors.password}</p>
+                  <p className="mt-2 text-sm text-secondaryRed">
+                    {errors.password}
+                  </p>
                 )}
               </div>
             </div>
 
+            {errors.submit && (
+              <div className="rounded-md bg-secondaryRed/10 p-3 text-sm text-secondaryRed">
+                {errors.submit}
+              </div>
+            )}
+
             <div>
               <button
                 type="submit"
-                className="flex w-full justify-center rounded-lg bg-primaryRed px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-secondaryRed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaryRed"
+                className="flex w-full justify-center rounded-md bg-primaryRed px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-secondaryRed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaryRed"
               >
                 Login
               </button>
               <p className="p-2 text-center">or</p>
             </div>
           </form>
+
           <button
             onClick={handleGoogleAuth}
-            className="flex w-full items-center justify-center rounded-lg bg-white px-3 py-1.5 text-sm/6 font-semibold text-primaryDark shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaryRed"
+            className="mt-2 flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-primaryDark shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaryRed"
           >
             <FcGoogle className="mr-3" />
             Login with Google
@@ -262,7 +295,7 @@ export default function Login() {
           <p className="mt-10 text-center text-sm/6 text-gray-500">
             Not a member?{" "}
             <Link
-              to={"/signup"}
+              to={`/signup${search}`}
               className="font-semibold text-primaryRed hover:text-secondaryRed"
             >
               Register now

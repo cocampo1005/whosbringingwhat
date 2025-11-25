@@ -162,7 +162,7 @@ function CategoryList({
                               e.stopPropagation();
                               onEditItem?.(item);
                             }}
-                            className="rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed"
+                            className="rounded-full bg-black/10 p-2 text-white hover:bg-black/20"
                           >
                             <FiEdit />
                           </button>

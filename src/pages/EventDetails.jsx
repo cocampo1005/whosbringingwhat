@@ -41,6 +41,7 @@ import PieChart from "../components/PieChart";
 import CategoryList from "../components/CategoryList";
 import JoinEventPromptModal from "../components/JoinEventPromptModal";
 import { deleteAllEventItemImages } from "../utils/storageCleanup";
+import CookingLoader from "../components/CookingLoader";
 
 function EventDetails() {
   const { eventId } = useParams();
@@ -504,10 +505,7 @@ function EventDetails() {
   if (!event) {
     return (
       <div className="flex h-screen flex-col items-center justify-center text-center">
-        <div className="mb-4 h-16 w-16 animate-spin rounded-full border-t-4 border-primaryRed"></div>
-        <p className="text-lg font-medium text-primaryDark">
-          Loading event, please wait...
-        </p>
+        <CookingLoader />
       </div>
     );
   }

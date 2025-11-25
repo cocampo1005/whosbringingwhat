@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -10,6 +10,7 @@ import {
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import logo from "../assets/logoBorderless.png";
+import CookingLoader from "../components/CookingLoader";
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
@@ -19,7 +20,12 @@ export default function Signup() {
     password: "",
   });
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const redirectTo = searchParams.get("redirect") || "/events";
+  const search = location.search || "";
 
   // Email validation regex
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -32,12 +38,11 @@ export default function Signup() {
     }));
 
     // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+      submit: "",
+    }));
   };
 
   const validateForm = () => {
@@ -75,17 +80,17 @@ export default function Signup() {
     }
 
     try {
-      // Create user in Firebase Authentication
+      setLoading(true);
+      // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
         formData.password,
       );
 
-      // Get the user
       const user = userCredential.user;
 
-      // Create a document in Firestore with additional user info
+      // Create user document in Firestore
       await setDoc(doc(db, "users", user.uid), {
         avatar: "",
         name: formData.name,
@@ -95,14 +100,14 @@ export default function Signup() {
         createdAt: new Date(),
       });
 
-      // Redirect to dashboard or home page
-      navigate("/");
+      // Go to redirect target or default events page
+      navigate(redirectTo, { replace: true });
     } catch (error) {
+      setLoading(false);
       // Handle Firebase errors
       const errorCode = error.code;
       const errorMessage = error.message;
 
-      // Map Firebase error codes to user-friendly messages
       switch (errorCode) {
         case "auth/email-already-in-use":
           setErrors((prev) => ({
@@ -127,34 +132,49 @@ export default function Signup() {
   };
 
   const provider = new GoogleAuthProvider();
-  const handleGoogleAuth = async (e) => {
+  const handleGoogleAuth = async () => {
     try {
+      setLoading(true);
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Check if the user document exists in Firestore
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        // If the document doesn't exist, create it with the user data
         await setDoc(userDocRef, {
-          name: user.displayName || "New User",
-          email: user.email,
-          avatar: user.photoURL || "",
+          name: user.displayName || null,
+          displayName: user.displayName || null,
+          email: user.email || null,
+          avatar: user.photoURL || null,
+          photoURL: user.photoURL || null,
           dietaryRestrictions: [],
           contributions: {},
           createdAt: new Date(),
         });
       }
 
-      console.log("User Info: ", user);
+      // Full reload to avoid auth race conditions on first Google sign-up
+      const targetPath = redirectTo || "/events";
+      const targetUrl =
+        targetPath.startsWith("http") || targetPath.startsWith("/")
+          ? targetPath
+          : `/${targetPath}`;
 
-      navigate("/");
+      window.location.assign(targetUrl);
     } catch (error) {
+      setLoading(false);
       console.error("Error during Google sign-in:", error.message);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center text-center">
+        <CookingLoader />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -178,7 +198,7 @@ export default function Signup() {
                   htmlFor="name"
                   className="block text-sm/6 font-medium text-primaryDark"
                 >
-                  Full Name
+                  Full name
                 </label>
               </div>
               <div className="mt-2">
@@ -186,36 +206,50 @@ export default function Signup() {
                   id="name"
                   name="name"
                   type="text"
+                  autoComplete="name"
                   value={formData.name}
                   onChange={handleChange}
-                  autoComplete="name"
-                  className={`${errors.name ? "ring-red-500" : "ring-gray-300"} focus:ring-inset sm:text-sm/6`}
+                  className={`block w-full rounded-md border-0 px-3 py-1.5 text-base text-primaryDark shadow-sm ring-1 ring-inset focus:outline-none focus:ring-primaryRed sm:text-sm/6 ${
+                    errors.name
+                      ? "ring-secondaryRed"
+                      : "ring-primaryDark/10 focus:ring-primaryRed"
+                  }`}
                 />
                 {errors.name && (
-                  <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+                  <p className="mt-2 text-sm text-secondaryRed">
+                    {errors.name}
+                  </p>
                 )}
               </div>
             </div>
 
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm/6 font-medium text-primaryDark"
-              >
-                Email
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="email"
+                  className="block text-sm/6 font-medium text-primaryDark"
+                >
+                  Email address
+                </label>
+              </div>
               <div className="mt-2">
                 <input
                   id="email"
                   name="email"
-                  type="text"
+                  type="email"
+                  autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
-                  autoComplete="email"
-                  className={`block w-full rounded-lg border-0 py-1.5 text-primaryDark shadow-sm ring-1 ring-inset focus:ring-primaryRed ${errors.email ? "ring-red-500" : "ring-gray-300"} placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm/6`}
+                  className={`block w-full rounded-md border-0 px-3 py-1.5 text-base text-primaryDark shadow-sm ring-1 ring-inset focus:outline-none focus:ring-primaryRed sm:text-sm/6 ${
+                    errors.email
+                      ? "ring-secondaryRed"
+                      : "ring-primaryDark/10 focus:ring-primaryRed"
+                  }`}
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+                  <p className="mt-2 text-sm text-secondaryRed">
+                    {errors.email}
+                  </p>
                 )}
               </div>
             </div>
@@ -229,45 +263,47 @@ export default function Signup() {
                   Password
                 </label>
               </div>
-              <div>
-                <div className="relative mt-2">
+              <div className="mt-2">
+                <div className="relative">
                   <input
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     value={formData.password}
                     onChange={handleChange}
-                    autoComplete="new-password"
-                    className={`block w-full rounded-lg border-0 py-1.5 pr-10 text-primaryDark shadow-sm ring-1 ring-inset focus:ring-primaryRed ${errors.password ? "ring-red-500" : "ring-gray-300"} placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm/6`}
+                    className={`block w-full rounded-md border-0 px-3 py-1.5 text-base text-primaryDark shadow-sm ring-1 ring-inset focus:outline-none focus:ring-primaryRed sm:text-sm/6 ${
+                      errors.password
+                        ? "ring-secondaryRed"
+                        : "ring-primaryDark/10 focus:ring-primaryRed"
+                    }`}
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-primaryDark"
                   >
-                    {showPassword ? (
-                      <FaRegEyeSlash className="h-5 w-5 text-gray-500" />
-                    ) : (
-                      <FaRegEye className="h-5 w-5 text-gray-500" />
-                    )}
+                    {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+                  <p className="mt-2 text-sm text-secondaryRed">
+                    {errors.password}
+                  </p>
                 )}
               </div>
             </div>
 
             {errors.submit && (
-              <div className="text-center text-sm text-red-500">
+              <div className="rounded-md bg-secondaryRed/10 p-3 text-sm text-secondaryRed">
                 {errors.submit}
               </div>
             )}
 
-            <div className="flex flex-col">
+            <div>
               <button
                 type="submit"
-                className="flex w-full justify-center rounded-lg bg-primaryRed px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-secondaryRed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaryRed"
+                className="flex w-full justify-center rounded-md bg-primaryRed px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-secondaryRed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaryRed"
               >
                 Sign Up
               </button>
@@ -276,7 +312,7 @@ export default function Signup() {
           </form>
           <button
             onClick={handleGoogleAuth}
-            className="flex w-full items-center justify-center rounded-lg bg-white px-3 py-1.5 text-sm/6 font-semibold text-primaryDark shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaryRed"
+            className="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-primaryDark shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaryRed"
           >
             <FcGoogle className="mr-3" />
             Sign Up with Google
@@ -285,7 +321,7 @@ export default function Signup() {
           <p className="mt-10 text-center text-sm/6 text-gray-500">
             Already a member?{" "}
             <Link
-              to={"/login"}
+              to={`/login${search}`}
               className="font-semibold text-primaryRed hover:text-secondaryRed"
             >
               Login

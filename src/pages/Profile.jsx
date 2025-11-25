@@ -135,37 +135,52 @@ export default function Profile() {
 
     if (!confirmation) return;
 
-    const password = prompt(
-      "Please enter your current password to confirm account deletion:",
-    );
-    if (!password) return;
+    let password = null;
+
+    if (isGoogleUser) {
+      // Google-linked accounts: confirm by typing "delete" instead of password
+      const typed = prompt(
+        'To confirm account deletion, please type "delete" (without quotes):',
+      );
+
+      if (!typed || typed.trim().toLowerCase() !== "delete") {
+        alert("Account deletion cancelled.");
+        return;
+      }
+    } else {
+      // Email/password accounts: require current password
+      password = prompt(
+        "Please enter your current password to confirm account deletion:",
+      );
+      if (!password) return;
+    }
 
     try {
-      // Get the current user from auth
       const user = auth.currentUser;
       if (!user) {
         alert("No user is currently signed in.");
         return;
       }
 
-      // Create credential for reauthentication
-      const credential = EmailAuthProvider.credential(user.email, password);
-
-      // Re-authenticate the user
-      await reauthenticateWithCredential(user, credential);
+      // Only email/password accounts need credential-based reauth here
+      if (!isGoogleUser) {
+        const credential = EmailAuthProvider.credential(user.email, password);
+        await reauthenticateWithCredential(user, credential);
+      }
 
       // Delete user document from Firestore first
       await deleteDoc(doc(db, "users", user.uid));
 
-      // Delete the user account
+      // Then delete the auth user
       await deleteUser(user);
 
       console.log("Account deleted successfully");
+      alert("Your account has been deleted.");
     } catch (error) {
       console.error("Error deleting account: ", error);
 
-      // Provide more specific error messages
-      if (error.code === "auth/wrong-password") {
+      // Password-specific errors only apply to non-Google users
+      if (!isGoogleUser && error.code === "auth/wrong-password") {
         alert("Incorrect password. Please try again.");
       } else if (error.code === "auth/too-many-requests") {
         alert("Too many failed attempts. Please try again later.");
