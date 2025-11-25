@@ -4,7 +4,7 @@ import AssigneeAvatar from "./AssigneeAvatar";
 
 const ALL_FILTER = "__all__";
 
-function ReactionsModal({
+function ReactionsModalDesktop({
   isOpen,
   onClose,
   reactionEntries,
@@ -39,18 +39,12 @@ function ReactionsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center sm:items-center">
+    <div className="fixed inset-0 z-40 flex items-center justify-center">
       <div
         className="absolute inset-0 bg-black/40"
         onClick={onClose}
       />
-      <div className="relative z-50 w-full max-w-sm mx-2 rounded-t-2xl border border-white/40 bg-white/40 bg-clip-padding px-4 pt-2 pb-4 shadow-2xl backdrop-blur-xl sm:mx-0 sm:w-auto sm:max-w-md sm:rounded-2xl sm:p-4">
-        {/* Drag handle bar (mobile bottom sheet only) */}
-        <div className="mb-4 flex justify-center sm:hidden">
-          <div className="h-1.5 w-10 rounded-full bg-gray-400/80" />
-        </div>
-
-        {/* Tabs */}
+      <div className="relative z-50 w-full max-w-xs rounded-2xl border border-white/40 bg-white/40 bg-clip-padding px-4 pt-3 pb-4 shadow-2xl backdrop-blur-xl sm:max-w-sm">
         <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1">
           <button
             type="button"
@@ -100,7 +94,6 @@ function ReactionsModal({
           })}
         </div>
 
-        {/* List */}
         <div className="max-h-64 divide-y divide-gray-200 overflow-y-auto">
           {rowsToShow.length === 0 ? (
             <div className="py-4 text-center text-xs text-gray-500">
@@ -157,4 +150,4 @@ function ReactionsModal({
   );
 }
 
-export default ReactionsModal;
+export default ReactionsModalDesktop;

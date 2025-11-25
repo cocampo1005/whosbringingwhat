@@ -4,6 +4,8 @@ import Calendar from "react-calendar";
 import "../styles/Calendar.css";
 import { useAuth } from "../contexts/AuthContext";
 import ImageUpload from "./ImageUpload";
+import useEscapeKey from "../hooks/useEscapeKey";
+import UnsavedChangesPrompt from "./UnsavedChangesPrompt";
 
 export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   const { currentUser } = useAuth();
@@ -29,6 +31,8 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
     bannerColor: initialData.bannerColor || "",
   });
 
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const isFormValid =
@@ -55,12 +59,14 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
 
   // Handle calendar date selection
   const handleDateChange = (selectedDate) => {
+    setHasInteracted(true);
     setEventData((prev) => ({ ...prev, date: selectedDate }));
   };
 
   // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setHasInteracted(true);
     setEventData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -83,8 +89,35 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
     closeModal();
   };
 
+  const requestClose = () => {
+    if (hasInteracted) {
+      setShowUnsavedPrompt(true);
+    } else {
+      closeModal();
+    }
+  };
+
+  useEscapeKey(
+    () => {
+      if (showUnsavedPrompt) {
+        setShowUnsavedPrompt(false);
+        return;
+      }
+      requestClose();
+    },
+    true,
+  );
+
+  const handleBackdropClick = (e) => {
+    if (e.target !== e.currentTarget) return;
+    requestClose();
+  };
+
   return (
-    <div className="fixed inset-0 z-40 flex items-stretch justify-center md:justify-end bg-gray-500 bg-opacity-50">
+    <div
+      className="fixed inset-0 z-40 flex items-stretch justify-center md:justify-end bg-gray-500 bg-opacity-50"
+      onClick={handleBackdropClick}
+    >
       <div className="relative flex h-full w-full max-w-full md:max-w-md flex-col overflow-hidden bg-yellow-50 shadow-lg">
         <div className="flex items-center justify-center bg-primaryRed px-4 py-3">
           <h2 className="text-center text-lg font-semibold text-white">
@@ -92,7 +125,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           </h2>
           <IoClose
             className="absolute right-4 top-3 cursor-pointer text-2xl text-white"
-            onClick={closeModal}
+            onClick={requestClose}
           />
         </div>
         <div className="flex-1 overflow-y-auto px-4 pb-4 pt-4">
@@ -124,9 +157,10 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
             <ImageUpload
               label="Add Event Photo"
               imageUrl={eventData.imageUrl}
-              onImageChange={(url) =>
-                setEventData((prev) => ({ ...prev, imageUrl: url }))
-              }
+              onImageChange={(url) => {
+                setHasInteracted(true);
+                setEventData((prev) => ({ ...prev, imageUrl: url }));
+              }}
               storageFolder="event-images"
               objectId={initialData.id || eventData.createdById || currentUser?.uid || "event"}
               imageAlt="Event photo preview"
@@ -187,6 +221,16 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
         </form>
         </div>
       </div>
+      <UnsavedChangesPrompt
+        isOpen={showUnsavedPrompt}
+        title="Discard changes?"
+        description="You have unsaved changes for this event. Are you sure you want to close without saving?"
+        onCancel={() => setShowUnsavedPrompt(false)}
+        onConfirm={() => {
+          setShowUnsavedPrompt(false);
+          closeModal();
+        }}
+      />
     </div>
   );
 }

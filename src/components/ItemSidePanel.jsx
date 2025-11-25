@@ -8,6 +8,8 @@ import AssigneeAvatar from "./AssigneeAvatar";
 import Tooltip from "./Tooltip";
 import { useUsers } from "../contexts/UsersContext";
 import ImageUpload from "./ImageUpload";
+import useEscapeKey from "../hooks/useEscapeKey";
+import UnsavedChangesPrompt from "./UnsavedChangesPrompt";
 
 function ItemSidePanel({
   closeModal,
@@ -45,16 +47,31 @@ function ItemSidePanel({
       !!(initialData?.onBehalfOfName && initialData.onBehalfOfName.trim()) ||
       !!initialData?.isOnBehalfOf,
   });
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
+
+  useEffect(() => {
+    setAssigneeQuery(itemData.assignee || "");
+  }, [itemData.assignee]);
 
   const isOnBehalfValid =
     !itemData.isOnBehalfOf ||
     (itemData.onBehalfOfName || "").trim() !== "";
 
+  const hasValidAssigneeId =
+    !itemData.isOnBehalfOf ? !!itemData.assigneeId : true;
+
   const isFormValid =
     (itemData.title || "").trim() !== "" &&
     (itemData.assignee || "").trim() !== "" &&
     !!itemData.category &&
-    isOnBehalfValid;
+    isOnBehalfValid &&
+    hasValidAssigneeId;
+
+  const shouldShowAssigneeError =
+    !itemData.isOnBehalfOf &&
+    assigneeQuery.trim() !== "" &&
+    !itemData.assigneeId;
 
   const dietaryOptions = [
     { label: "Vegetarian", value: "vegetarian" },
@@ -70,8 +87,6 @@ function ItemSidePanel({
     { label: "Spicy", value: "spicy" },
   ];
 
-  const normalize = (s = "") => s.trim().toLowerCase().replace(/\s+/g, " ");
-
   // Fetch users once
   // useEffect(() => {
   //   const fetchUsers = async () => {
@@ -83,6 +98,7 @@ function ItemSidePanel({
 
   // Handler when selecting from dropdown
   const handleSelectUser = (user) => {
+    setHasInteracted(true);
     setItemData((prev) => ({
       ...prev,
       assignee: user.name,
@@ -92,24 +108,8 @@ function ItemSidePanel({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "assignee") {
-      // Check if input is cleared (empty string), then clear avatar and ID
-      if (value.trim() === "") {
-        setItemData((prev) => ({
-          ...prev,
-          assignee: "",
-          assigneeId: null,
-          avatar: "",
-        }));
-      } else {
-        setItemData((prev) => ({
-          ...prev,
-          assignee: value,
-          assigneeId: null,
-          avatar: "", // also reset avatar when typing a new name
-        }));
-      }
-    } else if (name === "onBehalfOfName") {
+    setHasInteracted(true);
+    if (name === "onBehalfOfName") {
       setItemData((prev) => ({ ...prev, onBehalfOfName: value }));
     } else {
       setItemData((prev) => ({ ...prev, [name]: value }));
@@ -117,6 +117,7 @@ function ItemSidePanel({
   };
 
   const handleToggleOnBehalfOf = () => {
+    setHasInteracted(true);
     setItemData((prev) => {
       const nextIsOnBehalfOf = !prev.isOnBehalfOf;
       return {
@@ -129,6 +130,7 @@ function ItemSidePanel({
   };
 
   const handleDietaryChange = (tag) => {
+    setHasInteracted(true);
     setItemData((prev) => {
       if (prev.dietary.includes(tag)) {
         // Remove the tag if already selected
@@ -144,19 +146,14 @@ function ItemSidePanel({
     e.preventDefault();
 
     const meUid = currentUser?.uid || null;
-    const meName = normalize(currentUser?.name || "");
-    const assigneeIsMe = normalize(itemData.assignee) === meName;
-
-    // If your combo dropdown set a UID, trust it.
-    // Otherwise, set UID only when the assignee text equals my display name.
-    const resolvedAssigneeId =
-      itemData.assigneeId ?? (assigneeIsMe ? meUid : null);
 
     const rawOnBehalfName = itemData.isOnBehalfOf
       ? (itemData.onBehalfOfName || "").trim()
       : "";
     const onBehalfOfName = rawOnBehalfName || null;
     const isOnBehalfOf = !!onBehalfOfName;
+
+    const resolvedAssigneeId = itemData.assigneeId ?? null;
 
     const payload = {
       ...itemData,
@@ -177,8 +174,35 @@ function ItemSidePanel({
     closeModal();
   };
 
+  const requestClose = () => {
+    if (hasInteracted) {
+      setShowUnsavedPrompt(true);
+    } else {
+      closeModal();
+    }
+  };
+
+  useEscapeKey(
+    () => {
+      if (showUnsavedPrompt) {
+        setShowUnsavedPrompt(false);
+        return;
+      }
+      requestClose();
+    },
+    true,
+  );
+
+  const handleBackdropClick = (e) => {
+    if (e.target !== e.currentTarget) return;
+    requestClose();
+  };
+
   return (
-    <div className="fixed inset-0 z-40 flex items-stretch justify-center md:justify-end bg-gray-500 bg-opacity-50">
+    <div
+      className="fixed inset-0 z-40 flex items-stretch justify-center md:justify-end bg-gray-500 bg-opacity-50"
+      onClick={handleBackdropClick}
+    >
       <div className="relative flex h-full w-full max-w-full md:max-w-md flex-col overflow-hidden bg-yellow-50 shadow-lg">
         <div className="flex items-center justify-center bg-primaryRed px-4 py-3">
           <h2 className="text-center text-lg font-semibold text-white">
@@ -186,7 +210,7 @@ function ItemSidePanel({
           </h2>
           <IoClose
             className="absolute right-4 top-3 cursor-pointer text-2xl text-white"
-            onClick={closeModal}
+            onClick={requestClose}
           />
         </div>
         <div className="flex-1 overflow-y-auto p-6">
@@ -222,14 +246,23 @@ function ItemSidePanel({
                 <input
                   type="text"
                   name="assignee"
-                  value={itemData.assignee}
+                  value={assigneeQuery}
                   onChange={(e) => {
-                    handleChange(e);
-                    setAssigneeQuery(e.target.value);
+                    setHasInteracted(true);
+                    const value = e.target.value;
+                    setAssigneeQuery(value);
                     setShowSuggestions(true);
+
+                    if (value.trim() === "") {
+                      setItemData((prev) => ({
+                        ...prev,
+                        assignee: "",
+                        assigneeId: null,
+                      }));
+                    }
                   }}
                   className={`flex-1 border-0 bg-white p-2 pl-2 focus:ring-0 ${itemData.isOnBehalfOf ? "cursor-not-allowed bg-gray-100 text-gray-500" : ""}`}
-                  placeholder="Type a name..."
+                  placeholder="Search for a name..."
                   disabled={itemData.isOnBehalfOf}
                   required
                 />
@@ -263,12 +296,13 @@ function ItemSidePanel({
                       <li
                         key={u.id}
                         onClick={() => {
+                          setHasInteracted(true);
                           setItemData((prev) => ({
                             ...prev,
                             assignee: u.name,
                             assigneeId: u.id,
                           }));
-                          setAssigneeQuery("");
+                          setAssigneeQuery(u.name);
                           setShowSuggestions(false);
                         }}
                         className="cursor-pointer px-3 py-2 hover:bg-gray-100"
@@ -283,6 +317,12 @@ function ItemSidePanel({
                       </li>
                     ))}
                 </ul>
+              )}
+
+              {shouldShowAssigneeError && (
+                <p className="mt-1 text-xs text-red-600">
+                  Can't find who's bringing it, use "On behalf of someone else" instead.
+                </p>
               )}
 
               <div className="mt-3 flex flex-col gap-2">
@@ -374,9 +414,10 @@ function ItemSidePanel({
               <ImageUpload
                 label="Photo"
                 imageUrl={itemData.imageUrl}
-                onImageChange={(url) =>
-                  setItemData((prev) => ({ ...prev, imageUrl: url }))
-                }
+                onImageChange={(url) => {
+                  setHasInteracted(true);
+                  setItemData((prev) => ({ ...prev, imageUrl: url }));
+                }}
                 storageFolder="item-images"
                 objectId={itemData.id}
                 imageAlt="Item preview"
@@ -425,6 +466,16 @@ function ItemSidePanel({
           </form>
         </div>
       </div>
+      <UnsavedChangesPrompt
+        isOpen={showUnsavedPrompt}
+        title="Discard changes?"
+        description="You have unsaved changes for this item. Are you sure you want to close without saving?"
+        onCancel={() => setShowUnsavedPrompt(false)}
+        onConfirm={() => {
+          setShowUnsavedPrompt(false);
+          closeModal();
+        }}
+      />
     </div>
   );
 }
