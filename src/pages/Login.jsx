@@ -8,8 +8,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
 } from "firebase/auth";
-import { auth, db } from "../firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth } from "../firebase";
 import ForgotPasswordModal from "../components/ForgotPasswordModal";
 import CookingLoader from "../components/CookingLoader";
 
@@ -130,23 +129,12 @@ export default function Login() {
 
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
+      console.log("[GoogleAuth][Login] signInWithPopup success", user?.uid);
 
       // Check if the user document exists in Firestore
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
 
-      if (!userDoc.exists()) {
+      if (user) {
         // If the document does not exist, create it with the user data
-        await setDoc(userDocRef, {
-          name: user.displayName || null,
-          displayName: user.displayName || null,
-          email: user.email || null,
-          avatar: user.photoURL || null,
-          photoURL: user.photoURL || null,
-          dietaryRestrictions: [],
-          contributions: {},
-          createdAt: new Date(),
-        });
       }
 
       // Full reload to avoid auth race conditions on first Google sign-in
@@ -159,7 +147,11 @@ export default function Login() {
       window.location.assign(targetUrl);
     } catch (error) {
       setLoading(false);
-      console.error("Error during Google sign-in:", error.message);
+      console.error(
+        "Error during Google sign-in:",
+        error.code,
+        error.message,
+      );
     }
   };
 

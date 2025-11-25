@@ -7,7 +7,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import logo from "../assets/logoBorderless.png";
 import CookingLoader from "../components/CookingLoader";
@@ -137,22 +137,7 @@ export default function Signup() {
       setLoading(true);
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        await setDoc(userDocRef, {
-          name: user.displayName || null,
-          displayName: user.displayName || null,
-          email: user.email || null,
-          avatar: user.photoURL || null,
-          photoURL: user.photoURL || null,
-          dietaryRestrictions: [],
-          contributions: {},
-          createdAt: new Date(),
-        });
-      }
+      console.log("[GoogleAuth][Signup] signInWithPopup success", user?.uid);
 
       // Full reload to avoid auth race conditions on first Google sign-up
       const targetPath = redirectTo || "/events";
@@ -164,7 +149,11 @@ export default function Signup() {
       window.location.assign(targetUrl);
     } catch (error) {
       setLoading(false);
-      console.error("Error during Google sign-in:", error.message);
+      console.error(
+        "Error during Google sign-in:",
+        error.code,
+        error.message,
+      );
     }
   };
 
