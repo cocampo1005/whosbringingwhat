@@ -76,8 +76,7 @@ service cloud.firestore {
 
       // Users can create/update their own doc, but only certain profile fields.
       // Custom role is mirrored here by Admin SDK; clients must NOT edit it.
-      allow create: if request.auth.uid == userId
-        && request.resource.data.keys().hasOnly(['name', 'avatar', 'displayName', 'photoURL', 'email', 'dietaryRestrictions', 'contributions', 'createdAt']);
+      allow create: if isSignedIn() && request.auth.uid == userId;
 
       allow update: if request.auth.uid == userId
         && changedKeysAreOnly(['name', 'avatar', 'displayName', 'photoURL', 'dietaryRestrictions', 'email']);
