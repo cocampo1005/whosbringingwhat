@@ -15,6 +15,7 @@ import EventCard from "../components/EventCard";
 import { useNavigate } from "react-router-dom";
 import { useRole } from "../hooks/useRole";
 import { pickRandomEventBannerColor } from "../constants/eventBannerColors";
+import CookingLoader from "../components/CookingLoader";
 
 export default function Events() {
   const { currentUser } = useAuth();
@@ -23,6 +24,7 @@ export default function Events() {
 
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [events, setEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
   const [tab, setTab] = useState("upcoming");
 
   const isSidePanelOpen = showAddEventModal;
@@ -88,13 +90,21 @@ export default function Events() {
   useEffect(() => {
     const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const eventsData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setEvents(eventsData);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const eventsData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setEvents(eventsData);
+        setLoadingEvents(false); // done loading, even if empty
+      },
+      (error) => {
+        console.error("Error fetching events: ", error);
+        setLoadingEvents(false); // avoid stuck loader on error
+      },
+    );
 
     return () => unsubscribe();
   }, []);
@@ -126,9 +136,7 @@ export default function Events() {
             ? "https://us-central1-whos-bringing-what.cloudfunctions.net/randomPotluckImage"
             : "/api/randomPotluckImage";
 
-          const response = await fetch(
-            `${baseUrl}?${params.toString()}`,
-          );
+          const response = await fetch(`${baseUrl}?${params.toString()}`);
 
           if (response.ok) {
             const data = await response.json();
@@ -213,7 +221,11 @@ export default function Events() {
       </div>
 
       {/* Content under the tabs */}
-      {hasEvents ? (
+      {loadingEvents ? (
+        <div className="flex justify-center py-8">
+          <CookingLoader />
+        </div>
+      ) : hasEvents ? (
         <EventCard events={displayedEvents} />
       ) : (
         <p className="text-center text-gray-600">
@@ -221,13 +233,6 @@ export default function Events() {
             ? "You do not have any upcoming events yet."
             : "You do not have any previous events yet."}
         </p>
-      )}
-
-      {showAddEventModal && (
-        <EventModal
-          closeModal={() => setShowAddEventModal(false)}
-          onSubmit={addEventToFirestore}
-        />
       )}
 
       <button
