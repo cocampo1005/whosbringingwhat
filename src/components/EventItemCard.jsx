@@ -7,7 +7,8 @@ import Picker from "@emoji-mart/react";
 import { useAuth } from "../contexts/AuthContext";
 import { useUsers } from "../contexts/UsersContext";
 import ReactionTooltip from "./ReactionTooltip";
-import ReactionsModal from "./ReactionsModal";
+import ReactionsModalMobile from "./ReactionsModal";
+import ReactionsModalDesktop from "./ReactionsModalDesktop";
 
 const CATEGORY_FOCUS_RING = {
   Main: "focus-visible:ring-rose-300",
@@ -48,6 +49,7 @@ function EventItemCard({
   const [showQuickBar, setShowQuickBar] = useState(false);
   const [showFullPicker, setShowFullPicker] = useState(false);
   const [showAllReactions, setShowAllReactions] = useState(false);
+  const [initialEmojiFilter, setInitialEmojiFilter] = useState(null);
   const [hoveredEmoji, setHoveredEmoji] = useState(null);
   const [canHover, setCanHover] = useState(true);
   const longPressTimerRef = useRef(null);
@@ -58,6 +60,7 @@ function EventItemCard({
 
   const quickBarRef = useRef(null);
   const reactionButtonRef = useRef(null);
+  const hideTooltipTimeoutRef = useRef(null);
 
   const quickEmojis = ["👍", "❤️", "😂", "😮", "😢", "🙏", "‼️"];
 
@@ -66,7 +69,15 @@ function EventItemCard({
 
   const reactionEntries = Object.entries(item.reactions || {})
     .filter(([, info]) => (info?.count ?? 0) > 0)
-    .sort(([a], [b]) => (a || "").localeCompare(b || ""));
+    .sort(([emojiA, infoA], [emojiB, infoB]) => {
+      const aOrder =
+        typeof infoA?.order === "number" ? infoA.order : 0;
+      const bOrder =
+        typeof infoB?.order === "number" ? infoB.order : 0;
+
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return (emojiA || "").localeCompare(emojiB || "");
+    });
 
   const MAX_VISIBLE_REACTIONS = 7;
   const visibleReactions = reactionEntries.slice(0, MAX_VISIBLE_REACTIONS);
@@ -124,6 +135,19 @@ function EventItemCard({
     longPressEmojiRef.current = null;
   };
 
+  const clearHideTooltipTimeout = () => {
+    if (hideTooltipTimeoutRef.current) {
+      clearTimeout(hideTooltipTimeoutRef.current);
+      hideTooltipTimeoutRef.current = null;
+    }
+  };
+
+  const openReactionsModalForEmoji = (emoji) => {
+    setInitialEmojiFilter(emoji || null);
+    setShowAllReactions(true);
+    setHoveredEmoji(null);
+  };
+
   const handleReactionPointerDown = (event, emoji) => {
     if (event.pointerType === "touch" || event.pointerType === "pen") {
       isTouchInteractionRef.current = true;
@@ -138,7 +162,7 @@ function EventItemCard({
       clearLongPressTimer();
       longPressEmojiRef.current = emoji;
       longPressTimerRef.current = setTimeout(() => {
-        setHoveredEmoji(emoji);
+        openReactionsModalForEmoji(emoji);
         suppressClickRef.current = true; // prevent toggle on long-press
         longPressTimerRef.current = null;
       }, LONG_PRESS_MS);
@@ -410,14 +434,45 @@ function EventItemCard({
       )}
 
       {showAllReactions && (
-        <ReactionsModal
-          isOpen={showAllReactions}
-          onClose={() => setShowAllReactions(false)}
-          reactionEntries={reactionEntries}
-          reactionRows={reactionRows}
-          currentUserId={currentUserId}
-          onToggleReaction={handleToggleReaction}
-        />
+        canHover ? (
+          <ReactionsModalDesktop
+            isOpen={showAllReactions}
+            onClose={() => {
+              setShowAllReactions(false);
+              setInitialEmojiFilter(null);
+            }}
+            reactionEntries={reactionEntries}
+            reactionRows={reactionRows}
+            currentUserId={currentUserId}
+            onToggleReaction={handleToggleReaction}
+            initialEmoji={initialEmojiFilter}
+            onOpenEmojiPicker={() => {
+              setShowAllReactions(false);
+              setInitialEmojiFilter(null);
+              setShowFullPicker(true);
+              setShowQuickBar(false);
+            }}
+          />
+        ) : (
+          <ReactionsModalMobile
+            isOpen={showAllReactions}
+            onClose={() => {
+              setShowAllReactions(false);
+              setInitialEmojiFilter(null);
+            }}
+            reactionEntries={reactionEntries}
+            reactionRows={reactionRows}
+            currentUserId={currentUserId}
+            onToggleReaction={handleToggleReaction}
+            initialEmoji={initialEmojiFilter}
+            onOpenEmojiPicker={() => {
+              setShowAllReactions(false);
+              setInitialEmojiFilter(null);
+              setShowFullPicker(true);
+              setShowQuickBar(false);
+            }}
+          />
+        )
       )}
 
       {/* Reactions chip cluster anchored near bottom border */}
@@ -450,17 +505,23 @@ function EventItemCard({
                 : info?.count ?? userIds.length ?? 0;
 
             let summary = "";
+            let othersCountForTooltip = 0;
             if (reactionUsersStatus === "loading" && userIds.length > 0) {
               summary = "Loading names...";
-            } else if (names.length === 1) {
-              summary = names[0];
-            } else if (names.length === 2) {
-              summary = `${names[0]} and ${names[1]}`;
-            } else if (names.length > 2) {
-              const others = names.length - 2;
-              summary = `${names[0]}, ${names[1]} and ${others} other${
-                others === 1 ? "" : "s"
-              }`;
+            } else if (names.length > 0) {
+              if (names.length <= 3) {
+                if (names.length === 1) {
+                  summary = names[0];
+                } else if (names.length === 2) {
+                  summary = `${names[0]} and ${names[1]}`;
+                } else {
+                  summary = `${names[0]}, ${names[1]} and ${names[2]}`;
+                }
+              } else {
+                const primary = names.slice(0, 3);
+                othersCountForTooltip = names.length - primary.length;
+                summary = `${primary[0]}, ${primary[1]}, ${primary[2]}`;
+              }
             }
 
             const reactionsLabel =
@@ -473,11 +534,16 @@ function EventItemCard({
                 className="relative"
                 onMouseEnter={() => {
                   if (!canHover) return;
+                  clearHideTooltipTimeout();
                   setHoveredEmoji(emoji);
                 }}
-                onMouseLeave={() =>
-                  setHoveredEmoji((prev) => (prev === emoji ? null : prev))
-                }
+                onMouseLeave={() => {
+                  if (!canHover) return;
+                  clearHideTooltipTimeout();
+                  hideTooltipTimeoutRef.current = setTimeout(() => {
+                    setHoveredEmoji((prev) => (prev === emoji ? null : prev));
+                  }, 120);
+                }}
                 onFocus={() => {
                   if (!canHover) return;
                   setHoveredEmoji(emoji);
@@ -509,11 +575,17 @@ function EventItemCard({
                   <span className="text-gray-700">{info?.count ?? 0}</span>
                 </button>
 
-                {isHovered && (
+                {canHover && !isTouchInteractionRef.current && isHovered && (
                   <ReactionTooltip
                     emoji={emoji}
                     label={reactionsLabel}
                     summary={summary}
+                    othersCount={othersCountForTooltip}
+                    onClickOthers={
+                      othersCountForTooltip > 0
+                        ? () => openReactionsModalForEmoji(emoji)
+                        : undefined
+                    }
                   />
                 )}
               </div>
@@ -526,6 +598,7 @@ function EventItemCard({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  setInitialEmojiFilter(null);
                   setShowAllReactions(true);
                 }}
                 className={`flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-xs shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 ${
@@ -546,23 +619,32 @@ function EventItemCard({
 
       {/* Full emoji picker overlay */}
       {showFullPicker && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center">
+        <div className="fixed inset-0 z-40">
           <div
             className="absolute inset-0 bg-black/40"
             onClick={handleCloseFullPicker}
           />
-          <div className="relative z-50 rounded-3xl border border-white/10 bg-gradient-to-b from-[#18252d] to-[#0b141a] p-2 shadow-2xl">
-            <Picker
-              data={data}
-              theme="dark"
-              navPosition="bottom"
-              previewPosition="none"
-              skinTonePosition="none"
-              onEmojiSelect={(emoji) => {
-                handleToggleReaction(emoji.native);
-                handleCloseFullPicker();
-              }}
-            />
+          <div className="flex h-full items-end justify-center sm:items-center md:pl-56">
+            <div className="relative z-50 w-full max-w-lg mx-2 rounded-t-3xl bg-[#0b141a] px-4 pt-3 pb-5 shadow-2xl sm:w-auto sm:max-w-none sm:mx-0 sm:bg-transparent sm:p-0 sm:rounded-none sm:shadow-none">
+              {/* Drag handle for mobile-style bottom sheet */}
+              <div className="mb-3 flex justify-center sm:hidden">
+                <div className="h-1.5 w-10 rounded-full bg-gray-500/80" />
+              </div>
+
+              <div className="max-h-[70vh] sm:max-h-[65vh] overflow-y-auto">
+                <Picker
+                  data={data}
+                  theme="dark"
+                  navPosition="bottom"
+                  previewPosition="none"
+                  skinTonePosition="none"
+                  onEmojiSelect={(emoji) => {
+                    handleToggleReaction(emoji.native);
+                    handleCloseFullPicker();
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -383,7 +383,7 @@ function EventDetails() {
         if (!item || item.id !== itemId) return item;
 
         const reactions = { ...(item.reactions || {}) };
-        const current = reactions[emoji] || { count: 0, userIds: [] };
+        const current = reactions[emoji] || { count: 0, userIds: [], order: undefined };
         const existingUserIds = Array.isArray(current.userIds)
           ? current.userIds
           : [];
@@ -400,9 +400,22 @@ function EventDetails() {
         if (nextUserIds.length === 0) {
           delete reactions[emoji];
         } else {
+          let order =
+            typeof current.order === "number" ? current.order : null;
+
+          if (order === null) {
+            const existingOrders = Object.values(reactions).map((value) =>
+              typeof value?.order === "number" ? value.order : 0,
+            );
+            const maxOrder =
+              existingOrders.length > 0 ? Math.max(...existingOrders) : 0;
+            order = maxOrder + 1;
+          }
+
           reactions[emoji] = {
             count: nextUserIds.length,
             userIds: nextUserIds,
+            order,
           };
         }
 
@@ -437,9 +450,18 @@ function EventDetails() {
 
     if (eventDoc.exists()) {
       const { items } = eventDoc.data();
-      const updatedItems = items.map((item) =>
-        item.id === updatedItem.id ? updatedItem : item,
-      );
+      const updatedItems = items.map((item) => {
+        if (!item || item.id !== updatedItem.id) return item;
+
+        // Merge new fields into existing item but always preserve reactions.
+        const merged = { ...item, ...updatedItem };
+
+        if (item.reactions && !merged.reactions) {
+          merged.reactions = item.reactions;
+        }
+
+        return merged;
+      });
 
       await updateDoc(eventRef, { items: updatedItems });
     }

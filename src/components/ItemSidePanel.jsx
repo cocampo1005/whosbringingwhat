@@ -46,15 +46,28 @@ function ItemSidePanel({
       !!initialData?.isOnBehalfOf,
   });
 
+  useEffect(() => {
+    setAssigneeQuery(itemData.assignee || "");
+  }, [itemData.assignee]);
+
   const isOnBehalfValid =
     !itemData.isOnBehalfOf ||
     (itemData.onBehalfOfName || "").trim() !== "";
+
+  const hasValidAssigneeId =
+    !itemData.isOnBehalfOf ? !!itemData.assigneeId : true;
 
   const isFormValid =
     (itemData.title || "").trim() !== "" &&
     (itemData.assignee || "").trim() !== "" &&
     !!itemData.category &&
-    isOnBehalfValid;
+    isOnBehalfValid &&
+    hasValidAssigneeId;
+
+  const shouldShowAssigneeError =
+    !itemData.isOnBehalfOf &&
+    assigneeQuery.trim() !== "" &&
+    !itemData.assigneeId;
 
   const dietaryOptions = [
     { label: "Vegetarian", value: "vegetarian" },
@@ -69,8 +82,6 @@ function ItemSidePanel({
     { label: "Has Shellfish", value: "shellfish" },
     { label: "Spicy", value: "spicy" },
   ];
-
-  const normalize = (s = "") => s.trim().toLowerCase().replace(/\s+/g, " ");
 
   // Fetch users once
   // useEffect(() => {
@@ -92,24 +103,7 @@ function ItemSidePanel({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "assignee") {
-      // Check if input is cleared (empty string), then clear avatar and ID
-      if (value.trim() === "") {
-        setItemData((prev) => ({
-          ...prev,
-          assignee: "",
-          assigneeId: null,
-          avatar: "",
-        }));
-      } else {
-        setItemData((prev) => ({
-          ...prev,
-          assignee: value,
-          assigneeId: null,
-          avatar: "", // also reset avatar when typing a new name
-        }));
-      }
-    } else if (name === "onBehalfOfName") {
+    if (name === "onBehalfOfName") {
       setItemData((prev) => ({ ...prev, onBehalfOfName: value }));
     } else {
       setItemData((prev) => ({ ...prev, [name]: value }));
@@ -144,19 +138,14 @@ function ItemSidePanel({
     e.preventDefault();
 
     const meUid = currentUser?.uid || null;
-    const meName = normalize(currentUser?.name || "");
-    const assigneeIsMe = normalize(itemData.assignee) === meName;
-
-    // If your combo dropdown set a UID, trust it.
-    // Otherwise, set UID only when the assignee text equals my display name.
-    const resolvedAssigneeId =
-      itemData.assigneeId ?? (assigneeIsMe ? meUid : null);
 
     const rawOnBehalfName = itemData.isOnBehalfOf
       ? (itemData.onBehalfOfName || "").trim()
       : "";
     const onBehalfOfName = rawOnBehalfName || null;
     const isOnBehalfOf = !!onBehalfOfName;
+
+    const resolvedAssigneeId = itemData.assigneeId ?? null;
 
     const payload = {
       ...itemData,
@@ -222,14 +211,22 @@ function ItemSidePanel({
                 <input
                   type="text"
                   name="assignee"
-                  value={itemData.assignee}
+                  value={assigneeQuery}
                   onChange={(e) => {
-                    handleChange(e);
-                    setAssigneeQuery(e.target.value);
+                    const value = e.target.value;
+                    setAssigneeQuery(value);
                     setShowSuggestions(true);
+
+                    if (value.trim() === "") {
+                      setItemData((prev) => ({
+                        ...prev,
+                        assignee: "",
+                        assigneeId: null,
+                      }));
+                    }
                   }}
                   className={`flex-1 border-0 bg-white p-2 pl-2 focus:ring-0 ${itemData.isOnBehalfOf ? "cursor-not-allowed bg-gray-100 text-gray-500" : ""}`}
-                  placeholder="Type a name..."
+                  placeholder="Search for a name..."
                   disabled={itemData.isOnBehalfOf}
                   required
                 />
@@ -268,7 +265,7 @@ function ItemSidePanel({
                             assignee: u.name,
                             assigneeId: u.id,
                           }));
-                          setAssigneeQuery("");
+                          setAssigneeQuery(u.name);
                           setShowSuggestions(false);
                         }}
                         className="cursor-pointer px-3 py-2 hover:bg-gray-100"
@@ -283,6 +280,12 @@ function ItemSidePanel({
                       </li>
                     ))}
                 </ul>
+              )}
+
+              {shouldShowAssigneeError && (
+                <p className="mt-1 text-xs text-red-600">
+                  Can't find who's bringing it, use "On behalf of someone else" instead.
+                </p>
               )}
 
               <div className="mt-3 flex flex-col gap-2">
