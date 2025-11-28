@@ -16,10 +16,18 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   const initialMembers =
     initialData.members || (initialHostId ? [initialHostId] : []);
 
+  const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return dateStr;
+    // Handle ISO string or Legacy format
+    const d = new Date(dateStr);
+    return isNaN(d) ? null : d;
+  };
+
   const [eventData, setEventData] = useState({
     title: initialData.title || "",
     description: initialData.description || "",
-    date: initialData.date || null,
+    date: parseDate(initialData.date),
     items: initialData.items || [],
     time: initialData.time || "",
     location: initialData.location || "",
@@ -74,11 +82,31 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Helper to format date as YYYY-MM-DD
+    const toISODateString = (date) => {
+      if (!date) return null;
+      // If it's already a string, check if it's ISO or formatted
+      if (typeof date === "string") {
+        // If it matches YYYY-MM-DD, return it
+        if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+        // If it's the old format "Fri, Oct 27, 2023", try to parse it
+        const parsed = new Date(date);
+        if (!isNaN(parsed)) {
+          const offset = parsed.getTimezoneOffset();
+          const adjusted = new Date(parsed.getTime() - offset * 60 * 1000);
+          return adjusted.toISOString().split("T")[0];
+        }
+        return date; // Fallback
+      }
+      // It's a Date object
+      const offset = date.getTimezoneOffset();
+      const adjusted = new Date(date.getTime() - offset * 60 * 1000);
+      return adjusted.toISOString().split("T")[0];
+    };
+
     const formattedData = {
       ...eventData,
-      date: isFormattedDate(eventData.date)
-        ? eventData.date
-        : formatDate(eventData.date),
+      date: toISODateString(eventData.date),
     };
 
     if (!eventData.date) {
