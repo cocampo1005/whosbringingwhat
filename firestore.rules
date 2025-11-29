@@ -99,11 +99,11 @@ service cloud.firestore {
         && (isEventOwner() || isChefRole())
         && unchanged('createdById')
         && unchanged('hostId')
-        && changedKeysAreOnly(['title', 'description', 'date', 'time', 'location', 'items', 'members', 'imageUrl', 'bannerColor', 'createdAt', 'updatedAt', 'hostId', 'createdById']);
+        && changedKeysAreOnly(['title', 'description', 'date', 'time', 'location', 'items', 'members', 'imageUrl', 'bannerColor', 'createdAt', 'updatedAt', 'hostId', 'createdById', 'suggestedItems']);
 
       // Allow event members to update only the items array (e.g., emoji reactions)
       allow update: if isEventMember()
-        && changedKeysAreOnly(['items']);
+        && changedKeysAreOnly(['items', 'suggestedItems']);
 
       // Allow any signed-in user to join an event by adding themselves to members
       allow update: if isSelfJoiningEvent()
@@ -111,7 +111,7 @@ service cloud.firestore {
 
       // Allow a member to leave an event and update items (e.g., remove their items)
       allow update: if isSelfLeavingEvent()
-        && changedKeysAreOnly(['members', 'items']);
+        && changedKeysAreOnly(['members', 'items', 'suggestedItems']);
 
       allow delete: if isSignedIn()
         && (isEventOwner() || isChefRole());

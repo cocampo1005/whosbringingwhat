@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "../contexts/AuthContext";
-import { IoClose, IoChevronDown, IoInformationCircleOutline } from "react-icons/io5";
+import {
+  IoClose,
+  IoChevronDown,
+  IoInformationCircleOutline,
+} from "react-icons/io5";
 // import { collection, getDocs } from "firebase/firestore";
 // import { db } from "firebase";
 import AssigneeAvatar from "./AssigneeAvatar";
@@ -16,6 +20,7 @@ function ItemSidePanel({
   onSubmit,
   initialData = {},
   mode = "add",
+  formMode,
   memberIds = [],
 }) {
   const { currentUser } = useAuth();
@@ -30,10 +35,16 @@ function ItemSidePanel({
   const { users: memberUsers = [], status: memberUsersStatus } =
     useUsers(allMemberIds);
   const [assigneeQuery, setAssigneeQuery] = useState("");
+  const resolvedMode = formMode || mode;
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSuggestionMode, setIsSuggestionMode] = useState(false);
+  const isSuggestionLocked = Boolean(
+    initialData?.isSuggestion && initialData?.suggestionId,
+  );
+  const isClaimingSuggestion = resolvedMode === "claim" && isSuggestionLocked;
   const [uploading, setUploading] = useState(false);
   const [itemData, setItemData] = useState({
-    id: initialData?.id || (mode === "add" && uuidv4()),
+    id: initialData?.id || uuidv4(),
     title: initialData?.title || "",
     assignee: initialData?.assignee || currentUser.name,
     assigneeId: initialData?.assigneeId ?? currentUser?.uid ?? null,
@@ -50,16 +61,24 @@ function ItemSidePanel({
   const [hasInteracted, setHasInteracted] = useState(false);
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
 
+  // Reset Suggest mode when claiming or editing
+  useEffect(() => {
+    if (resolvedMode === "claim" || resolvedMode === "edit") {
+      setIsSuggestionMode(false);
+      console.log("Ran useEffect.");
+    }
+  }, [resolvedMode, initialData]);
+
   useEffect(() => {
     setAssigneeQuery(itemData.assignee || "");
   }, [itemData.assignee]);
 
   const isOnBehalfValid =
-    !itemData.isOnBehalfOf ||
-    (itemData.onBehalfOfName || "").trim() !== "";
+    !itemData.isOnBehalfOf || (itemData.onBehalfOfName || "").trim() !== "";
 
-  const hasValidAssigneeId =
-    !itemData.isOnBehalfOf ? !!itemData.assigneeId : true;
+  const hasValidAssigneeId = !itemData.isOnBehalfOf
+    ? !!itemData.assigneeId
+    : true;
 
   const isFormValid =
     (itemData.title || "").trim() !== "" &&
@@ -147,6 +166,22 @@ function ItemSidePanel({
 
     const meUid = currentUser?.uid || null;
 
+    // If we’re in Suggest Item mode, send a special suggestion payload
+    if (isSuggestionMode) {
+      const suggestionPayload = {
+        __type: "suggestion",
+        id: itemData.id || uuidv4(),
+        itemName: itemData.title?.trim() || "",
+        category: itemData.category || "Main",
+        suggesterId: meUid,
+        suggester: currentUser?.name || currentUser?.email || "Someone",
+      };
+
+      onSubmit(suggestionPayload);
+      closeModal();
+      return;
+    }
+
     const rawOnBehalfName = itemData.isOnBehalfOf
       ? (itemData.onBehalfOfName || "").trim()
       : "";
@@ -182,31 +217,46 @@ function ItemSidePanel({
     }
   };
 
-  useEscapeKey(
-    () => {
-      if (showUnsavedPrompt) {
-        setShowUnsavedPrompt(false);
-        return;
-      }
-      requestClose();
-    },
-    true,
-  );
+  useEscapeKey(() => {
+    if (showUnsavedPrompt) {
+      setShowUnsavedPrompt(false);
+      return;
+    }
+    requestClose();
+  }, true);
 
   const handleBackdropClick = (e) => {
     if (e.target !== e.currentTarget) return;
     requestClose();
   };
 
+  let submitLabel;
+
+  if (uploading) {
+    submitLabel = "Uploading...";
+  } else if (isSuggestionMode) {
+    submitLabel = "Suggest Item";
+  } else if (formMode === "claim") {
+    submitLabel = "Claim Suggested Item";
+  } else if (formMode === "edit") {
+    submitLabel = "Save Changes";
+  } else {
+    submitLabel = "Add Item";
+  }
+
   return (
     <div
-      className="fixed inset-0 z-40 flex items-stretch justify-center md:justify-end bg-gray-500 bg-opacity-50"
+      className="fixed inset-0 z-40 flex items-stretch justify-center bg-gray-500 bg-opacity-50 md:justify-end"
       onClick={handleBackdropClick}
     >
-      <div className="relative flex h-full w-full max-w-full md:max-w-md flex-col overflow-hidden bg-yellow-50 shadow-lg">
+      <div className="relative flex h-full w-full max-w-full flex-col overflow-hidden bg-yellow-50 shadow-lg md:max-w-md">
         <div className="flex items-center justify-center bg-primaryRed px-4 py-3">
-          <h2 className="text-center text-lg font-semibold text-white">
-            {mode === "add" ? "Add Item" : "Edit Item"}
+          <h2 className="text-lg font-semibold text-white">
+            {resolvedMode === "claim"
+              ? "Claim Item"
+              : resolvedMode === "edit"
+                ? "Edit Item"
+                : "Add Item"}
           </h2>
           <IoClose
             className="absolute right-4 top-3 cursor-pointer text-2xl text-white"
@@ -215,6 +265,34 @@ function ItemSidePanel({
         </div>
         <div className="flex-1 overflow-y-auto p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Suggest Item Mode Toggle */}
+            {resolvedMode === "add" &&
+              !isSuggestionLocked &&
+              !isClaimingSuggestion && (
+                <div className="rounded-lg bg-primaryRed/5 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-primaryRed">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-primaryRed text-primaryRed focus:ring-primaryRed"
+                        checked={isSuggestionMode}
+                        onChange={(e) => {
+                          setHasInteracted(true);
+                          setIsSuggestionMode(e.target.checked);
+                        }}
+                      />
+                      Suggest Item
+                    </label>
+                    <Tooltip
+                      content="Suggest an item idea without committing to bring it. Others can claim it later."
+                      placement="bottom"
+                    >
+                      <IoInformationCircleOutline className="h-4 w-4 text-primaryRed" />
+                    </Tooltip>
+                  </div>
+                </div>
+              )}
+            {/* Item name – always visible, but locked if from a suggestion */}
             <div>
               <label className="mb-1 block font-bold after:ml-0.5 after:text-primaryRed after:content-['*']">
                 Item Name
@@ -224,10 +302,17 @@ function ItemSidePanel({
                 name="title"
                 value={itemData.title}
                 onChange={handleChange}
-                className="w-full rounded border p-2 focus:border-primaryRed"
+                className="w-full rounded border p-2 focus:border-primaryRed disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                 placeholder="e.g., Caesar Salad"
+                disabled={isSuggestionLocked}
                 required
               />
+              {isSuggestionLocked && (
+                <p className="mt-1 text-xs text-gray-500">
+                  This item came from a suggestion, so the name can’t be
+                  changed.
+                </p>
+              )}
             </div>
 
             <div className="relative">
@@ -321,7 +406,8 @@ function ItemSidePanel({
 
               {shouldShowAssigneeError && (
                 <p className="mt-1 text-xs text-red-600">
-                  Can't find who's bringing it, use "On behalf of someone else" instead.
+                  Can't find who's bringing it, use "On behalf of someone else"
+                  instead.
                 </p>
               )}
 
@@ -343,7 +429,7 @@ function ItemSidePanel({
                 </label>
 
                 {itemData.isOnBehalfOf && (
-                  <div className="mt-1 ml-6">
+                  <div className="ml-6 mt-1">
                     <div className="flex w-full items-stretch rounded-lg border border-gray-300 bg-white focus-within:border-primaryRed">
                       <AssigneeAvatar
                         assigneeId={null}
@@ -377,6 +463,7 @@ function ItemSidePanel({
                 onChange={handleChange}
                 className="w-full rounded-lg border border-gray-300 p-2 focus:border-primaryRed focus:ring-0"
                 required
+                disabled={isSuggestionLocked}
               >
                 <option value="Main">Main</option>
                 <option value="Side">Side</option>
@@ -384,67 +471,77 @@ function ItemSidePanel({
                 <option value="Beverage">Beverage</option>
                 <option value="Miscellaneous">Miscellaneous</option>
               </select>
+              {isSuggestionLocked && (
+                <p className="mt-1 text-xs text-gray-500">
+                  This item came from a suggestion, so the category can’t be
+                  changed.
+                </p>
+              )}
             </div>
 
-            <div>
-              <label className="mb-1 block font-bold">Description</label>
-              <textarea
-                name="description"
-                value={itemData.description}
-                onChange={handleChange}
-                placeholder="Add a description of your dish"
-                className="w-full resize-none rounded border p-2 focus:border-primaryRed"
-                rows="3"
-              />
-            </div>
+            {!isSuggestionMode && (
+              <>
+                <div>
+                  <label className="mb-1 block font-bold">Description</label>
+                  <textarea
+                    name="description"
+                    value={itemData.description}
+                    onChange={handleChange}
+                    placeholder="Add a description of your dish"
+                    className="w-full resize-none rounded border p-2 focus:border-primaryRed"
+                    rows="3"
+                  />
+                </div>
 
-            <div>
-              <label className="mb-1 block font-bold">Servings</label>
-              <input
-                type="text"
-                name="servings"
-                value={itemData.servings}
-                onChange={handleChange}
-                placeholder="e.g., 4-6 people"
-                className="w-full rounded border p-2 focus:border-primaryRed"
-              />
-            </div>
+                <div>
+                  <label className="mb-1 block font-bold">Servings</label>
+                  <input
+                    type="text"
+                    name="servings"
+                    value={itemData.servings}
+                    onChange={handleChange}
+                    placeholder="e.g., 4-6 people"
+                    className="w-full rounded border p-2 focus:border-primaryRed"
+                  />
+                </div>
 
-            <div>
-              <ImageUpload
-                label="Photo"
-                imageUrl={itemData.imageUrl}
-                onImageChange={(url) => {
-                  setHasInteracted(true);
-                  setItemData((prev) => ({ ...prev, imageUrl: url }));
-                }}
-                storageFolder="item-images"
-                objectId={itemData.id}
-                imageAlt="Item preview"
-                onUploadingChange={setUploading}
-                inputId="item-image-upload"
-              />
-            </div>
+                <div>
+                  <ImageUpload
+                    label="Photo"
+                    imageUrl={itemData.imageUrl}
+                    onImageChange={(url) => {
+                      setHasInteracted(true);
+                      setItemData((prev) => ({ ...prev, imageUrl: url }));
+                    }}
+                    storageFolder="item-images"
+                    objectId={itemData.id}
+                    imageAlt="Item preview"
+                    onUploadingChange={setUploading}
+                    inputId="item-image-upload"
+                  />
+                </div>
 
-            <div>
-              <label className="mb-2 block font-bold">Dietary Tags</label>
-              <div className="grid grid-cols-2 gap-2">
-                {dietaryOptions.map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center text-sm font-semibold"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={itemData.dietary.includes(option.value)}
-                      onChange={() => handleDietaryChange(option.value)}
-                      className="mr-2 h-4 w-4 rounded border-gray-300 text-primaryRed focus:ring-primaryRed"
-                    />
-                    {option.label}
-                  </label>
-                ))}
-              </div>
-            </div>
+                <div>
+                  <label className="mb-2 block font-bold">Dietary Tags</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {dietaryOptions.map((option) => (
+                      <label
+                        key={option.value}
+                        className="flex items-center text-sm font-semibold"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={itemData.dietary.includes(option.value)}
+                          onChange={() => handleDietaryChange(option.value)}
+                          className="mr-2 h-4 w-4 rounded border-gray-300 text-primaryRed focus:ring-primaryRed"
+                        />
+                        {option.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="pt-4">
               <button
@@ -452,15 +549,11 @@ function ItemSidePanel({
                 disabled={uploading || !isFormValid}
                 className={`w-full rounded-lg px-4 py-3 text-center text-sm font-semibold text-white ${
                   uploading || !isFormValid
-                    ? "bg-red-300 cursor-not-allowed"
+                    ? "cursor-not-allowed bg-red-300"
                     : "bg-primaryRed hover:bg-secondaryRed"
                 }`}
               >
-                {uploading
-                  ? "Uploading..."
-                  : mode === "add"
-                    ? "Add Item"
-                    : "Save Changes"}
+                {submitLabel}
               </button>
             </div>
           </form>
