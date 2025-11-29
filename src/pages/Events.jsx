@@ -5,10 +5,19 @@ import { FaPlus } from "react-icons/fa6";
 import {
   addDoc,
   collection,
+  getDocs,
+  limit,
+  limitToLast,
   onSnapshot,
   orderBy,
   query,
+  startAfter,
+  endBefore,
+  where,
+  or,
   serverTimestamp,
+  updateDoc,
+  doc,
 } from "firebase/firestore";
 import { useAuth } from "../contexts/AuthContext";
 import EventCard from "../components/EventCard";
@@ -24,90 +33,169 @@ export default function Events() {
 
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [events, setEvents] = useState([]);
+  const [lastDoc, setLastDoc] = useState(null);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [tab, setTab] = useState("upcoming");
 
   const isSidePanelOpen = showAddEventModal;
 
   const navigate = useNavigate();
 
-  const memberEvents = useMemo(() => {
-    if (!currentUser) return [];
-    if (isAdmin) return events;
+  // Migration Effect
+  useEffect(() => {
+    const migrateEvents = async () => {
+      if (!currentUser) return;
+      try {
+        // Fetch all events to check for legacy dates
+        // We limit to a reasonable number to avoid reading too many if DB is huge, 
+        // but for migration we might want to catch all. 
+        // Let's assume < 500 events for now or just query ones that look like legacy?
+        // Actually, we can't easily query for "date format".
+        // We'll just fetch recent 100 events and check.
+        const q = query(collection(db, "events"), limit(100));
+        const snapshot = await getDocs(q);
+        
+        const updates = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (typeof data.date === "string" && !/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+            // It's a legacy date string, try to parse and update
+            const parsed = new Date(data.date);
+            if (!isNaN(parsed)) {
+              const offset = parsed.getTimezoneOffset();
+              const adjusted = new Date(parsed.getTime() - offset * 60 * 1000);
+              const isoDate = adjusted.toISOString().split("T")[0];
+              updates.push(updateDoc(doc(db, "events", docSnap.id), { date: isoDate }));
+            }
+          }
+        });
 
-    return events.filter((ev) => {
-      const members = Array.isArray(ev.members) ? ev.members : [];
-      const isMember = members.includes(currentUser.uid);
-      const isHost =
-        ev.hostId === currentUser.uid || ev.createdById === currentUser.uid;
+        if (updates.length > 0) {
+          await Promise.all(updates);
+          console.log(`Migrated ${updates.length} events to ISO date format.`);
+        }
+      } catch (error) {
+        console.error("Migration error:", error);
+      }
+    };
 
-      return isMember || isHost;
-    });
-  }, [events, currentUser, isAdmin]);
+    migrateEvents();
+  }, [currentUser]);
 
-  const eventsByDate = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const fetchEvents = async (isLoadMore = false) => {
+    if (!currentUser) return;
+    
+    try {
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoadingEvents(true);
+      }
 
-    const upcoming = [];
-    const past = [];
+      const today = new Date();
+      const offset = today.getTimezoneOffset();
+      const adjustedToday = new Date(today.getTime() - offset * 60 * 1000);
+      const todayISO = adjustedToday.toISOString().split("T")[0];
 
-    memberEvents.forEach((ev) => {
-      let eventDate = null;
+      let q = query(
+        collection(db, "events"),
+        or(
+          where("members", "array-contains", currentUser.uid),
+          where("hostId", "==", currentUser.uid),
+          where("createdById", "==", currentUser.uid)
+        )
+      );
 
-      if (ev.date instanceof Date) {
-        eventDate = ev.date;
-      } else if (typeof ev.date === "string") {
-        const parsed = new Date(ev.date);
-        if (!Number.isNaN(parsed.getTime())) {
-          eventDate = parsed;
+      // Common: Filter by date relative to today
+      if (tab === "upcoming") {
+        q = query(
+          q,
+          where("date", ">=", todayISO),
+          orderBy("date", "asc")
+        );
+      } else {
+        // For past events, we still use 'asc' order to utilize the existing index.
+        // We filter for dates < today.
+        q = query(
+          q,
+          where("date", "<", todayISO),
+          orderBy("date", "asc")
+        );
+      }
+
+      // Pagination and Limits
+      if (tab === "upcoming") {
+        // Standard forward pagination
+        if (isLoadMore && lastDoc) {
+          q = query(q, startAfter(lastDoc));
+        }
+        q = query(q, limit(10));
+      } else {
+        // "Previous" tab: We want the *latest* past events (closest to today).
+        // Since the order is 'asc' (oldest -> newest), the ones closest to today are at the END.
+        // So we use limitToLast(10).
+        
+        if (isLoadMore && lastDoc) {
+          // For loading *older* events (which are 'before' in the asc list),
+          // we use endBefore(lastDoc).
+          q = query(q, endBefore(lastDoc));
+        }
+        q = query(q, limitToLast(10));
+      }
+
+      const snapshot = await getDocs(q);
+      let newEvents = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      if (tab === "past") {
+        // The query returns events in Ascending order (Oldest -> Newest).
+        // We want to display them Newest -> Oldest.
+        newEvents.reverse();
+      }
+
+      if (isLoadMore) {
+        setEvents((prev) => [...prev, ...newEvents]);
+      } else {
+        setEvents(newEvents);
+      }
+
+      // Update cursor
+      if (snapshot.docs.length > 0) {
+        if (tab === "upcoming") {
+          // Cursor is the last doc (latest date in batch)
+          setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+        } else {
+          // Cursor is the first doc (oldest date in batch) because we are moving backwards
+          setLastDoc(snapshot.docs[0]);
         }
       }
+      
+      setHasMore(snapshot.docs.length === 10);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    } finally {
+      setLoadingEvents(false);
+      setLoadingMore(false);
+    }
+  };
 
-      if (!eventDate) {
-        // If we cannot parse the date, treat it as upcoming
-        upcoming.push(ev);
-        return;
-      }
-
-      const normalized = new Date(eventDate);
-      normalized.setHours(0, 0, 0, 0);
-
-      if (normalized < today) {
-        past.push(ev);
-      } else {
-        upcoming.push(ev);
-      }
-    });
-
-    return { upcoming, past };
-  }, [memberEvents]);
-
-  const displayedEvents =
-    tab === "upcoming" ? eventsByDate.upcoming : eventsByDate.past;
-  const hasEvents = displayedEvents.length > 0;
-
+  // Initial fetch and tab change
   useEffect(() => {
-    const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
+    setEvents([]);
+    setLastDoc(null);
+    setHasMore(true);
+    fetchEvents(false);
+  }, [tab, currentUser]);
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const eventsData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setEvents(eventsData);
-        setLoadingEvents(false); // done loading, even if empty
-      },
-      (error) => {
-        console.error("Error fetching events: ", error);
-        setLoadingEvents(false); // avoid stuck loader on error
-      },
-    );
-
-    return () => unsubscribe();
-  }, []);
+  const handleLoadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchEvents(true);
+    }
+  };
 
   const handleAddEvent = () => {
     setShowAddEventModal(true);
@@ -208,7 +296,7 @@ export default function Events() {
             </button>
           </div>
           <span className="text-xs text-gray-500">
-            {displayedEvents.length} events
+            {events.length} loaded
           </span>
         </div>
         <button
@@ -225,8 +313,21 @@ export default function Events() {
         <div className="flex justify-center py-8">
           <CookingLoader />
         </div>
-      ) : hasEvents ? (
-        <EventCard events={displayedEvents} />
+      ) : events.length > 0 ? (
+        <>
+          <EventCard events={events} />
+          {hasMore && (
+            <div className="mt-8 flex justify-center">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="rounded-full bg-gray-100 px-6 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-200 disabled:opacity-50"
+              >
+                {loadingMore ? "Loading..." : "Load More Events"}
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <p className="text-center text-gray-600">
           {tab === "upcoming"

@@ -121,6 +121,24 @@ function EventDetails() {
     spicy: { icon: <FaPepperHot />, color: "text-red-600" },
   };
 
+  const formatDisplayDate = (dateStr) => {
+    if (!dateStr) return "";
+    // If it matches YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const date = new Date(dateStr);
+      // Adjust for timezone offset to display correct date
+      const offset = date.getTimezoneOffset();
+      const adjusted = new Date(date.getTime() + offset * 60 * 1000);
+      return new Intl.DateTimeFormat("en-US", {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }).format(adjusted);
+    }
+    return dateStr; // Return as is if not ISO (legacy format)
+  };
+
   useEffect(() => {
     const unsubscribe = onSnapshot(
       doc(db, "events", eventId),
@@ -384,7 +402,11 @@ function EventDetails() {
         if (!item || item.id !== itemId) return item;
 
         const reactions = { ...(item.reactions || {}) };
-        const current = reactions[emoji] || { count: 0, userIds: [], order: undefined };
+        const current = reactions[emoji] || {
+          count: 0,
+          userIds: [],
+          order: undefined,
+        };
         const existingUserIds = Array.isArray(current.userIds)
           ? current.userIds
           : [];
@@ -401,8 +423,7 @@ function EventDetails() {
         if (nextUserIds.length === 0) {
           delete reactions[emoji];
         } else {
-          let order =
-            typeof current.order === "number" ? current.order : null;
+          let order = typeof current.order === "number" ? current.order : null;
 
           if (order === null) {
             const existingOrders = Object.values(reactions).map((value) =>
@@ -687,15 +708,15 @@ function EventDetails() {
               <div className="pr-20">
                 <div className="mb-4 space-y-2">
                   <div className="flex items-center">
-                    <FaCalendarAlt className="mr-2 text-primaryRed" />
-                    <p className="font-bold">{event.date}</p>
+                    <FaCalendarAlt className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
+                    <p className="font-bold">{formatDisplayDate(event.date)}</p>
                   </div>
                   <div className="flex items-center">
-                    <MdOutlineAccessTimeFilled className="mr-2 text-primaryRed" />
+                    <MdOutlineAccessTimeFilled className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
                     <p className="font-bold">{formatTime(event.time)}</p>
                   </div>
                   <div className="flex items-center">
-                    <TiLocation className="mr-2 text-primaryRed" />
+                    <TiLocation className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
                     <p className="font-bold">{event.location}</p>
                   </div>
                 </div>
@@ -705,8 +726,9 @@ function EventDetails() {
 
             {/* Pie chart for mobile */}
             <div className="mt-6">
-              <h3 className="font-bold text-primaryDark">Item Distribution</h3>
-
+              <h3 className="font-bold text-primaryDark">
+                Item Distribution ({event.items.length})
+              </h3>
               {pieData.length > 0 ? (
                 <div className="flex items-center gap-4">
                   <div className="shrink-0">
@@ -863,15 +885,15 @@ function EventDetails() {
             <div className="mb-6">
               <div className="mb-4 space-y-2">
                 <div className="flex items-center">
-                  <FaCalendarAlt className="mr-2 text-primaryRed" />
-                  <p className="font-bold">{event.date}</p>
+                  <FaCalendarAlt className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
+                  <p className="font-bold">{formatDisplayDate(event.date)}</p>
                 </div>
                 <div className="flex items-center">
-                  <MdOutlineAccessTimeFilled className="mr-2 text-primaryRed" />
+                  <MdOutlineAccessTimeFilled className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
                   <p className="font-bold">{formatTime(event.time)}</p>
                 </div>
                 <div className="flex items-center">
-                  <TiLocation className="mr-2 text-primaryRed" />
+                  <TiLocation className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
                   <p className="font-bold">{event.location}</p>
                 </div>
               </div>
@@ -882,7 +904,11 @@ function EventDetails() {
 
             {/* Pie chart */}
             <div className="justify-center">
-              <h3 className="font-bold text-primaryDark">Item Distribution</h3>
+              <div className="flex gap-2">
+                <h3 className="font-bold text-primaryDark">
+                  Item Distribution ({event.items.length})
+                </h3>
+              </div>
               {pieData.length > 0 ? (
                 <div className="flex items-center gap-8">
                   <PieChart

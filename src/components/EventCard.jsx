@@ -50,15 +50,15 @@ export default function EventCard({ events }) {
                 {event.title}
               </h3>
               <div className="flex items-center text-sm">
-                <FaCalendarAlt className="mr-2 text-primaryRed" />
+                <FaCalendarAlt className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
                 <p className="font-medium text-gray-600">{event.date}</p>
               </div>
               <div className="flex items-center text-sm">
-                <MdOutlineAccessTimeFilled className="mr-2 text-primaryRed" />
+                <MdOutlineAccessTimeFilled className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
                 <p className="font-medium text-gray-600">{time}</p>
               </div>
               <div className="flex items-center text-sm">
-                <TiLocation className="mr-2 text-primaryRed" />
+                <TiLocation className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
                 <p className="font-medium text-gray-600">{event.location}</p>
               </div>
             </div>

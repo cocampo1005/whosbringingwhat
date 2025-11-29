@@ -129,20 +129,20 @@ export default function ParticipantsModal({
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-stretch justify-center md:justify-end bg-gray-500 bg-opacity-50"
+      className="fixed inset-0 z-40 flex items-stretch justify-center bg-gray-500 bg-opacity-50 md:justify-end"
       onClick={handleBackdropClick}
     >
-      <div className="relative flex h-full w-full max-w-full md:max-w-md flex-col overflow-hidden bg-yellow-50 shadow-lg">
+      <div className="relative flex h-full w-full max-w-full flex-col overflow-hidden bg-yellow-50 shadow-lg md:max-w-md">
         <div className="flex items-center justify-center bg-primaryRed px-4 py-3">
           <h2 className="text-center text-lg font-semibold text-white">
-            Event participants
+            Event participants {`(${ids.length})`}
           </h2>
           <IoClose
             className="absolute right-4 top-3 cursor-pointer text-2xl text-white"
             onClick={onClose}
           />
         </div>
-        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4 mt-2">
+        <div className="mt-2 flex-1 overflow-y-auto px-6 pb-6 pt-4">
           {isLoading ? (
             <p className="text-sm text-gray-500">Loading participants...</p>
           ) : ids.length === 0 ? (
@@ -211,19 +211,25 @@ export default function ParticipantsModal({
                     className="mx-auto flex w-full max-w-[34rem] items-stretch justify-between gap-2 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm transition hover:bg-gray-50 hover:shadow-md"
                   >
                     {/* Left: avatar, name, dietary row under name */}
-                    <div className="flex flex-1 flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <AssigneeAvatar
-                          assigneeId={id}
-                          displayName={user.name}
-                          size={36}
-                          showName={false}
-                        />
-                        <span className="block whitespace-nowrap text-lg font-medium text-gray-900">
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <div className="flex min-w-0 items-center gap-2">
+                        {/* Avatar should never squish */}
+                        <div className="flex-shrink-0">
+                          <AssigneeAvatar
+                            assigneeId={id}
+                            displayName={user.name}
+                            size={36}
+                            showName={false}
+                          />
+                        </div>
+
+                        {/* Name: wraps, but clamps for extreme cases like emails */}
+                        <span className="line-clamp-2 min-w-0 flex-1 break-words text-lg font-medium text-gray-900">
                           {user.name}
                         </span>
                       </div>
-                      {/* Dietary info directly under name, collapsible when present */}
+
+                      {/* Dietary info directly under name */}
                       <div className="mt-0.5">
                         {dietary.length === 0 ? (
                           <span className="text-[11px] text-gray-400">
@@ -258,7 +264,9 @@ export default function ParticipantsModal({
                                       key={key}
                                       className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[11px] text-gray-700 shadow-sm"
                                     >
-                                      <span className={meta.color}>{meta.icon}</span>
+                                      <span className={meta.color}>
+                                        {meta.icon}
+                                      </span>
                                       <span>{meta.label}</span>
                                     </span>
                                   );
@@ -271,10 +279,10 @@ export default function ParticipantsModal({
                     </div>
 
                     {/* Right: item count, category chips, and remove button, right aligned */}
-                    <div className="flex w-[160px] flex-col items-end justify-between text-xs text-gray-600">
+                    <div className="flex flex-shrink-0 flex-col items-end justify-between text-xs text-gray-600">
                       {/* Top: item count + category chips */}
-                      <div className="w-full">
-                        <div className="flex justify-end mt-3 mb-[17px]">
+                      <div className="max-w-[7rem]">
+                        <div className="mb-[17px] mt-3 flex justify-end">
                           <span>
                             {totalItems > 0
                               ? `${totalItems} item${totalItems === 1 ? "" : "s"}`
