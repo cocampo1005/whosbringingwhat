@@ -17,7 +17,7 @@ import { useRole } from "../hooks/useRole";
 import EventModal from "../components/EventModal";
 import ShareButton from "../components/ShareButton";
 import { FiEdit, FiLogOut } from "react-icons/fi";
-import { BsPeople } from "react-icons/bs";
+import { BsPeople, BsLightbulb } from "react-icons/bs";
 import { MdOutlineAccessTimeFilled } from "react-icons/md";
 import { FaCalendarAlt } from "react-icons/fa";
 import { TiLocation } from "react-icons/ti";
@@ -38,6 +38,7 @@ import { PorkIconComponent } from "../styles/svgs";
 import ItemSidePanel from "../components/ItemSidePanel";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import ParticipantsModal from "../components/ParticipantsModal";
+import SuggestionsModal from "../components/SuggestionsModal";
 import PieChart from "../components/PieChart";
 import CategoryList from "../components/CategoryList";
 import JoinEventPromptModal from "../components/JoinEventPromptModal";
@@ -62,6 +63,8 @@ function EventDetails() {
     useState(false);
   const [participantToRemove, setParticipantToRemove] = useState(null);
   const [participantToRemoveName, setParticipantToRemoveName] = useState("");
+  const [isSuggestionsModalOpen, setIsSuggestionsModalOpen] = useState(false);
+  const [claimingSuggestion, setClaimingSuggestion] = useState(null);
   const [isSelfRemoval, setIsSelfRemoval] = useState(false);
   const navigate = useNavigate();
 
@@ -82,7 +85,10 @@ function EventDetails() {
         event.members.includes(currentUser.uid)));
 
   const isSidePanelOpen =
-    isItemModalOpen || isParticipantModalOpen || editingEvent;
+    isItemModalOpen ||
+    isParticipantModalOpen ||
+    editingEvent ||
+    isSuggestionsModalOpen;
 
   const memberIds = useMemo(() => {
     if (!event) return [];
@@ -281,6 +287,63 @@ function EventDetails() {
     setIsParticipantModalOpen(!isParticipantModalOpen);
   };
 
+  const handleSuggestionsModal = () => {
+    setIsSuggestionsModalOpen((prev) => !prev);
+  };
+
+  const handleClaimSuggestion = (suggestion) => {
+    if (!event || !currentUser) return;
+    if (!isMember && !isAdmin) return;
+
+    const initialData = {
+      title: suggestion.itemName,
+      category: suggestion.category || "Main",
+
+      // Assign to current user
+      assignee:
+        currentUser.name || currentUser.displayName || currentUser.email || "",
+      assigneeId: currentUser.uid,
+
+      // Lock fields inside the panel
+      isSuggestion: true,
+      suggestionId: suggestion.id,
+      suggesterId: suggestion.suggesterId,
+
+      createdById: currentUser.uid,
+      createdByName:
+        currentUser.name || currentUser.displayName || currentUser.email || "",
+    };
+
+    setClaimingSuggestion(suggestion);
+    setEditingItem(initialData);
+    setIsItemModalOpen(true);
+  };
+
+  const handleEditSuggestion = async (updatedSuggestion) => {
+    if (!event) return;
+
+    try {
+      await updateSuggestionInEvent(event.id, updatedSuggestion);
+    } catch (error) {
+      console.error("Error updating suggestion:", error);
+    }
+  };
+
+  const handleDeleteSuggestion = async (suggestion) => {
+    if (!event) return;
+
+    if (suggestion.claimed) {
+      alert("This suggestion has been claimed and cannot be deleted.");
+      return;
+    }
+
+    try {
+      await deleteSuggestionFromEvent(event.id, suggestion.id);
+    } catch (e) {
+      console.error("Error deleting suggestion:", e);
+    }
+  };
+
   const groupItemsByCategory = (items) => {
     const categories = ["Main", "Side", "Dessert", "Beverage", "Miscellaneous"];
     const grouped = {};
@@ -466,6 +529,123 @@ function EventDetails() {
     });
   };
 
+  const addSuggestionToEvent = async (eventId, suggestion) => {
+    const eventRef = doc(db, "events", eventId);
+
+    const suggestionForFirestore = {
+      id: suggestion.id,
+      itemName: suggestion.itemName,
+      category: suggestion.category || "Main",
+      suggesterId: suggestion.suggesterId,
+      suggester: suggestion.suggester,
+      claimed: false,
+      claimedById: null,
+      claimedItemId: null,
+      createdAt: Date.now(),
+    };
+
+    await updateDoc(eventRef, {
+      suggestedItems: arrayUnion(suggestionForFirestore),
+    });
+  };
+
+  const markSuggestionClaimed = async (
+    eventId,
+    suggestionId,
+    claimedById,
+    claimedItemId,
+  ) => {
+    const eventRef = doc(db, "events", eventId);
+
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(eventRef);
+      if (!snap.exists()) return;
+
+      const data = snap.data() || {};
+      const suggestedItems = Array.isArray(data.suggestedItems)
+        ? data.suggestedItems
+        : [];
+
+      const updated = suggestedItems.map((s) =>
+        s && s.id === suggestionId
+          ? {
+              ...s,
+              claimed: true,
+              claimedById,
+              claimedItemId,
+            }
+          : s,
+      );
+
+      transaction.update(eventRef, { suggestedItems: updated });
+    });
+  };
+
+  const markSuggestionUnclaimed = async (eventId, suggestionId) => {
+    const eventRef = doc(db, "events", eventId);
+
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(eventRef);
+      if (!snap.exists()) return;
+
+      const data = snap.data() || {};
+      const suggestedItems = Array.isArray(data.suggestedItems)
+        ? data.suggestedItems
+        : [];
+
+      const updated = suggestedItems.map((s) =>
+        s && s.id === suggestionId
+          ? {
+              ...s,
+              claimed: false,
+              claimedById: null,
+              claimedItemId: null,
+            }
+          : s,
+      );
+
+      transaction.update(eventRef, { suggestedItems: updated });
+    });
+  };
+
+  const updateSuggestionInEvent = async (eventId, updatedSuggestion) => {
+    const eventRef = doc(db, "events", eventId);
+
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(eventRef);
+      if (!snap.exists()) return;
+
+      const data = snap.data() || {};
+      const suggestedItems = Array.isArray(data.suggestedItems)
+        ? data.suggestedItems
+        : [];
+
+      const mapped = suggestedItems.map((s) =>
+        s && s.id === updatedSuggestion.id ? { ...s, ...updatedSuggestion } : s,
+      );
+
+      transaction.update(eventRef, { suggestedItems: mapped });
+    });
+  };
+
+  const deleteSuggestionFromEvent = async (eventId, suggestionId) => {
+    const eventRef = doc(db, "events", eventId);
+
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(eventRef);
+      if (!snap.exists()) return;
+
+      const data = snap.data() || {};
+      const suggestedItems = Array.isArray(data.suggestedItems)
+        ? data.suggestedItems
+        : [];
+
+      const filtered = suggestedItems.filter((s) => s && s.id !== suggestionId);
+
+      transaction.update(eventRef, { suggestedItems: filtered });
+    });
+  };
+
   const updateItemInEvent = async (eventId, updatedItem) => {
     const eventRef = doc(db, "events", eventId);
     const eventDoc = await getDoc(eventRef);
@@ -506,12 +686,58 @@ function EventDetails() {
   };
 
   const handleItemSubmit = async (itemData) => {
-    if (editingItem) {
-      await updateItemInEvent(event.id, itemData);
-    } else {
-      await addItemToEvent(event.id, itemData);
+    if (!event) return;
+
+    // 1) Pure suggestion coming from Suggest Item mode in ItemSidePanel
+    if (itemData.__type === "suggestion") {
+      try {
+        await addSuggestionToEvent(event.id, itemData);
+      } catch (error) {
+        console.error("Error adding suggestion:", error);
+      } finally {
+        setIsItemModalOpen(false);
+      }
+      return;
     }
-    setIsItemModalOpen(false);
+
+    // 2) Normal item or item created from a suggestion
+    try {
+      let itemToSave = { ...itemData };
+
+      // If we are in the middle of claiming a suggestion, attach suggestion metadata
+      if (claimingSuggestion) {
+        itemToSave = {
+          ...itemToSave,
+          isSuggestion: true,
+          suggestionId: claimingSuggestion.id,
+          suggesterId: claimingSuggestion.suggesterId,
+        };
+      }
+
+      if (editingItem && !claimingSuggestion) {
+        // Regular edit
+        await updateItemInEvent(event.id, itemToSave);
+      } else {
+        // New item (either regular add or claim-add)
+        await addItemToEvent(event.id, itemToSave);
+
+        // If this was created from a suggestion, mark that suggestion as claimed
+        if (claimingSuggestion) {
+          await markSuggestionClaimed(
+            event.id,
+            claimingSuggestion.id,
+            currentUser?.uid ?? null,
+            itemToSave.id,
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error saving item:", error);
+    } finally {
+      setClaimingSuggestion(null);
+      setEditingItem(null);
+      setIsItemModalOpen(false);
+    }
   };
 
   const handleToggleReaction = async (itemId, emoji) => {
@@ -585,6 +811,14 @@ function EventDetails() {
           await updateDoc(eventRef, {
             items: arrayRemove(itemToRemove),
           });
+          // If this item was created from a suggestion, mark that suggestion as unclaimed
+          if (itemToRemove.isSuggestion && itemToRemove.suggestionId) {
+            try {
+              await markSuggestionUnclaimed(eventId, itemToRemove.suggestionId);
+            } catch (error) {
+              console.error("Error marking suggestion unclaimed:", error);
+            }
+          }
         }
       } else {
         console.log("Event not found!");
@@ -675,6 +909,13 @@ function EventDetails() {
                       </button>
                     </>
                   )}
+                  <button
+                    onClick={handleSuggestionsModal}
+                    className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                    aria-label="View suggestions"
+                  >
+                    <BsLightbulb className="text-lg text-white" />
+                  </button>
                   <button
                     onClick={handleParticipantsModal}
                     className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
@@ -961,6 +1202,13 @@ function EventDetails() {
                   </>
                 )}
                 <button
+                  onClick={handleSuggestionsModal}
+                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
+                  aria-label="View suggestions"
+                >
+                  <BsLightbulb className="text-lg text-white" />
+                </button>
+                <button
                   onClick={handleParticipantsModal}
                   className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
                 >
@@ -989,10 +1237,10 @@ function EventDetails() {
               </div>
               <button
                 onClick={handleAddItem}
-                className="flex items-center gap-2 rounded-xl bg-primaryRed px-4 py-3 text-sm font-semibold text-white hover:bg-secondaryRed"
+                className="flex shrink-0 items-center gap-2 rounded-xl bg-primaryRed px-4 py-3 text-sm font-semibold text-white hover:bg-secondaryRed"
               >
                 <FaPlus />
-                <span>Add Item</span>
+                <span>Add / Suggest Item</span>
               </button>
             </div>
           </div>
@@ -1129,9 +1377,11 @@ function EventDetails() {
         isOpen={isDeleteModalOpen}
         closeModal={() => setIsDeleteModalOpen(false)}
         onConfirmDelete={
-          itemToDelete === event.id
-            ? handleDeleteEvent
-            : () => handleDeleteItem(itemToDelete)
+          itemToDelete && itemToDelete.itemName
+            ? () => handleDeleteSuggestion(itemToDelete)
+            : itemToDelete === event.id
+              ? handleDeleteEvent
+              : () => handleDeleteItem(itemToDelete)
         }
         deleteItemName={itemToDeleteName}
       />
@@ -1163,6 +1413,23 @@ function EventDetails() {
         />
       )}
 
+      {event && (
+        <SuggestionsModal
+          isOpen={isSuggestionsModalOpen}
+          onClose={handleSuggestionsModal}
+          suggestions={event.suggestedItems || []}
+          currentUserId={currentUser?.uid ?? null}
+          onClaimSuggestion={handleClaimSuggestion}
+          onEditSuggestion={handleEditSuggestion}
+          onDeleteSuggestion={(suggestion) => {
+            setItemToDelete(suggestion);
+            setItemToDeleteName(suggestion.itemName);
+            setIsDeleteModalOpen(true);
+          }}
+          memberIds={memberIds}
+        />
+      )}
+
       {editingEvent && (
         <EventModal
           closeModal={() => setEditingEvent(false)}
@@ -1177,6 +1444,7 @@ function EventDetails() {
           onSubmit={handleItemSubmit}
           initialData={editingItem}
           mode={editingItem ? "edit" : "add"}
+          formMode={claimingSuggestion ? "claim" : editingItem ? "edit" : "add"}
           memberIds={event?.members || []}
         />
       )}
