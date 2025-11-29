@@ -726,8 +726,9 @@ function EventDetails() {
 
             {/* Pie chart for mobile */}
             <div className="mt-6">
-              <h3 className="font-bold text-primaryDark">Item Distribution</h3>
-
+              <h3 className="font-bold text-primaryDark">
+                Item Distribution ({event.items.length})
+              </h3>
               {pieData.length > 0 ? (
                 <div className="flex items-center gap-4">
                   <div className="shrink-0">
@@ -903,7 +904,11 @@ function EventDetails() {
 
             {/* Pie chart */}
             <div className="justify-center">
-              <h3 className="font-bold text-primaryDark">Item Distribution</h3>
+              <div className="flex gap-2">
+                <h3 className="font-bold text-primaryDark">
+                  Item Distribution ({event.items.length})
+                </h3>
+              </div>
               {pieData.length > 0 ? (
                 <div className="flex items-center gap-8">
                   <PieChart
