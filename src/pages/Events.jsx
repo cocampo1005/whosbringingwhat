@@ -49,25 +49,30 @@ export default function Events() {
       if (!currentUser) return;
       try {
         // Fetch all events to check for legacy dates
-        // We limit to a reasonable number to avoid reading too many if DB is huge, 
-        // but for migration we might want to catch all. 
+        // We limit to a reasonable number to avoid reading too many if DB is huge,
+        // but for migration we might want to catch all.
         // Let's assume < 500 events for now or just query ones that look like legacy?
         // Actually, we can't easily query for "date format".
         // We'll just fetch recent 100 events and check.
         const q = query(collection(db, "events"), limit(100));
         const snapshot = await getDocs(q);
-        
+
         const updates = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
-          if (typeof data.date === "string" && !/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+          if (
+            typeof data.date === "string" &&
+            !/^\d{4}-\d{2}-\d{2}$/.test(data.date)
+          ) {
             // It's a legacy date string, try to parse and update
             const parsed = new Date(data.date);
             if (!isNaN(parsed)) {
               const offset = parsed.getTimezoneOffset();
               const adjusted = new Date(parsed.getTime() - offset * 60 * 1000);
               const isoDate = adjusted.toISOString().split("T")[0];
-              updates.push(updateDoc(doc(db, "events", docSnap.id), { date: isoDate }));
+              updates.push(
+                updateDoc(doc(db, "events", docSnap.id), { date: isoDate }),
+              );
             }
           }
         });
@@ -86,7 +91,7 @@ export default function Events() {
 
   const fetchEvents = async (isLoadMore = false) => {
     if (!currentUser) return;
-    
+
     try {
       if (isLoadMore) {
         setLoadingMore(true);
@@ -104,25 +109,17 @@ export default function Events() {
         or(
           where("members", "array-contains", currentUser.uid),
           where("hostId", "==", currentUser.uid),
-          where("createdById", "==", currentUser.uid)
-        )
+          where("createdById", "==", currentUser.uid),
+        ),
       );
 
       // Common: Filter by date relative to today
       if (tab === "upcoming") {
-        q = query(
-          q,
-          where("date", ">=", todayISO),
-          orderBy("date", "asc")
-        );
+        q = query(q, where("date", ">=", todayISO), orderBy("date", "asc"));
       } else {
         // For past events, we still use 'asc' order to utilize the existing index.
         // We filter for dates < today.
-        q = query(
-          q,
-          where("date", "<", todayISO),
-          orderBy("date", "asc")
-        );
+        q = query(q, where("date", "<", todayISO), orderBy("date", "asc"));
       }
 
       // Pagination and Limits
@@ -136,7 +133,7 @@ export default function Events() {
         // "Previous" tab: We want the *latest* past events (closest to today).
         // Since the order is 'asc' (oldest -> newest), the ones closest to today are at the END.
         // So we use limitToLast(10).
-        
+
         if (isLoadMore && lastDoc) {
           // For loading *older* events (which are 'before' in the asc list),
           // we use endBefore(lastDoc).
@@ -173,7 +170,7 @@ export default function Events() {
           setLastDoc(snapshot.docs[0]);
         }
       }
-      
+
       setHasMore(snapshot.docs.length === 10);
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -295,9 +292,7 @@ export default function Events() {
               Previous
             </button>
           </div>
-          <span className="text-xs text-gray-500">
-            {events.length} loaded
-          </span>
+          <span className="text-xs text-gray-500">{events.length} loaded</span>
         </div>
         <button
           className="hidden items-center gap-2 rounded-full bg-primaryRed px-4 py-2 text-sm font-semibold text-white hover:bg-secondaryRed md:flex"
@@ -342,6 +337,13 @@ export default function Events() {
       >
         <FaPlus />
       </button>
+
+      {showAddEventModal && (
+        <EventModal
+          closeModal={() => setShowAddEventModal(false)}
+          onSubmit={addEventToFirestore}
+        />
+      )}
     </div>
   );
 }
