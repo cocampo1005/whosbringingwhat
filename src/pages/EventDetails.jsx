@@ -1121,9 +1121,9 @@ function EventDetails() {
 
         {/* Desktop layout */}
         <div className="hidden md:block">
-          <div className="mb-8 flex items-start justify-between gap-8">
-            {/* Event details section */}
-            <div className="mb-6">
+          <div className="mb-8 flex items-start justify-between gap-6">
+            {/* Event details section - flexible width */}
+            <div className="min-w-0 flex-1">
               <div className="mb-4 space-y-2">
                 <div className="flex items-center">
                   <FaCalendarAlt className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
@@ -1141,27 +1141,23 @@ function EventDetails() {
               <p className="text-gray-700">{event.description}</p>
             </div>
 
-            {/* Pie chart and Action buttons section */}
-
-            {/* Pie chart */}
-            <div className="justify-center">
-              <div className="flex gap-2">
-                <h3 className="font-bold text-primaryDark">
-                  Item Distribution ({event.items.length})
-                </h3>
-              </div>
+            {/* Pie chart section - auto width based on content */}
+            <div className="shrink-0">
+              <h3 className="mb-3 text-center font-bold text-primaryDark">
+                Item Distribution ({event.items.length})
+              </h3>
               {pieData.length > 0 ? (
                 <div className="flex items-center gap-8">
                   <PieChart
                     data={pieData}
-                    size={160}
+                    size={170}
                     animate
                     duration={700}
                     delayStep={140}
                   />
 
                   {/* Legend */}
-                  <div className="grid grid-cols-1 gap-3 text-sm">
+                  <div className="grid grid-cols-1 gap-3">
                     {pieData.map((cat) => {
                       const IconComponent = cat.icon;
                       return (
@@ -1169,7 +1165,7 @@ function EventDetails() {
                           <IconComponent
                             className={`mr-3 text-xl ${cat.textColor}`}
                           />
-                          <span className="font-bold">
+                          <span className="whitespace-nowrap font-bold">
                             {cat.name}: {cat.count}
                           </span>
                         </div>
@@ -1178,12 +1174,14 @@ function EventDetails() {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-primaryDark">No items added yet</p>
+                <p className="text-center text-sm text-gray-500">
+                  No items added yet
+                </p>
               )}
             </div>
 
-            {/* Action buttons - horizontal on desktop */}
-            <div className="flex h-44 flex-col items-end justify-between">
+            {/* Action buttons - auto width, aligned top and bottom */}
+            <div className="flex shrink-0 flex-col items-end justify-between self-stretch">
               <div className="flex gap-2">
                 {canManageEvent && (
                   <>
