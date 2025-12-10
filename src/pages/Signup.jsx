@@ -71,6 +71,14 @@ export default function Signup() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const formatName = (name) => {
+    return name
+      .trim()
+      .split(/\s+/) // split on any amount of spaces
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -81,6 +89,9 @@ export default function Signup() {
 
     try {
       setLoading(true);
+
+      const formattedName = formatName(formData.name);
+
       // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -93,7 +104,7 @@ export default function Signup() {
       // Create user document in Firestore
       await setDoc(doc(db, "users", user.uid), {
         avatar: "",
-        name: formData.name,
+        name: formattedName,
         email: formData.email,
         dietaryRestrictions: [],
         contributions: {},
@@ -149,11 +160,7 @@ export default function Signup() {
       window.location.assign(targetUrl);
     } catch (error) {
       setLoading(false);
-      console.error(
-        "Error during Google sign-in:",
-        error.code,
-        error.message,
-      );
+      console.error("Error during Google sign-in:", error.code, error.message);
     }
   };
 
