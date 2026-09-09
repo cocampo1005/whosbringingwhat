@@ -17,9 +17,9 @@
     "browser-image-compression": "^2.0.2",
     "firebase": "^11.0.2",
     "firebase-admin": "^13.6.0",
-    "react": "^18.3.1",
+    "react": "^19.2.0",
     "react-calendar": "^5.1.0",
-    "react-dom": "^18.3.1",
+    "react-dom": "^19.2.0",
     "react-icons": "^5.3.0",
     "react-router-dom": "^6.28.0",
     "uuid": "^11.1.0"
@@ -28,10 +28,10 @@
     "@eslint/js": "^9.13.0",
     "@firebase/rules-unit-testing": "^4.0.1",
     "@testing-library/jest-dom": "^6.4.0",
-    "@testing-library/react": "^14.2.0",
+    "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.5.0",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.13.0",
@@ -59,5 +59,13 @@
   "bugs": {
     "url": "https://github.com/cocampo1005/whosbringingwhat/issues"
   },
-  "homepage": "https://github.com/cocampo1005/whosbringingwhat#readme"
+  "homepage": "https://github.com/cocampo1005/whosbringingwhat#readme",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "overrides": {
+    "@emoji-mart/react": {
+      "react": "$react"
+    }
+  }
 }
