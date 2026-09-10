@@ -24,6 +24,7 @@ import EventCard from "../components/EventCard";
 import { useNavigate } from "@tanstack/react-router";
 import { useRole } from "../hooks/useRole";
 import { pickRandomEventBannerColor } from "../constants/eventBannerColors";
+import { RANDOM_POTLUCK_IMAGE_URL } from "../constants/api";
 import CookingLoader from "../components/CookingLoader";
 
 export default function Events() {
@@ -217,9 +218,7 @@ export default function Events() {
             params.set("date", eventData.date);
           }
 
-          const baseUrl = import.meta.env.DEV
-            ? "https://us-central1-whos-bringing-what.cloudfunctions.net/randomPotluckImage"
-            : "/api/randomPotluckImage";
+          const baseUrl = RANDOM_POTLUCK_IMAGE_URL;
 
           const response = await fetch(`${baseUrl}?${params.toString()}`);
 

@@ -280,6 +280,7 @@ exports.randomPotluckImage = functions.https.onRequest(async (req, res) => {
     return;
   }
 
+  res.set("Access-Control-Allow-Origin", "*");
   const {
     title = "",
     location = "",
@@ -301,7 +302,6 @@ exports.randomPotluckImage = functions.https.onRequest(async (req, res) => {
       return;
     }
 
-    res.set("Access-Control-Allow-Origin", "*");
     res.json(result);
   } catch (err) {
     functions.logger.error("randomPotluckImage failed", err);
