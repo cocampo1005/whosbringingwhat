@@ -9,12 +9,14 @@ import { createAppRouter } from "./router.jsx";
 export default function App({ basename = "/" }) {
   const [router] = useState(() => createAppRouter({ basepath: basename }));
   return (
-    <AuthProvider>
-      <RoleProvider>
-        <UsersProvider>
-          <RouterProvider router={router} />
-        </UsersProvider>
-      </RoleProvider>
-    </AuthProvider>
+    <div className="wbw min-h-screen bg-yellow-50">
+      <AuthProvider>
+        <RoleProvider>
+          <UsersProvider>
+            <RouterProvider router={router} />
+          </UsersProvider>
+        </RoleProvider>
+      </AuthProvider>
+    </div>
   );
 }
