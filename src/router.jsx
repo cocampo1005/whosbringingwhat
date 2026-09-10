@@ -80,8 +80,17 @@ const profileRoute = createRoute({
 // work lives only on the unmerged `feature-user-page` branch (commit 53141ef). Both pieces are
 // intentionally omitted here; wire them in once that branch merges. See task-2-report.md.
 
+// Only ever keep a same-origin, root-relative path: exactly one leading slash, so neither an
+// absolute URL (`https://evil.example/`) nor a protocol-relative one (`//evil.example`) — both
+// of which `navigate({ href })` would happily hand to `window.location` — survives validation.
+const SAME_ORIGIN_PATH = /^\/(?!\/)/;
+
 const readRedirect = (search) => ({
-  redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  redirect:
+    typeof search.redirect === "string" &&
+    SAME_ORIGIN_PATH.test(search.redirect)
+      ? search.redirect
+      : undefined,
 });
 
 export const loginRoute = createRoute({
@@ -124,6 +133,10 @@ export function createAppRouter({ basepath = "/", history } = {}) {
     history,
     defaultPendingComponent: CookingLoader,
     defaultPreload: false,
-    scrollRestoration: true,
+    // Scroll restoration installs document/pagehide listeners and sets
+    // `history.scrollRestoration = "manual"` on whatever page mounts the app; under the
+    // portfolio shell (basepath !== "/") that would fight the host's own scroll handling, so
+    // only enable it when this app owns the whole page.
+    scrollRestoration: basepath === "/",
   });
 }
