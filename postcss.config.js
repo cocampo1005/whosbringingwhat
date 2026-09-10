@@ -11,6 +11,12 @@ export default {
     autoprefixer(),
     prefixSelector({
       prefix: ".wbw",
+      // Vite extracts index.html's inline <style> block into its own virtual CSS module
+      // (its source file is reported as "index.html?html-proxy&inline-css&index=0.css") and
+      // runs it through this same PostCSS pipeline. That block is the standalone-only page
+      // reset (see index.html) and must keep its literal html/body selectors, so it is the one
+      // file this plugin must never touch.
+      ignoreFiles: [/\.html\?html-proxy/],
       transform(prefix, selector, prefixedSelector) {
         if (
           selector === "html" ||
@@ -21,6 +27,9 @@ export default {
         }
         if (selector === "*") {
           return `${prefix}, ${prefix} *`;
+        }
+        if (/^html\s+body$/.test(selector)) {
+          return prefix;
         }
         const rootScoped = selector.match(/^(html|body)\s+(.*)$/);
         if (rootScoped) {

@@ -28,6 +28,15 @@
     <link rel="icon" type="image/svg+xml" href="/WBW-Logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Who's Bringing What</title>
+    <style>
+      /* Standalone only: the app's stylesheet is scoped under .wbw at build time and never
+         targets the real html/body, so the page reset lives here. */
+      html,
+      body {
+        margin: 0;
+        background-color: #fefce8;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

@@ -10,6 +10,7 @@
   body {
     @apply text-primaryDark;
     background-color: #fefce8;
+    line-height: 1.5;
   }
 
   h1,
