@@ -19,6 +19,9 @@ export default defineConfig(({ command }) => ({
   server: {
     port: 5173,
     strictPort: true,
+    // Imported assets get absolute URLs in dev so a host on another origin loads them from
+    // this server.
+    origin: devOrigin.replace(/\/$/, ""),
   },
   plugins: [
     react(),
