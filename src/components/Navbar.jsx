@@ -4,9 +4,27 @@ import { Link } from "@tanstack/react-router";
 import logo from "../assets/logo-with-face-outlined.svg";
 import { useAuth } from "../contexts/AuthContext";
 import AssigneeAvatar from "./AssigneeAvatar";
+import { useEmbedded } from "../hooks/useEmbedded";
+
+/** Standalone pins both bars to the viewport; embedded they flow inside the host's box. */
+const NAV = {
+  standalone: {
+    sidebar:
+      "fixed left-0 top-0 z-40 hidden h-screen w-56 flex-col bg-primaryRed px-4 py-6 shadow-[6px_0_12px_-2px_rgba(0,0,0,0.2)] md:flex",
+    tabBar:
+      "fixed bottom-0 left-0 right-0 z-20 flex h-16 items-center justify-around bg-primaryRed shadow md:hidden",
+  },
+  embedded: {
+    sidebar:
+      "hidden w-56 shrink-0 flex-col bg-primaryRed px-4 py-6 shadow-[6px_0_12px_-2px_rgba(0,0,0,0.2)] md:flex",
+    tabBar:
+      "order-last flex h-16 items-center justify-around bg-primaryRed shadow md:hidden",
+  },
+};
 
 export default function Navbar() {
   const { currentUser } = useAuth();
+  const nav = useEmbedded() ? NAV.embedded : NAV.standalone;
   const navLinkStyles = ({ isActive }) =>
     `flex flex-col items-center justify-center text-xs font-medium ${
       isActive ? "text-white" : "text-rose-200"
@@ -15,7 +33,7 @@ export default function Navbar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <nav className="fixed left-0 top-0 z-40 hidden h-screen w-56 flex-col bg-primaryRed px-4 py-6 shadow-[6px_0_12px_-2px_rgba(0,0,0,0.2)] md:flex">
+      <nav className={nav.sidebar}>
         {/* Logo */}
         <div className="flex flex-grow flex-col">
           <Link to="/">
@@ -89,7 +107,7 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 flex h-16 items-center justify-around bg-primaryRed shadow md:hidden">
+      <nav className={nav.tabBar}>
         <Link
           to="/events"
           activeProps={{ className: navLinkStyles({ isActive: true }) }}

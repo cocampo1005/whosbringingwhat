@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { db } from "../firebase";
+import { useEmbedded } from "../hooks/useEmbedded";
 import EventModal from "../components/EventModal";
 import { FaPlus } from "react-icons/fa6";
 import {
@@ -30,6 +31,7 @@ import CookingLoader from "../components/CookingLoader";
 export default function Events() {
   const { currentUser } = useAuth();
   const role = useRole();
+  const embedded = useEmbedded();
   const isAdmin = role === "admin";
 
   const [showAddEventModal, setShowAddEventModal] = useState(false);
@@ -332,7 +334,11 @@ export default function Events() {
 
       <button
         onClick={handleAddEvent}
-        className="fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white shadow-md md:hidden"
+        className={
+          embedded
+            ? "absolute bottom-4 right-4 rounded-full bg-primaryRed p-4 text-white shadow-md md:hidden"
+            : "fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white shadow-md md:hidden"
+        }
       >
         <FaPlus />
       </button>

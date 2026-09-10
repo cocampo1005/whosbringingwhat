@@ -95,6 +95,12 @@ Make sure you have the following installed on your machine:
   `.wbw` wrapper and the element that carries layout classes. The only sanctioned exception is
   `index.html`'s inline `<style>` page reset, which is kept unprefixed by the `ignoreFiles` entry
   in `postcss.config.js` — do not remove that entry.
+- **Embedded layout**: `useEmbedded()` (`src/hooks/useEmbedded.js`) is true when the router
+  mounts under a host basepath. Standalone, the sidebar, the page header, the mobile tab bar and
+  the mobile "+" buttons are pinned to the viewport with `position: fixed`; embedded they flow
+  inside the host's box instead, because a fixed element ignores the remote's container and
+  lands on top of the host's own chrome. Modals stay fixed on purpose: a dialog is meant to
+  cover the whole page. Put any new fixed element behind that hook.
 - **Assets**: always `import` assets (images, SVGs, etc.) rather than referencing them by a
   `/src/...` string path — string paths are not resolved/bundled by Vite the same way and will
   break under federation.
