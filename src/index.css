@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Embedded in a host (the portfolio mounts the app under /projects/wbw), App.jsx wraps the app
+ * in a frame of stable height that is also the containing block for every `position: fixed`
+ * descendant (its `transform`), so the sidebar, the page header, the tab bar, the "+" buttons and
+ * every dialog pin to the frame instead of the browser viewport. Inside that frame "the screen"
+ * means the frame: the two viewport-height utilities resolve against it, so the login page, the
+ * loader and the sidebar fill the frame rather than 100vh of a page they do not own.
+ */
+.wbw-embedded .h-screen {
+  height: 100%;
+}
+.wbw-embedded .min-h-screen {
+  min-height: 100%;
+}
+
 @layer base {
   html {
     font-family: "Inter", sans-serif;

@@ -28,14 +28,28 @@ describe("App wrapper", () => {
     const layoutElement = scopeElement.firstChild;
     expect(layoutElement.classList.contains("min-h-screen")).toBe(true);
     expect(layoutElement.classList.contains("bg-yellow-50")).toBe(true);
+    expect(layoutElement.classList.contains("wbw-embedded")).toBe(false);
+    expect(layoutElement.firstChild.hasAttribute("class")).toBe(false);
   });
 
-  it("drops min-h-screen from the layout element when mounted under a basename", () => {
+  it("mounts the app in a stable-height frame that pins fixed elements when under a basename", () => {
     const { container } = render(<App basename="/projects/wbw" />);
 
     const scopeElement = container.firstChild;
-    const layoutElement = scopeElement.firstChild;
-    expect(layoutElement.classList.contains("bg-yellow-50")).toBe(true);
-    expect(layoutElement.classList.contains("min-h-screen")).toBe(false);
+    const frameElement = scopeElement.firstChild;
+    expect(frameElement.classList.contains("bg-yellow-50")).toBe(true);
+    expect(frameElement.classList.contains("min-h-screen")).toBe(false);
+    // The frame is the containing block for every `position: fixed` descendant (its transform)
+    // and the stylesheet remaps the screen-height utilities under `.wbw-embedded` to fill it.
+    expect(frameElement.classList.contains("wbw-embedded")).toBe(true);
+    expect(frameElement.classList.contains("[transform:translateZ(0)]")).toBe(
+      true,
+    );
+    expect(frameElement.classList.contains("h-[80dvh]")).toBe(true);
+    expect(frameElement.classList.contains("min-h-[560px]")).toBe(true);
+
+    const scrollElement = frameElement.firstChild;
+    expect(scrollElement.classList.contains("h-full")).toBe(true);
+    expect(scrollElement.classList.contains("overflow-y-auto")).toBe(true);
   });
 });

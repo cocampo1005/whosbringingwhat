@@ -15,15 +15,21 @@ export default function App({ basename = "/" }) {
   return (
     <div className="wbw">
       <div
-        className={standalone ? "min-h-screen bg-yellow-50" : "bg-yellow-50"}
+        className={
+          standalone
+            ? "min-h-screen bg-yellow-50"
+            : "wbw-embedded relative h-[80dvh] min-h-[560px] bg-yellow-50 [transform:translateZ(0)]"
+        }
       >
-        <AuthProvider>
-          <RoleProvider>
-            <UsersProvider>
-              <RouterProvider router={router} />
-            </UsersProvider>
-          </RoleProvider>
-        </AuthProvider>
+        <div className={standalone ? undefined : "h-full overflow-y-auto"}>
+          <AuthProvider>
+            <RoleProvider>
+              <UsersProvider>
+                <RouterProvider router={router} />
+              </UsersProvider>
+            </RoleProvider>
+          </AuthProvider>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,5 @@
 import { useNavigate, getRouteApi } from "@tanstack/react-router";
 import { useMemo, useEffect, useState } from "react";
-import { useEmbedded } from "../hooks/useEmbedded";
 import {
   arrayRemove,
   arrayUnion,
@@ -54,7 +53,6 @@ function EventDetails() {
   const { eventId } = eventDetailsRouteApi.useParams();
   const { currentUser } = useAuth();
   const role = useRole();
-  const embedded = useEmbedded();
   const isAdmin = role === "admin";
 
   const [event, setEvent] = useState(null);
@@ -1365,11 +1363,7 @@ function EventDetails() {
       {/* Add item button */}
       <button
         onClick={handleAddItem}
-        className={
-          embedded
-            ? "absolute bottom-4 right-4 rounded-full bg-primaryRed p-4 text-white shadow-lg transition-colors hover:bg-secondaryRed md:hidden"
-            : "fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white shadow-lg transition-colors hover:bg-secondaryRed md:hidden"
-        }
+        className="fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white shadow-lg transition-colors hover:bg-secondaryRed md:hidden"
       >
         <FaPlus />
       </button>

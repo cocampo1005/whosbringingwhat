@@ -95,12 +95,13 @@ Make sure you have the following installed on your machine:
   `.wbw` wrapper and the element that carries layout classes. The only sanctioned exception is
   `index.html`'s inline `<style>` page reset, which is kept unprefixed by the `ignoreFiles` entry
   in `postcss.config.js` — do not remove that entry.
-- **Embedded layout**: `useEmbedded()` (`src/hooks/useEmbedded.js`) is true when the router
-  mounts under a host basepath. Standalone, the sidebar, the page header, the mobile tab bar and
-  the mobile "+" buttons are pinned to the viewport with `position: fixed`; embedded they flow
-  inside the host's box instead, because a fixed element ignores the remote's container and
-  lands on top of the host's own chrome. Modals stay fixed on purpose: a dialog is meant to
-  cover the whole page. Put any new fixed element behind that hook.
+- **Embedded frame**: under a host basepath, `App.jsx` mounts the app in a frame of stable height
+  (`80dvh`, at least `560px`) with an inner scrolling element. The frame has a `transform`, which
+  makes it the containing block for every `position: fixed` descendant, so the sidebar, the page
+  header, the tab bar, the "+" buttons and every dialog pin to the frame instead of the browser
+  viewport, and the app scrolls inside it. `src/index.css` remaps `h-screen` and `min-h-screen`
+  under `.wbw-embedded` to the frame's height. Nothing in the components changes between the two
+  modes: write layout for the standalone viewport and the frame takes care of the rest.
 - **Assets**: always `import` assets (images, SVGs, etc.) rather than referencing them by a
   `/src/...` string path — string paths are not resolved/bundled by Vite the same way and will
   break under federation.
