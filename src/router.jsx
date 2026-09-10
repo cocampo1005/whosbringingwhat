@@ -7,7 +7,7 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { auth } from "./firebase";
-import Home from "./pages/Home";
+import SignedInLayout from "./components/SignedInLayout";
 import Events from "./pages/Events";
 import MyItems from "./pages/MyItems";
 import Login from "./pages/Login";
@@ -35,7 +35,7 @@ const homeRoute = createRoute({
       });
     }
   },
-  component: Home,
+  component: SignedInLayout,
 });
 
 const indexRoute = createRoute({

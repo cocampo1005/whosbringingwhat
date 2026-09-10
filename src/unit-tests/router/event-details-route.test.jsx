@@ -10,6 +10,10 @@ const authMock = vi.hoisted(() => ({
   authStateReady: () => Promise.resolve(),
 }));
 vi.mock("../../firebase", () => ({ auth: authMock, db: {}, storage: {} }));
+// The signed-in layout also watches the auth context; mirror the Firebase stand-in there.
+vi.mock("../../contexts/AuthContext", () => ({
+  useAuth: () => ({ currentUser: authMock.currentUser }),
+}));
 vi.mock("../../pages/Home", async () => {
   const { Outlet } = await import("@tanstack/react-router");
   return { default: () => <Outlet /> };
