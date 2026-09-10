@@ -100,14 +100,12 @@ export const loginRoute = createRoute({
   validateSearch: readRedirect,
 });
 
-export const signupRoute = createRoute({
+const signupRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/signup",
   component: Signup,
   validateSearch: readRedirect,
 });
-
-export { eventDetailsRoute };
 
 const routeTree = rootRoute.addChildren([
   homeRoute.addChildren([

@@ -2,8 +2,7 @@ import { useState } from "react";
 import logo from "../assets/logoBorderless.png";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { loginRoute } from "../router";
+import { Link, useNavigate, getRouteApi } from "@tanstack/react-router";
 import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
@@ -12,6 +11,8 @@ import {
 import { auth } from "../firebase";
 import ForgotPasswordModal from "../components/ForgotPasswordModal";
 import CookingLoader from "../components/CookingLoader";
+
+const loginRouteApi = getRouteApi("/login");
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -24,7 +25,7 @@ export default function Login() {
   const [isForgotPasswordModalOpen, setForgotPasswordModalOpen] =
     useState(false);
   const navigate = useNavigate();
-  const { redirect } = loginRoute.useSearch();
+  const { redirect } = loginRouteApi.useSearch();
 
   // `redirect` is the full href the guard captured (basepath included), so it is navigated to
   // as-is; the default is a route path the router prefixes with the basepath.

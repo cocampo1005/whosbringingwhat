@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { signupRoute } from "../router";
+import { Link, useNavigate, getRouteApi } from "@tanstack/react-router";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -12,6 +11,8 @@ import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import logo from "../assets/logoBorderless.png";
 import CookingLoader from "../components/CookingLoader";
+
+const signupRouteApi = getRouteApi("/signup");
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
@@ -23,7 +24,7 @@ export default function Signup() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { redirect } = signupRoute.useSearch();
+  const { redirect } = signupRouteApi.useSearch();
 
   // `redirect` is the full href the guard captured (basepath included), so it is navigated to
   // as-is; the default is a route path the router prefixes with the basepath.

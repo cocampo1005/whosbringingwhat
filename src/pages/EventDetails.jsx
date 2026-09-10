@@ -1,5 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
-import { eventDetailsRoute } from "../router";
+import { useNavigate, getRouteApi } from "@tanstack/react-router";
 import { useMemo, useEffect, useState } from "react";
 import {
   arrayRemove,
@@ -46,8 +45,10 @@ import JoinEventPromptModal from "../components/JoinEventPromptModal";
 import { deleteAllEventItemImages } from "../utils/storageCleanup";
 import CookingLoader from "../components/CookingLoader";
 
+const eventDetailsRouteApi = getRouteApi("/events/$eventId");
+
 function EventDetails() {
-  const { eventId } = eventDetailsRoute.useParams();
+  const { eventId } = eventDetailsRouteApi.useParams();
   const { currentUser } = useAuth();
   const role = useRole();
   const isAdmin = role === "admin";
