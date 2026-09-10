@@ -2,7 +2,8 @@ import { useState } from "react";
 import logo from "../assets/logoBorderless.png";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { loginRoute } from "../router";
 import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
@@ -23,10 +24,14 @@ export default function Login() {
   const [isForgotPasswordModalOpen, setForgotPasswordModalOpen] =
     useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const redirectTo = searchParams.get("redirect") || "/events";
-  const search = location.search || "";
+  const { redirect } = loginRoute.useSearch();
+
+  // `redirect` is the full href the guard captured (basepath included), so it is navigated to
+  // as-is; the default is a route path the router prefixes with the basepath.
+  const goToTarget = () =>
+    redirect
+      ? navigate({ href: redirect, replace: true })
+      : navigate({ to: "/events", replace: true });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -79,7 +84,7 @@ export default function Login() {
       const user = userCredential.user;
 
       // Go to redirect target or default events page
-      navigate(redirectTo, { replace: true });
+      goToTarget();
     } catch (error) {
       const errorCode = error.code;
       const errorMessage = error.message;
@@ -137,21 +142,10 @@ export default function Login() {
         // If the document does not exist, create it with the user data
       }
 
-      // Full reload to avoid auth race conditions on first Google sign-in
-      const targetPath = redirectTo || "/events";
-      const targetUrl =
-        targetPath.startsWith("http") || targetPath.startsWith("/")
-          ? targetPath
-          : `/${targetPath}`;
-
-      window.location.assign(targetUrl);
+      goToTarget();
     } catch (error) {
       setLoading(false);
-      console.error(
-        "Error during Google sign-in:",
-        error.code,
-        error.message,
-      );
+      console.error("Error during Google sign-in:", error.code, error.message);
     }
   };
 
@@ -287,7 +281,8 @@ export default function Login() {
           <p className="mt-10 text-center text-sm/6 text-gray-500">
             Not a member?{" "}
             <Link
-              to={`/signup${search}`}
+              to="/signup"
+              search={redirect ? { redirect } : {}}
               className="font-semibold text-primaryRed hover:text-secondaryRed"
             >
               Register now

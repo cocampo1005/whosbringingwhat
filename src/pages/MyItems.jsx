@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { MdOutlineAccessTimeFilled } from "react-icons/md";
@@ -110,7 +110,7 @@ export default function MyItems() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto pt-8 pb-8 md:pt-8">
+    <div className="mx-auto max-w-5xl pb-8 pt-8 md:pt-8">
       {!hasAnyItems ? (
         <p className="text-center text-gray-600">
           Items you bring will show up here.

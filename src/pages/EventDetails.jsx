@@ -1,4 +1,5 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
+import { eventDetailsRoute } from "../router";
 import { useMemo, useEffect, useState } from "react";
 import {
   arrayRemove,
@@ -46,7 +47,7 @@ import { deleteAllEventItemImages } from "../utils/storageCleanup";
 import CookingLoader from "../components/CookingLoader";
 
 function EventDetails() {
-  const { eventId } = useParams();
+  const { eventId } = eventDetailsRoute.useParams();
   const { currentUser } = useAuth();
   const role = useRole();
   const isAdmin = role === "admin";
@@ -771,7 +772,7 @@ function EventDetails() {
       }
       const eventRef = doc(db, "events", eventId);
       await deleteDoc(eventRef);
-      navigate("/events");
+      navigate({ to: "/events" });
     } catch (error) {
       console.error("Error deleting event:", error);
     } finally {
@@ -1367,7 +1368,7 @@ function EventDetails() {
       {/* Modals */}
       <JoinEventPromptModal
         isOpen={!!currentUser && !!event && !isMember}
-        onCancel={() => navigate("/events")}
+        onCancel={() => navigate({ to: "/events" })}
         onJoin={handleJoinEvent}
       />
 

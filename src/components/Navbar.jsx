@@ -1,6 +1,6 @@
 import React from "react";
 import { FaCalendarAlt, FaClipboardList, FaUser } from "react-icons/fa";
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import logo from "../assets/logo-with-face-outlined.svg";
 import { useAuth } from "../contexts/AuthContext";
 import AssigneeAvatar from "./AssigneeAvatar";
@@ -28,74 +28,97 @@ export default function Navbar() {
 
           {/* Top Nav Links */}
           <div className="flex flex-col gap-4">
-            <NavLink
+            <Link
               to="/events"
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                  isActive
-                  ? "bg-white/20 text-white"        // translucent white background, keep text white
-                  : "text-white hover:bg-white/10"
-                }`
-              }
+              activeProps={{
+                className:
+                  "flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-white/20 text-white",
+              }}
+              inactiveProps={{
+                className:
+                  "flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors text-white hover:bg-white/10",
+              }}
             >
               <FaCalendarAlt size={18} />
               <span>Events</span>
-            </NavLink>
+            </Link>
 
-            <NavLink
+            <Link
               to="/my-items"
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                  isActive
-                  ? "bg-white/20 text-white"        // translucent white background, keep text white
-                  : "text-white hover:bg-white/10"
-                }`
-              }
+              activeProps={{
+                className:
+                  "flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-white/20 text-white",
+              }}
+              inactiveProps={{
+                className:
+                  "flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors text-white hover:bg-white/10",
+              }}
             >
               <FaClipboardList size={18} />
               <span>My Items</span>
-            </NavLink>
+            </Link>
           </div>
         </div>
 
         {/* Bottom Profile Link */}
         <div>
-          <NavLink
+          <Link
             to="/profile"
-            className={({ isActive }) =>
-              `flex items-center justify-between gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                isActive
-                ? "bg-white/20 text-white"        // translucent white background, keep text white
-                : "text-white hover:bg-white/10"
-              }`
-            }
+            activeProps={{
+              className:
+                "flex items-center justify-between gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-white/20 text-white",
+            }}
+            inactiveProps={{
+              className:
+                "flex items-center justify-between gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors text-white hover:bg-white/10",
+            }}
           >
             {/* Left: avatar with initials fallback */}
             <div className="flex items-center gap-3">
               {currentUser?.uid && (
-                <AssigneeAvatar assigneeId={currentUser.uid} size={28} showName={false} />
+                <AssigneeAvatar
+                  assigneeId={currentUser.uid}
+                  size={28}
+                  showName={false}
+                />
               )}
               <span className="text-white md:text-inherit">Profile</span>
             </div>
-          </NavLink>
+          </Link>
         </div>
       </nav>
 
       {/* Mobile Bottom Nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-20 flex h-16 items-center justify-around bg-primaryRed shadow md:hidden">
-        <NavLink to="/events" className={navLinkStyles}>
+        <Link
+          to="/events"
+          activeProps={{ className: navLinkStyles({ isActive: true }) }}
+          inactiveProps={{ className: navLinkStyles({ isActive: false }) }}
+        >
           <FaCalendarAlt size={20} />
           <span>Events</span>
-        </NavLink>
-        <NavLink to="/my-items" className={navLinkStyles}>
+        </Link>
+        <Link
+          to="/my-items"
+          activeProps={{ className: navLinkStyles({ isActive: true }) }}
+          inactiveProps={{ className: navLinkStyles({ isActive: false }) }}
+        >
           <FaClipboardList size={20} />
           <span>My Items</span>
-        </NavLink>
-        <NavLink to="/profile" className={navLinkStyles}>
-            {currentUser?.uid && (
-              <AssigneeAvatar assigneeId={currentUser.uid} size={34} showName={false}/>
-            )}
-        </NavLink>
+        </Link>
+        <Link
+          to="/profile"
+          activeProps={{ className: navLinkStyles({ isActive: true }) }}
+          inactiveProps={{ className: navLinkStyles({ isActive: false }) }}
+        >
+          {currentUser?.uid && (
+            <AssigneeAvatar
+              assigneeId={currentUser.uid}
+              size={34}
+              showName={false}
+            />
+          )}
+        </Link>
       </nav>
     </>
   );

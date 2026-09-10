@@ -26,7 +26,7 @@ export default defineConfig({
             'firebase/firestore',
             'firebase/storage',
           ],
-          reactVendor: ['react', 'react-dom', 'react-router-dom'],
+          reactVendor: ['react', 'react-dom'],
         },
       },
     },

@@ -21,7 +21,7 @@ import {
 } from "firebase/firestore";
 import { useAuth } from "../contexts/AuthContext";
 import EventCard from "../components/EventCard";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
 import { useRole } from "../hooks/useRole";
 import { pickRandomEventBannerColor } from "../constants/eventBannerColors";
 import CookingLoader from "../components/CookingLoader";
@@ -251,7 +251,7 @@ export default function Events() {
       setShowAddEventModal(false);
 
       // Navigate to the newly created event
-      navigate(`/events/${docRef.id}`);
+      navigate({ to: `/events/${docRef.id}` });
     } catch (error) {
       console.error("Error adding event to Firestore: ", error);
     }

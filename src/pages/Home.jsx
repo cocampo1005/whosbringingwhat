@@ -1,23 +1,12 @@
 import Navbar from "../components/Navbar";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useMatches } from "@tanstack/react-router";
 import logo from "../assets/logo-with-face-outlined.svg";
 
 export default function Home() {
-  const location = useLocation();
-
-  // Determine page name based on the current path
-  const getPageName = () => {
-    switch (location.pathname) {
-      case "/events":
-        return "Events";
-      case "/my-items":
-        return "My Items";
-      case "/profile":
-        return "Profile";
-      default:
-        return "Events"; // Default page name if the path doesn't match
-    }
-  };
+  const matches = useMatches();
+  const pageName =
+    [...matches].reverse().find((match) => match.staticData?.pageName)
+      ?.staticData.pageName ?? "Events";
 
   return (
     <div className="flex min-h-screen flex-col overflow-hidden md:flex-row">
@@ -30,8 +19,8 @@ export default function Home() {
             <Link to="/" className="absolute left-0 md:hidden">
               <img src={logo} className="h-10" />
             </Link>
-            <h1 className="text-primaryLight text-center text-[1.5rem] font-bold tracking-wide md:text-left md:text-2xl md:text-primaryRed">
-              {getPageName()}
+            <h1 className="text-center text-[1.5rem] font-bold tracking-wide text-primaryLight md:text-left md:text-2xl md:text-primaryRed">
+              {pageName}
             </h1>
           </div>
         </header>

@@ -2,7 +2,7 @@ import React from "react";
 import { MdOutlineAccessTimeFilled } from "react-icons/md";
 import { FaCalendarAlt } from "react-icons/fa";
 import { TiLocation } from "react-icons/ti";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { formatTime } from "../utils/formatters";
 import ShareButton from "./ShareButton";
 

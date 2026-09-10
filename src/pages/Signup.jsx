@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { signupRoute } from "../router";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -22,10 +23,14 @@ export default function Signup() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const redirectTo = searchParams.get("redirect") || "/events";
-  const search = location.search || "";
+  const { redirect } = signupRoute.useSearch();
+
+  // `redirect` is the full href the guard captured (basepath included), so it is navigated to
+  // as-is; the default is a route path the router prefixes with the basepath.
+  const goToTarget = () =>
+    redirect
+      ? navigate({ href: redirect, replace: true })
+      : navigate({ to: "/events", replace: true });
 
   // Email validation regex
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -112,7 +117,7 @@ export default function Signup() {
       });
 
       // Go to redirect target or default events page
-      navigate(redirectTo, { replace: true });
+      goToTarget();
     } catch (error) {
       setLoading(false);
       // Handle Firebase errors
@@ -150,14 +155,7 @@ export default function Signup() {
       const user = result.user;
       console.log("[GoogleAuth][Signup] signInWithPopup success", user?.uid);
 
-      // Full reload to avoid auth race conditions on first Google sign-up
-      const targetPath = redirectTo || "/events";
-      const targetUrl =
-        targetPath.startsWith("http") || targetPath.startsWith("/")
-          ? targetPath
-          : `/${targetPath}`;
-
-      window.location.assign(targetUrl);
+      goToTarget();
     } catch (error) {
       setLoading(false);
       console.error("Error during Google sign-in:", error.code, error.message);
@@ -317,7 +315,8 @@ export default function Signup() {
           <p className="mt-10 text-center text-sm/6 text-gray-500">
             Already a member?{" "}
             <Link
-              to={`/login${search}`}
+              to="/login"
+              search={redirect ? { redirect } : {}}
               className="font-semibold text-primaryRed hover:text-secondaryRed"
             >
               Login
