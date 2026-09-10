@@ -5,10 +5,26 @@
   },
   "hosting": {
     "public": "dist",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "headers": [
+      {
+        "source": "/mf-manifest.json",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-store" },
+          { "key": "Access-Control-Allow-Origin", "value": "*" }
+        ]
+      },
+      {
+        "source": "/remoteEntry.js",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-store" },
+          { "key": "Access-Control-Allow-Origin", "value": "*" }
+        ]
+      },
+      {
+        "source": "/assets/**",
+        "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }]
+      }
     ],
     "rewrites": [
       {

@@ -13,6 +13,8 @@
   "dependencies": {
     "@emoji-mart/data": "^1.1.0",
     "@emoji-mart/react": "^1.1.0",
+    "@module-federation/bridge-react": "^2.9.0",
+    "@module-federation/vite": "^1.21.5",
     "@tailwindcss/forms": "^0.5.9",
     "@tanstack/react-router": "^1.170.34",
     "browser-image-compression": "^2.0.2",
