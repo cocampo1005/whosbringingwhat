@@ -14,7 +14,6 @@
     "@emoji-mart/data": "^1.1.0",
     "@emoji-mart/react": "^1.1.0",
     "@module-federation/bridge-react": "^2.9.0",
-    "@module-federation/vite": "^1.21.5",
     "@tailwindcss/forms": "^0.5.9",
     "@tanstack/react-router": "^1.170.34",
     "browser-image-compression": "^2.0.2",
@@ -29,6 +28,7 @@
   "devDependencies": {
     "@eslint/js": "^9.13.0",
     "@firebase/rules-unit-testing": "^4.0.1",
+    "@module-federation/vite": "^1.21.5",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.5.0",

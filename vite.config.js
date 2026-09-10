@@ -9,6 +9,9 @@ import { configDefaults } from "vitest/config";
 const remoteOrigin = "https://whos-bringing-what.web.app/";
 
 export default defineConfig(({ command }) => ({
+  // Load-bearing, not cosmetic: the host injects this remote's CSS by prefixing the
+  // preload helper's asset paths with this absolute base, and `vite preview` fetches
+  // production assets from it too (there is no local "/" fallback once this is set for build).
   base: command === "build" ? remoteOrigin : "/",
   plugins: [
     react(),
@@ -29,6 +32,10 @@ export default defineConfig(({ command }) => ({
               react: { singleton: true, requiredVersion: "^19" },
               "react-dom": { singleton: true, requiredVersion: "^19" },
             },
+            // The host is on React 19.2, this remote on 19.3; "loaded-first" (rather than the
+            // runtime's "version-first" default) makes both sides prefer whichever singleton
+            // copy is already loaded instead of racing to load a second React by version.
+            shareStrategy: "loaded-first",
           }),
         ]),
   ],
@@ -48,13 +55,16 @@ export default defineConfig(({ command }) => ({
     chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
-        manualChunks: {
-          firebase: [
-            "firebase/app",
-            "firebase/auth",
-            "firebase/firestore",
-            "firebase/storage",
-          ],
+        // The federation plugin ignores the object form of manualChunks (it claims
+        // federation-owned modules first and needs the function form for everything else),
+        // so Firebase is grouped by id instead of by package-name list.
+        manualChunks(id) {
+          if (
+            id.includes("node_modules/@firebase") ||
+            id.includes("node_modules/firebase/")
+          ) {
+            return "firebase";
+          }
         },
       },
     },
