@@ -42,6 +42,7 @@ Try out the deployed app [here](https://whos-bringing-what.web.app/).
 ### Prerequisites
 
 Make sure you have the following installed on your machine:
+
 - [nvm](https://github.com/nvm-sh/nvm)
 - [Node.js](https://nodejs.org/)
 - [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
@@ -75,6 +76,36 @@ Make sure you have the following installed on your machine:
    ```bash
    npx vite
    ```
+
+## Development notes (federated build)
+
+- **Node version**: this branch pins Node 22. Run `nvm use` before installing or running
+  anything so you pick up the right version.
+- **Routing**: the app uses TanStack Router with a `basepath` (see `src/router.jsx`). Every
+  `to` you write must be root-relative — never hardcode a leading path like `/projects/wbw/...`;
+  the router prepends the basepath for you.
+- **Module Federation remote**: the app is also exposed as the Module Federation remote `wbw`,
+  publishing `./app` for the portfolio to consume at
+  `https://www.jsrodriguez.dev/projects/wbw`. See `src/federation/export-app.jsx` and
+  `vite.config.js` for the wiring.
+- **Style scoping**: every stylesheet rule is scoped under `.wbw` at build time (see
+  `postcss.config.js`). Do not write rules that target `html`, `body`, or `*` — they will not
+  reach the real page when this app is mounted as a remote. Also do not put utility classes on
+  the element that carries the `wbw` class itself; `src/App.jsx` shows the split between the
+  `.wbw` wrapper and the element that carries layout classes.
+- **Assets**: always `import` assets (images, SVGs, etc.) rather than referencing them by a
+  `/src/...` string path — string paths are not resolved/bundled by Vite the same way and will
+  break under federation.
+- **Production `base`**: the production `base` is set to the Firebase hosting origin, so
+  running `npm run preview` or the Firebase emulator loads its built assets from the live site,
+  not from your local server.
+- **`randomPotluckImage`**: this Cloud Function is called by its absolute URL (see
+  `src/constants/api.js`) rather than a relative path, so it resolves correctly regardless of
+  which origin the app is served from.
+- **Version**: the package version became `1.0.0` as part of this branch.
+- **Tests already failing on `main`**: the following unit tests were failing before this branch
+  and are unrelated to the federated-remote work — please don't pin them on this branch:
+  EventModal, ImageUpload, `events.rules` (×2), CategoryList (×2), ItemSidePanel (×2).
 
 ## Acknowledgments 💡
 
