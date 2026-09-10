@@ -92,7 +92,9 @@ Make sure you have the following installed on your machine:
   `postcss.config.js`). Do not write rules that target `html`, `body`, or `*` — they will not
   reach the real page when this app is mounted as a remote. Also do not put utility classes on
   the element that carries the `wbw` class itself; `src/App.jsx` shows the split between the
-  `.wbw` wrapper and the element that carries layout classes.
+  `.wbw` wrapper and the element that carries layout classes. The only sanctioned exception is
+  `index.html`'s inline `<style>` page reset, which is kept unprefixed by the `ignoreFiles` entry
+  in `postcss.config.js` — do not remove that entry.
 - **Assets**: always `import` assets (images, SVGs, etc.) rather than referencing them by a
   `/src/...` string path — string paths are not resolved/bundled by Vite the same way and will
   break under federation.

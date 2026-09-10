@@ -45,7 +45,9 @@ import JoinEventPromptModal from "../components/JoinEventPromptModal";
 import { deleteAllEventItemImages } from "../utils/storageCleanup";
 import CookingLoader from "../components/CookingLoader";
 
-const eventDetailsRouteApi = getRouteApi("/events/$eventId");
+// This route hangs off the pathless "home" layout route (see homeRoute's explicit id: "home"
+// in router.jsx), so its composed route id is "/home/events/$eventId", not "/events/$eventId".
+const eventDetailsRouteApi = getRouteApi("/home/events/$eventId");
 
 function EventDetails() {
   const { eventId } = eventDetailsRouteApi.useParams();
