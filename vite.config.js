@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { federation } from "@module-federation/vite";
 import { configDefaults } from "vitest/config";
+import { buildInfoPlugin } from "./build-info-plugin.js";
 
 // Production asset URLs are absolute to the Firebase origin: the manifest the portfolio loads
 // must point at chunks the portfolio's origin does not serve. Development is absolute too, for
@@ -10,6 +11,10 @@ import { configDefaults } from "vitest/config";
 // names, not its own — a relative "/" here would 404 every asset the shell tries to load.
 const remoteOrigin = "https://whos-bringing-what.web.app/";
 const devOrigin = "http://localhost:5173/";
+// The host is on React 19.2, this remote on 19.3; "loaded-first" (rather than the runtime's
+// "version-first" default) makes both sides prefer whichever singleton copy is already loaded
+// instead of racing to load a second React by version.
+const shareStrategy = "loaded-first";
 
 export default defineConfig(({ command }) => ({
   // Load-bearing, not cosmetic: the host injects this remote's CSS by prefixing the
@@ -49,11 +54,11 @@ export default defineConfig(({ command }) => ({
               react: { singleton: true, requiredVersion: "^19" },
               "react-dom": { singleton: true, requiredVersion: "^19" },
             },
-            // The host is on React 19.2, this remote on 19.3; "loaded-first" (rather than the
-            // runtime's "version-first" default) makes both sides prefer whichever singleton
-            // copy is already loaded instead of racing to load a second React by version.
-            shareStrategy: "loaded-first",
+            shareStrategy,
           }),
+          // Writes dist/build-info.json: the version and commit this build deploys as, which the
+          // portfolio shows on this remote's project card.
+          buildInfoPlugin({ shareStrategy }),
         ]),
   ],
   test: {
