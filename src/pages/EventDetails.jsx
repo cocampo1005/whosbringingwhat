@@ -1001,7 +1001,8 @@ function EventDetails() {
                 </span>
               </div>
             )}
-            <h1 className="break-words font-display text-3xl md:text-4xl lg:text-5xl font-extrabold uppercase leading-[1.02] [font-stretch:125%]">
+            {/* The colour is set here too: the base h1 rule sets ink, so it does not inherit. */}
+            <h1 className={`break-words font-display text-3xl md:text-4xl lg:text-5xl font-extrabold uppercase leading-[1.02] [font-stretch:125%] ${heroText}`}>
               {event.title}
             </h1>
             {(event.time || event.location) && (
