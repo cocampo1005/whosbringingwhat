@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { MdDelete, MdImage } from "react-icons/md";
+import { MdImage } from "react-icons/md";
+import { LuTrash2 } from "react-icons/lu";
+import IconButton from "./ui/IconButton";
 import {
   getStorage,
   ref,
@@ -93,23 +95,28 @@ function ImageUpload({
 
   return (
     <div>
-      {label && <label className="mb-2 block font-bold">{label}</label>}
+      {label && (
+        <label htmlFor={resolvedInputId} className="mb-2 block font-semibold">
+          {label}
+        </label>
+      )}
 
       {imageUrl ? (
         <div className="relative">
           <img
             src={imageUrl}
             alt={imageAlt}
-            className="h-32 w-full rounded-lg border object-cover"
+            className="h-32 w-full rounded-[18px] object-cover"
           />
-          <button
-            type="button"
+          <IconButton
+            variant="danger"
             onClick={handleRemoveImage}
             disabled={isDisabled}
-            className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label="Remove photo"
+            className="absolute right-2 top-2"
           >
-            <MdDelete className="text-sm" />
-          </button>
+            <LuTrash2 size={16} />
+          </IconButton>
         </div>
       ) : (
         <div className="relative">
@@ -124,19 +131,19 @@ function ImageUpload({
           />
           <label
             htmlFor={resolvedInputId}
-            className={`flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-yellow-50 hover:bg-white ${
+            className={`flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-[18px] border-2 border-dashed border-lineStrong bg-surface2 hover:bg-surface3 ${
               isDisabled ? "cursor-not-allowed opacity-50" : ""
             }`}
           >
             {uploading ? (
               <div className="flex flex-col items-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primaryRed"></div>
-                <p className="mt-2 text-sm text-gray-500">Uploading...</p>
+                <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-selected"></div>
+                <p className="mt-2 text-sm text-muted">Uploading...</p>
               </div>
             ) : (
               <>
-                <MdImage className="mb-2 text-4xl text-gray-400" />
-                <p className="text-sm text-gray-500">Click to upload photo</p>
+                <MdImage className="mb-2 text-4xl text-control" />
+                <p className="text-sm text-muted">Click to upload photo</p>
               </>
             )}
           </label>

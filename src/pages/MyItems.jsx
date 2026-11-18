@@ -3,26 +3,25 @@ import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { Link } from "@tanstack/react-router";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
-import { MdOutlineAccessTimeFilled } from "react-icons/md";
-import { FaCalendarAlt } from "react-icons/fa";
-import { TiLocation } from "react-icons/ti";
+import { LuMapPin } from "react-icons/lu";
 import { formatTime } from "../utils/formatters";
+import { getCategoryTheme } from "../constants/categoryTheme";
+import { PageTitle, SegmentedTabs } from "../components/ui";
+import charYellow from "../assets/brand/characters/char-yellow.svg";
 
-const CATEGORY_ROW_BG = {
-  Main: "bg-rose-50",
-  Side: "bg-yellow-50",
-  Dessert: "bg-purple-50",
-  Beverage: "bg-blue-50",
-  Miscellaneous: "bg-emerald-50",
-};
+const TABS = [
+  { value: "myItems", label: "My Items" },
+  { value: "onBehalfOf", label: "On Behalf Of" },
+];
 
-const CATEGORY_PILL_STYLES = {
-  Main: "bg-rose-100 text-rose-700",
-  Side: "bg-yellow-100 text-yellow-800",
-  Dessert: "bg-purple-100 text-purple-700",
-  Beverage: "bg-blue-100 text-blue-700",
-  Miscellaneous: "bg-emerald-100 text-emerald-700",
-};
+function renderEmpty(text) {
+  return (
+    <div className="mx-auto flex max-w-md flex-col items-center rounded-card bg-raised px-6 py-10 text-center shadow-soft">
+      <img src={charYellow} alt="" className="mb-4 h-24 w-24" />
+      <p className="text-sm text-muted">{text}</p>
+    </div>
+  );
+}
 
 export default function MyItems() {
   const { currentUser } = useAuth();
@@ -80,7 +79,7 @@ export default function MyItems() {
   if (!currentUser) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <p className="text-center text-gray-600">
+        <p className="text-center text-muted">
           Please log in to see your contributions.
         </p>
       </div>
@@ -90,7 +89,7 @@ export default function MyItems() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <div className="h-12 w-12 animate-spin rounded-full border-t-4 border-primaryRed" />
+        <div className="h-12 w-12 animate-spin rounded-full border-t-4 border-selected-text" />
       </div>
     );
   }
@@ -109,136 +108,109 @@ export default function MyItems() {
     0,
   );
 
+  const subtitle =
+    totalItemsInTab > 0
+      ? `${totalItemsInTab} ${totalItemsInTab === 1 ? "item" : "items"} across ${eventsForTab.length} ${eventsForTab.length === 1 ? "event" : "events"}`
+      : undefined;
+
   return (
-    <div className="mx-auto max-w-5xl pb-8 pt-8 md:pt-8">
-      {!hasAnyItems ? (
-        <p className="text-center text-gray-600">
-          Items you bring will show up here.
-        </p>
-      ) : (
-        <>
-          <div className="mb-9 flex w-full items-center justify-between gap-4 md:w-auto md:justify-start">
-            <div className="inline-flex rounded-xl bg-white p-1 shadow-md">
-              <button
-                type="button"
-                onClick={() => setTab("myItems")}
-                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
-                  tab === "myItems"
-                    ? "bg-primaryRed text-white"
-                    : "text-primaryDark hover:bg-gray-50"
-                }`}
-                aria-pressed={tab === "myItems"}
+    <div className="pb-4">
+      <PageTitle
+        title="My Items"
+        subtitle={subtitle}
+        actions={
+          hasAnyItems ? (
+            <SegmentedTabs
+              tabs={TABS}
+              value={tab}
+              onChange={setTab}
+              ariaLabel="Item view"
+            />
+          ) : null
+        }
+      />
+
+      <div className="mt-6">
+        {!hasAnyItems ? (
+          renderEmpty("Items you bring will show up here.")
+        ) : eventsForTab.length === 0 ? (
+          renderEmpty(
+            tab === "myItems"
+              ? "You do not have any items assigned directly to you yet."
+              : "You are not currently bringing any items on behalf of someone else.",
+          )
+        ) : (
+          <div className="grid items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {eventsForTab.map((ev) => (
+              <Link
+                key={ev.eventId}
+                to={`/events/${ev.eventId}`}
+                className="block rounded-card bg-raised p-5 shadow-soft transition duration-150 ease-wbw hover:shadow-raised"
               >
-                My Items
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab("onBehalfOf")}
-                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
-                  tab === "onBehalfOf"
-                    ? "bg-primaryRed text-white"
-                    : "text-primaryDark hover:bg-gray-50"
-                }`}
-                aria-pressed={tab === "onBehalfOf"}
-              >
-                On Behalf Of
-              </button>
-            </div>
-            <span className="text-xs text-gray-500">
-              {totalItemsInTab} items
-            </span>
-          </div>
+                <span className="inline-block rounded-full bg-selected-soft px-2.5 py-1 font-display text-[10px] font-extrabold uppercase tracking-wide text-selected-text">
+                  {ev.eventDate} · {formatTime(ev.eventTime)}
+                </span>
+                <h2 className="mt-3 text-lg leading-tight">{ev.eventTitle}</h2>
+                {ev.eventLocation && (
+                  <p className="mt-1.5 flex items-center gap-1.5 text-[0.8125rem] text-muted">
+                    <LuMapPin aria-hidden="true" className="shrink-0" />
+                    <span>{ev.eventLocation}</span>
+                  </p>
+                )}
 
-          {eventsForTab.length === 0 ? (
-            <p className="text-center text-gray-600">
-              {tab === "myItems"
-                ? "You do not have any items assigned directly to you yet."
-                : "You are not currently bringing any items on behalf of someone else."}
-            </p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {eventsForTab.map((ev) => (
-                <Link
-                  key={ev.eventId}
-                  to={`/events/${ev.eventId}`}
-                  className="block rounded-2xl bg-white shadow-md"
-                >
-                  {/* Card header: Event name */}
-                  <div className="rounded-t-2xl bg-primaryRed py-2 text-center text-lg font-bold text-white">
-                    {ev.eventTitle}
-                  </div>
+                <div className="my-4 h-px bg-line" />
 
-                  {/* Optional compact event meta */}
-                  <div className="px-4 pt-3">
-                    <div className="flex items-center text-sm">
-                      <FaCalendarAlt className="mr-2 text-primaryRed" />
-                      <span className="font-semibold">{ev.eventDate}</span>
-                    </div>
-                    <div className="flex items-center text-sm">
-                      <MdOutlineAccessTimeFilled className="mr-2 text-primaryRed" />
-                      <span className="font-semibold">
-                        {formatTime(ev.eventTime)}
-                      </span>
-                    </div>
-                    <div className="flex items-center text-sm">
-                      <TiLocation className="mr-2 text-primaryRed" />
-                      <span className="font-semibold">{ev.eventLocation}</span>
-                    </div>
-                  </div>
+                <p className="mb-2.5 font-display text-[10px] font-extrabold uppercase tracking-wider text-muted">
+                  {tab === "onBehalfOf"
+                    ? "On Behalf Of Contributions"
+                    : "Your Contributions"}
+                </p>
+                <ul className="space-y-2">
+                  {ev.items.map((it) => {
+                    const displayAssignee =
+                      it.isOnBehalfOf && it.onBehalfOfName
+                        ? it.onBehalfOfName
+                        : it.assignee;
+                    const theme = getCategoryTheme(it.category);
 
-                  {/* Card body: Your items for this event */}
-                  <div className="px-4 pb-4 pt-2">
-                    <p className="mb-2 text-sm font-bold text-primaryDark">
-                      {tab === "onBehalfOf"
-                        ? "On Behalf Of Contributions"
-                        : "Your Contributions"}
-                    </p>
-                    <ul className="space-y-2">
-                      {ev.items.map((it) => {
-                        const displayAssignee =
-                          it.isOnBehalfOf && it.onBehalfOfName
-                            ? it.onBehalfOfName
-                            : it.assignee;
-
-                        const rowBgClass =
-                          CATEGORY_ROW_BG[it.category] || "bg-gray-50";
-                        const pillClass =
-                          CATEGORY_PILL_STYLES[it.category] ||
-                          "bg-rose-100 text-rose-700";
-
-                        return (
-                          <li
-                            key={it.id}
-                            className={`flex items-start justify-between rounded-xl border border-white/70 p-3 shadow-md ${rowBgClass}`}
+                    return (
+                      <li
+                        key={it.id}
+                        className="flex items-center gap-3 rounded-[14px] bg-surface2 px-3 py-2.5"
+                      >
+                        <span
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                          style={{ backgroundColor: theme.pastel }}
+                        >
+                          <img src={theme.icon} alt="" className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-ink">
+                            {it.title}
+                          </p>
+                          {displayAssignee && (
+                            <p className="truncate text-xs text-muted">
+                              {displayAssignee}
+                            </p>
+                          )}
+                        </div>
+                        {it.category && (
+                          <span
+                            className="shrink-0 font-display text-[10px] font-extrabold uppercase tracking-wide"
+                            style={{ color: theme.accent }}
                           >
-                            <div className="pr-3">
-                              <p className="text-sm font-semibold text-primaryDark">
-                                {it.title}
-                              </p>
-                              {displayAssignee && (
-                                <p className="text-xs text-gray-600">
-                                  {displayAssignee}
-                                </p>
-                              )}
-                            </div>
-                            {it.category && (
-                              <span
-                                className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${pillClass}`}
-                              >
-                                {it.category}
-                              </span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </>
-      )}
+                            {it.category}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

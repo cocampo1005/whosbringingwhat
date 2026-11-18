@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "../contexts/AuthContext";
-import {
-  IoClose,
-  IoChevronDown,
-  IoInformationCircleOutline,
-} from "react-icons/io5";
+import { LuChevronDown, LuInfo } from "react-icons/lu";
 // import { collection, getDocs } from "firebase/firestore";
 // import { db } from "firebase";
 import AssigneeAvatar from "./AssigneeAvatar";
@@ -14,6 +10,7 @@ import { useUsers } from "../contexts/UsersContext";
 import ImageUpload from "./ImageUpload";
 import useEscapeKey from "../hooks/useEscapeKey";
 import UnsavedChangesPrompt from "./UnsavedChangesPrompt";
+import { Button, SheetShell } from "./ui";
 
 function ItemSidePanel({
   closeModal,
@@ -244,321 +241,317 @@ function ItemSidePanel({
     submitLabel = "Add Item";
   }
 
+  const formId = "item-side-panel-form";
+  const labelCls = "mb-1.5 block text-sm font-semibold text-ink";
+  const requiredCls = "after:ml-0.5 after:text-accent after:content-['*']";
+  const helpCls = "mt-1.5 text-xs text-muted";
+  const fieldCls =
+    "w-full rounded-full border border-transparent bg-surface2 px-4 py-2.5 text-sm text-ink focus:ring-2 focus:ring-selected-text disabled:cursor-not-allowed disabled:opacity-60";
+  const checkboxCls =
+    "h-4 w-4 rounded border-lineStrong text-selected focus:ring-selected-text";
+
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-stretch justify-center bg-gray-500 bg-opacity-50 md:justify-end"
-      onClick={handleBackdropClick}
-    >
-      <div className="relative flex h-full w-full max-w-full flex-col overflow-hidden bg-yellow-50 shadow-lg md:max-w-md">
-        <div className="flex items-center justify-center bg-primaryRed px-4 py-3">
-          <h2 className="text-lg font-semibold text-white">
-            {resolvedMode === "claim"
-              ? "Claim Item"
-              : resolvedMode === "edit"
-                ? "Edit Item"
-                : "Add Item"}
-          </h2>
-          <IoClose
-            className="absolute right-4 top-3 cursor-pointer text-2xl text-white"
-            onClick={requestClose}
-          />
-        </div>
-        <div className="flex-1 overflow-y-auto p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Suggest Item Mode Toggle */}
-            {resolvedMode === "add" &&
-              !isSuggestionLocked &&
-              !isClaimingSuggestion && (
-                <div className="rounded-lg bg-primaryRed/5 px-3 py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <label className="flex items-center gap-2 text-sm font-semibold text-primaryRed">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-primaryRed text-primaryRed focus:ring-primaryRed"
-                        checked={isSuggestionMode}
-                        onChange={(e) => {
-                          setHasInteracted(true);
-                          setIsSuggestionMode(e.target.checked);
-                        }}
-                      />
-                      Suggest Item
-                    </label>
-                    <Tooltip
-                      content="Suggest an item idea without committing to bring it. Others can claim it later."
-                      placement="bottom"
-                    >
-                      <IoInformationCircleOutline className="h-4 w-4 text-primaryRed" />
-                    </Tooltip>
-                  </div>
+    <>
+      <SheetShell
+        onBackdropClick={handleBackdropClick}
+        title={
+          resolvedMode === "claim"
+            ? "Claim Item"
+            : resolvedMode === "edit"
+              ? "Edit Item"
+              : "Add Item"
+        }
+        onClose={requestClose}
+        labelledById="item-side-panel-title"
+        footer={
+          <Button
+            type="submit"
+            form={formId}
+            size="lg"
+            className="w-full"
+            disabled={uploading || !isFormValid}
+          >
+            {submitLabel}
+          </Button>
+        }
+      >
+        <form id={formId} onSubmit={handleSubmit} className="space-y-5">
+          {/* Suggest Item Mode Toggle */}
+          {resolvedMode === "add" &&
+            !isSuggestionLocked &&
+            !isClaimingSuggestion && (
+              <div className="rounded-[14px] bg-accent-soft px-4 py-3">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-danger">
+                    <input
+                      type="checkbox"
+                      className={checkboxCls}
+                      checked={isSuggestionMode}
+                      onChange={(e) => {
+                        setHasInteracted(true);
+                        setIsSuggestionMode(e.target.checked);
+                      }}
+                    />
+                    Suggest Item
+                  </label>
+                  <Tooltip
+                    content="Suggest an item idea without committing to bring it. Others can claim it later."
+                    placement="bottom"
+                  >
+                    <LuInfo className="h-4 w-4 text-danger" />
+                  </Tooltip>
                 </div>
-              )}
-            {/* Item name – always visible, but locked if from a suggestion */}
-            <div>
-              <label className="mb-1 block font-bold after:ml-0.5 after:text-primaryRed after:content-['*']">
-                Item Name
-              </label>
+              </div>
+            )}
+          {/* Item name – always visible, but locked if from a suggestion */}
+          <div>
+            <label className={`${labelCls} ${requiredCls}`}>Item Name</label>
+            <input
+              type="text"
+              name="title"
+              value={itemData.title}
+              onChange={handleChange}
+              className="disabled:cursor-not-allowed disabled:opacity-60"
+              placeholder="e.g., Caesar Salad"
+              disabled={isSuggestionLocked}
+              required
+            />
+            {isSuggestionLocked && (
+              <p className={helpCls}>
+                This item came from a suggestion, so the name can’t be changed.
+              </p>
+            )}
+          </div>
+
+          <div className="relative">
+            <label className={`${labelCls} ${requiredCls}`}>
+              Who's Bringing It?
+            </label>
+            <div
+              className={`flex w-full items-center rounded-full border border-transparent bg-surface2 focus-within:ring-2 focus-within:ring-selected-text ${itemData.isOnBehalfOf ? "opacity-60" : ""}`}
+            >
+              <AssigneeAvatar
+                assigneeId={itemData.assigneeId}
+                displayName={itemData.assignee}
+                size={24}
+                className={"ml-3 self-center"}
+                showName={false}
+              />
+
               <input
                 type="text"
-                name="title"
-                value={itemData.title}
-                onChange={handleChange}
-                className="w-full rounded border p-2 focus:border-primaryRed disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
-                placeholder="e.g., Caesar Salad"
-                disabled={isSuggestionLocked}
+                name="assignee"
+                value={assigneeQuery}
+                onChange={(e) => {
+                  setHasInteracted(true);
+                  const value = e.target.value;
+                  setAssigneeQuery(value);
+                  setShowSuggestions(true);
+
+                  if (value.trim() === "") {
+                    setItemData((prev) => ({
+                      ...prev,
+                      assignee: "",
+                      assigneeId: null,
+                    }));
+                  }
+                }}
+                className={`combo-input min-w-0 flex-1 border-0 bg-transparent px-2 py-2.5 text-sm text-ink focus:outline-none focus:ring-0 ${itemData.isOnBehalfOf ? "cursor-not-allowed" : ""}`}
+                placeholder="Search for a name..."
+                disabled={itemData.isOnBehalfOf}
                 required
               />
-              {isSuggestionLocked && (
-                <p className="mt-1 text-xs text-gray-500">
-                  This item came from a suggestion, so the name can’t be
-                  changed.
-                </p>
-              )}
-            </div>
 
-            <div className="relative">
-              <label className="mb-1 block font-bold after:ml-0.5 after:text-primaryRed after:content-['*']">
-                Who's Bringing It?
-              </label>
-              <div className="flex w-full items-stretch rounded-lg border border-gray-300 bg-white focus-within:border-primaryRed">
-                <AssigneeAvatar
-                  assigneeId={itemData.assigneeId}
-                  displayName={itemData.assignee}
-                  size={24}
-                  className={"ml-3 self-center"}
-                  showName={false}
-                />
-
-                <input
-                  type="text"
-                  name="assignee"
-                  value={assigneeQuery}
-                  onChange={(e) => {
-                    setHasInteracted(true);
-                    const value = e.target.value;
-                    setAssigneeQuery(value);
-                    setShowSuggestions(true);
-
-                    if (value.trim() === "") {
-                      setItemData((prev) => ({
-                        ...prev,
-                        assignee: "",
-                        assigneeId: null,
-                      }));
-                    }
-                  }}
-                  className={`flex-1 border-0 bg-white p-2 pl-2 focus:ring-0 ${itemData.isOnBehalfOf ? "cursor-not-allowed bg-gray-100 text-gray-500" : ""}`}
-                  placeholder="Search for a name..."
-                  disabled={itemData.isOnBehalfOf}
-                  required
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setShowSuggestions((prev) => !prev)}
-                  disabled={itemData.isOnBehalfOf}
-                  className={`rounded-r-lg px-3 text-primaryDark hover:bg-gray-50 ${itemData.isOnBehalfOf ? "cursor-not-allowed opacity-50 hover:bg-white" : ""}`}
-                >
-                  <IoChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                      showSuggestions ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Suggestion dropdown */}
-              {showSuggestions && !itemData.isOnBehalfOf && (
-                <ul className="absolute z-10 mt-1 max-h-40 w-full overflow-y-auto rounded-md bg-white shadow">
-                  {memberUsers
-                    .filter((u) =>
-                      assigneeQuery
-                        ? u?.name
-                            ?.toLowerCase()
-                            .includes(assigneeQuery.toLowerCase())
-                        : true,
-                    )
-                    .map((u) => (
-                      <li
-                        key={u.id}
-                        onClick={() => {
-                          setHasInteracted(true);
-                          setItemData((prev) => ({
-                            ...prev,
-                            assignee: u.name,
-                            assigneeId: u.id,
-                          }));
-                          setAssigneeQuery(u.name);
-                          setShowSuggestions(false);
-                        }}
-                        className="cursor-pointer px-3 py-2 hover:bg-gray-100"
-                      >
-                        <div className="flex items-center gap-2">
-                          <AssigneeAvatar
-                            assigneeId={u.id}
-                            displayName={u.name}
-                            size={24}
-                          />
-                        </div>
-                      </li>
-                    ))}
-                </ul>
-              )}
-
-              {shouldShowAssigneeError && (
-                <p className="mt-1 text-xs text-red-600">
-                  Can't find who's bringing it, use "On behalf of someone else"
-                  instead.
-                </p>
-              )}
-
-              <div className="mt-3 flex flex-col gap-2">
-                <label className="flex items-center text-xs font-semibold text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={!!itemData.isOnBehalfOf}
-                    onChange={handleToggleOnBehalfOf}
-                    className="mr-2 h-4 w-4 rounded border-gray-300 text-primaryRed focus:ring-0 focus:ring-offset-0"
-                  />
-                  <span>On behalf of someone else</span>
-                  <Tooltip
-                    content="Use this when someone who doesn't have an account is bringing an item."
-                    ariaLabel="What does this checkbox do?"
-                  >
-                    <IoInformationCircleOutline className="ml-[6px] h-4 w-4" />
-                  </Tooltip>
-                </label>
-
-                {itemData.isOnBehalfOf && (
-                  <div className="ml-6 mt-1">
-                    <div className="flex w-full items-stretch rounded-lg border border-gray-300 bg-white focus-within:border-primaryRed">
-                      <AssigneeAvatar
-                        assigneeId={null}
-                        displayName={itemData.onBehalfOfName}
-                        size={20}
-                        className={"ml-3 self-center"}
-                        showName={false}
-                      />
-                      <input
-                        type="text"
-                        name="onBehalfOfName"
-                        value={itemData.onBehalfOfName}
-                        onChange={handleChange}
-                        placeholder="Name of the person who's bringing what"
-                        className="flex-1 border-0 bg-white p-2 pl-2 text-sm focus:ring-0"
-                        maxLength={30}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1 block font-bold after:ml-0.5 after:text-primaryRed after:content-['*']">
-                Category
-              </label>
-              <select
-                name="category"
-                value={itemData.category}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 p-2 focus:border-primaryRed focus:ring-0"
-                required
-                disabled={isSuggestionLocked}
-              >
-                <option value="Main">Main</option>
-                <option value="Side">Side</option>
-                <option value="Dessert">Dessert</option>
-                <option value="Beverage">Beverage</option>
-                <option value="Miscellaneous">Miscellaneous</option>
-              </select>
-              {isSuggestionLocked && (
-                <p className="mt-1 text-xs text-gray-500">
-                  This item came from a suggestion, so the category can’t be
-                  changed.
-                </p>
-              )}
-            </div>
-
-            {!isSuggestionMode && (
-              <>
-                <div>
-                  <label className="mb-1 block font-bold">Description</label>
-                  <textarea
-                    name="description"
-                    value={itemData.description}
-                    onChange={handleChange}
-                    placeholder="Add a description of your dish"
-                    className="w-full resize-none rounded border p-2 focus:border-primaryRed"
-                    rows="3"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block font-bold">Servings</label>
-                  <input
-                    type="text"
-                    name="servings"
-                    value={itemData.servings}
-                    onChange={handleChange}
-                    placeholder="e.g., 4-6 people"
-                    className="w-full rounded border p-2 focus:border-primaryRed"
-                  />
-                </div>
-
-                <div>
-                  <ImageUpload
-                    label="Photo"
-                    imageUrl={itemData.imageUrl}
-                    onImageChange={(url) => {
-                      setHasInteracted(true);
-                      setItemData((prev) => ({ ...prev, imageUrl: url }));
-                    }}
-                    storageFolder="item-images"
-                    objectId={itemData.id}
-                    imageAlt="Item preview"
-                    onUploadingChange={setUploading}
-                    inputId="item-image-upload"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block font-bold">Dietary Tags</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {dietaryOptions.map((option) => (
-                      <label
-                        key={option.value}
-                        className="flex items-center text-sm font-semibold"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={itemData.dietary.includes(option.value)}
-                          onChange={() => handleDietaryChange(option.value)}
-                          className="mr-2 h-4 w-4 rounded border-gray-300 text-primaryRed focus:ring-primaryRed"
-                        />
-                        {option.label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div className="pt-4">
               <button
-                type="submit"
-                disabled={uploading || !isFormValid}
-                className={`w-full rounded-lg px-4 py-3 text-center text-sm font-semibold text-white ${
-                  uploading || !isFormValid
-                    ? "cursor-not-allowed bg-red-300"
-                    : "bg-primaryRed hover:bg-secondaryRed"
-                }`}
+                type="button"
+                aria-label="Show members"
+                onClick={() => setShowSuggestions((prev) => !prev)}
+                disabled={itemData.isOnBehalfOf}
+                className={`rounded-r-full px-3 py-2.5 text-muted hover:text-ink ${itemData.isOnBehalfOf ? "cursor-not-allowed" : ""}`}
               >
-                {submitLabel}
+                <LuChevronDown
+                  className={`h-4 w-4 transition-transform ${
+                    showSuggestions ? "rotate-180" : ""
+                  }`}
+                />
               </button>
             </div>
-          </form>
-        </div>
-      </div>
+
+            {/* Suggestion dropdown */}
+            {showSuggestions && !itemData.isOnBehalfOf && (
+              <ul className="absolute z-10 mt-1.5 max-h-48 w-full overflow-y-auto rounded-[14px] bg-raised p-1 shadow-raised">
+                {memberUsers
+                  .filter((u) =>
+                    assigneeQuery
+                      ? u?.name
+                          ?.toLowerCase()
+                          .includes(assigneeQuery.toLowerCase())
+                      : true,
+                  )
+                  .map((u) => (
+                    <li
+                      key={u.id}
+                      onClick={() => {
+                        setHasInteracted(true);
+                        setItemData((prev) => ({
+                          ...prev,
+                          assignee: u.name,
+                          assigneeId: u.id,
+                        }));
+                        setAssigneeQuery(u.name);
+                        setShowSuggestions(false);
+                      }}
+                      className="cursor-pointer rounded-[10px] px-3 py-2 text-sm hover:bg-surface2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <AssigneeAvatar
+                          assigneeId={u.id}
+                          displayName={u.name}
+                          size={24}
+                        />
+                      </div>
+                    </li>
+                  ))}
+              </ul>
+            )}
+
+            {shouldShowAssigneeError && (
+              <p className="mt-1.5 text-xs text-danger">
+                Can't find who's bringing it, use "On behalf of someone else"
+                instead.
+              </p>
+            )}
+
+            <div className="mt-3 flex flex-col gap-2">
+              <label className="flex items-center text-sm font-semibold text-ink">
+                <input
+                  type="checkbox"
+                  checked={!!itemData.isOnBehalfOf}
+                  onChange={handleToggleOnBehalfOf}
+                  className={`mr-2 ${checkboxCls}`}
+                />
+                <span>On behalf of someone else</span>
+                <Tooltip
+                  content="Use this when someone who doesn't have an account is bringing an item."
+                  ariaLabel="What does this checkbox do?"
+                >
+                  <LuInfo className="ml-[6px] h-4 w-4 text-muted" />
+                </Tooltip>
+              </label>
+
+              {itemData.isOnBehalfOf && (
+                <div className="ml-6 mt-1 flex items-center gap-2">
+                  <AssigneeAvatar
+                    assigneeId={null}
+                    displayName={itemData.onBehalfOfName}
+                    size={24}
+                    className={"shrink-0"}
+                    showName={false}
+                  />
+                  <input
+                    type="text"
+                    name="onBehalfOfName"
+                    value={itemData.onBehalfOfName}
+                    onChange={handleChange}
+                    placeholder="Name of the person who's bringing what"
+                    className="min-w-0 flex-1 text-sm"
+                    maxLength={30}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className={`${labelCls} ${requiredCls}`}>Category</label>
+            <select
+              name="category"
+              value={itemData.category}
+              onChange={handleChange}
+              className={fieldCls}
+              required
+              disabled={isSuggestionLocked}
+            >
+              <option value="Main">Main</option>
+              <option value="Side">Side</option>
+              <option value="Dessert">Dessert</option>
+              <option value="Beverage">Beverage</option>
+              <option value="Miscellaneous">Miscellaneous</option>
+            </select>
+            {isSuggestionLocked && (
+              <p className={helpCls}>
+                This item came from a suggestion, so the category can’t be
+                changed.
+              </p>
+            )}
+          </div>
+
+          {!isSuggestionMode && (
+            <>
+              <div>
+                <label className={labelCls}>Description</label>
+                <textarea
+                  name="description"
+                  value={itemData.description}
+                  onChange={handleChange}
+                  placeholder="Add a description of your dish"
+                  className="resize-none"
+                  rows="3"
+                />
+              </div>
+
+              <div>
+                <label className={labelCls}>Servings</label>
+                <input
+                  type="text"
+                  name="servings"
+                  value={itemData.servings}
+                  onChange={handleChange}
+                  placeholder="e.g., 4-6 people"
+                />
+              </div>
+
+              <div>
+                <ImageUpload
+                  label="Photo"
+                  imageUrl={itemData.imageUrl}
+                  onImageChange={(url) => {
+                    setHasInteracted(true);
+                    setItemData((prev) => ({ ...prev, imageUrl: url }));
+                  }}
+                  storageFolder="item-images"
+                  objectId={itemData.id}
+                  imageAlt="Item preview"
+                  onUploadingChange={setUploading}
+                  inputId="item-image-upload"
+                />
+              </div>
+
+              <div>
+                <span className="mb-2 block text-sm font-semibold text-ink">
+                  Dietary Tags
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {dietaryOptions.map((option) => (
+                    <label
+                      key={option.value}
+                      className="relative inline-flex cursor-pointer items-center rounded-full bg-surface2 px-3.5 py-1.5 text-[0.8125rem] font-semibold text-ink transition hover:bg-surface3 has-[:checked]:bg-selected-soft has-[:checked]:text-selected-text has-[:checked]:ring-1 has-[:checked]:ring-selected has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-selected-text"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={itemData.dietary.includes(option.value)}
+                        onChange={() => handleDietaryChange(option.value)}
+                        className="sr-only"
+                      />
+                      {option.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </form>
+      </SheetShell>
       <UnsavedChangesPrompt
         isOpen={showUnsavedPrompt}
         title="Discard changes?"
@@ -569,7 +562,7 @@ function ItemSidePanel({
           closeModal();
         }}
       />
-    </div>
+    </>
   );
 }
 

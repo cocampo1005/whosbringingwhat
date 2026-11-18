@@ -1,7 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
 import { db } from "../firebase";
 import EventModal from "../components/EventModal";
-import { FaPlus } from "react-icons/fa6";
+import { LuPlus } from "react-icons/lu";
+import { Button, PageTitle, SegmentedTabs } from "../components/ui";
+import AssigneeAvatar from "../components/AssigneeAvatar";
+import lettermark from "../assets/brand/logos/wbw-lettermark.svg";
+import charGreen from "../assets/brand/characters/char-green.svg";
 import {
   addDoc,
   collection,
@@ -21,7 +25,7 @@ import {
 } from "firebase/firestore";
 import { useAuth } from "../contexts/AuthContext";
 import EventCard from "../components/EventCard";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useRole } from "../hooks/useRole";
 import { pickRandomEventBannerColor } from "../constants/eventBannerColors";
 import { RANDOM_POTLUCK_IMAGE_URL } from "../constants/api";
@@ -40,7 +44,6 @@ export default function Events() {
   const [hasMore, setHasMore] = useState(true);
   const [tab, setTab] = useState("upcoming");
 
-  const isSidePanelOpen = showAddEventModal;
 
   const navigate = useNavigate();
 
@@ -256,51 +259,81 @@ export default function Events() {
     }
   };
 
+  const tabOptions = [
+    { value: "upcoming", label: "Upcoming" },
+    { value: "past", label: "Previous" },
+  ];
+
   return (
-    <div
-      className={`mx-auto max-w-5xl pb-8 pt-8 transition-all duration-200 ease-out ${
-        isSidePanelOpen ? "md:mr-[12rem] lg:mr-[14rem]" : ""
-      }`}
-    >
-      {/* Tabs and header should always be visible */}
-      <div className="mb-9 flex w-full items-center justify-between gap-4 sm:gap-8">
-        <div className="flex w-full items-center justify-between gap-4 md:w-auto md:justify-start">
-          <div className="inline-flex rounded-xl bg-white p-1 shadow-md">
-            <button
-              type="button"
-              onClick={() => setTab("upcoming")}
-              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
-                tab === "upcoming"
-                  ? "bg-primaryRed text-white"
-                  : "text-primaryDark hover:bg-gray-50"
-              }`}
-              aria-pressed={tab === "upcoming"}
+    <div className="mx-auto max-w-5xl pb-8 md:pt-2">
+      {/* Phone: yellow band bleeding to the screen edges (cancels main's px-4 pt-6) */}
+      <div className="-mx-4 -mt-6 mb-5 rounded-b-band bg-sidebar px-4 pb-9 pt-5 md:hidden">
+        <div className="flex items-center justify-between">
+          <img src={lettermark} alt="" aria-hidden="true" className="h-8 w-auto" />
+          {currentUser && (
+            <Link
+              to="/profile"
+              aria-label="Profile"
+              className="rounded-full ring-2 ring-white"
             >
-              Upcoming
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("past")}
-              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
-                tab === "past"
-                  ? "bg-primaryRed text-white"
-                  : "text-primaryDark hover:bg-gray-50"
-              }`}
-              aria-pressed={tab === "past"}
-            >
-              Previous
-            </button>
-          </div>
-          <span className="text-xs text-gray-500">{events.length} loaded</span>
+              <AssigneeAvatar
+                assigneeId={currentUser.uid}
+                displayName={currentUser.name}
+                size={36}
+                showName={false}
+              />
+            </Link>
+          )}
         </div>
         <button
-          className="hidden items-center gap-2 rounded-full bg-primaryRed px-4 py-2 text-sm font-semibold text-white hover:bg-secondaryRed md:flex"
+          type="button"
           onClick={handleAddEvent}
+          className="relative mt-12 block w-full rounded-3xl bg-white px-4 pb-8 pt-12 text-center shadow-soft"
         >
-          <FaPlus />
-          <span>Add Event</span>
+          <img
+            src={charGreen}
+            alt=""
+            aria-hidden="true"
+            className="absolute -top-10 left-1/2 h-24 w-auto -translate-x-1/2"
+          />
+          <span className="font-display text-sm font-extrabold uppercase tracking-wide [font-stretch:125%]">
+            Host an Event
+          </span>
+          <span className="absolute -bottom-5 left-1/2 grid h-10 w-10 -translate-x-1/2 place-items-center rounded-full bg-accent text-white shadow-action ring-4 ring-white">
+            <LuPlus size={20} aria-hidden="true" />
+          </span>
         </button>
       </div>
+
+      {/* Phone: tabs above the big title */}
+      <div className="mb-3 md:hidden">
+        <SegmentedTabs
+          variant="chips"
+          ariaLabel="Event tabs"
+          tabs={tabOptions}
+          value={tab}
+          onChange={setTab}
+        />
+      </div>
+
+      <PageTitle
+        className="mb-6 md:mb-9"
+        title="Events"
+        subtitle={`${events.length} loaded`}
+        actions={
+          <div className="hidden items-center gap-3 md:flex">
+            <SegmentedTabs
+              ariaLabel="Event tabs"
+              tabs={tabOptions}
+              value={tab}
+              onChange={setTab}
+            />
+            <Button leftIcon={<LuPlus size={16} aria-hidden="true" />} onClick={handleAddEvent}>
+              Add Event
+            </Button>
+          </div>
+        }
+      />
 
       {/* Content under the tabs */}
       {loadingEvents ? (
@@ -312,29 +345,34 @@ export default function Events() {
           <EventCard events={events} />
           {hasMore && (
             <div className="mt-8 flex justify-center">
-              <button
+              <Button
+                variant="soft"
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="rounded-full bg-gray-100 px-6 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-200 disabled:opacity-50"
               >
                 {loadingMore ? "Loading..." : "Load More Events"}
-              </button>
+              </Button>
             </div>
           )}
         </>
       ) : (
-        <p className="text-center text-gray-600">
-          {tab === "upcoming"
-            ? "You do not have any upcoming events yet."
-            : "You do not have any previous events yet."}
-        </p>
+        <div className="mx-auto flex max-w-sm flex-col items-center rounded-card bg-white px-6 py-8 text-center shadow-soft">
+          <img src={charGreen} alt="" aria-hidden="true" className="mb-4 h-24 w-auto" />
+          <p className="text-muted">
+            {tab === "upcoming"
+              ? "You do not have any upcoming events yet."
+              : "You do not have any previous events yet."}
+          </p>
+        </div>
       )}
 
       <button
+        type="button"
         onClick={handleAddEvent}
-        className="fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white shadow-md md:hidden"
+        aria-label="Add Event"
+        className="fixed bottom-4 left-4 z-30 grid h-[54px] w-[54px] place-items-center rounded-full bg-accent text-white shadow-action ring-4 ring-white md:hidden"
       >
-        <FaPlus />
+        <LuPlus size={24} aria-hidden="true" />
       </button>
 
       {showAddEventModal && (

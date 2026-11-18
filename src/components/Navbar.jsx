@@ -1,60 +1,62 @@
-import React from "react";
-import { FaCalendarAlt, FaClipboardList, FaUser } from "react-icons/fa";
+import { LuCalendar, LuListChecks, LuUser } from "react-icons/lu";
 import { Link } from "@tanstack/react-router";
-import logo from "../assets/logo-with-face-outlined.svg";
+import logo from "../assets/brand/logos/wbw-primary-ink.svg";
 import { useAuth } from "../contexts/AuthContext";
 import AssigneeAvatar from "./AssigneeAvatar";
 
+// Desktop sidebar pill rows (ink text on the yellow card; active = purple pill).
+const sidebarRow =
+  "flex items-center gap-2.5 rounded-full px-4 py-2.5 text-[0.8125rem] leading-none transition duration-150 ease-wbw focus-visible:outline-ink";
+const sidebarActive = `${sidebarRow} bg-selected font-bold text-white`;
+const sidebarInactive = `${sidebarRow} font-semibold text-ink hover:bg-ink/10`;
+
+// Foot member pill: white, turns purple on /profile.
+const memberRow =
+  "flex items-center gap-2.5 rounded-full py-2 pl-2 pr-3.5 text-xs font-semibold transition duration-150 ease-wbw focus-visible:outline-ink";
+const memberActive = `${memberRow} bg-selected text-white`;
+const memberInactive = `${memberRow} bg-raised text-ink`;
+
+// Phone floating bar items: active = white pill with coral text + label, inactive = white icon only.
+const barItem =
+  "flex h-9 items-center justify-center gap-1.5 rounded-full font-display text-xs font-bold transition duration-150 ease-wbw focus-visible:outline-white";
+const barActive = `${barItem} bg-raised px-3.5 text-accent`;
+const barInactive = `${barItem} w-9 text-white`;
+
 export default function Navbar() {
   const { currentUser } = useAuth();
-  const navLinkStyles = ({ isActive }) =>
-    `flex flex-col items-center justify-center text-xs font-medium ${
-      isActive ? "text-white" : "text-rose-200"
-    }`;
+  const memberName = currentUser?.name || currentUser?.displayName;
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <nav className="fixed left-0 top-0 z-40 hidden h-screen w-56 flex-col bg-primaryRed px-4 py-6 shadow-[6px_0_12px_-2px_rgba(0,0,0,0.2)] md:flex">
-        {/* Logo */}
+      {/* Desktop sidebar: inset yellow card, 14rem wide, 1rem from the top/left/bottom edges.
+          Content in Home.jsx clears it with md:ml-[16rem] (1rem inset + 14rem + 1rem gap). */}
+      <nav className="fixed bottom-4 left-4 top-4 z-20 hidden w-56 flex-col overflow-y-auto rounded-card bg-sidebar px-3 pb-5 pt-5 md:flex">
         <div className="flex flex-grow flex-col">
-          <Link to="/">
+          <Link to="/" className="-mx-3 -mt-5 mb-5 block px-3 pb-4 pt-2">
             <img
               alt="Who's Bringing What Logo"
               src={logo}
-              className="mx-auto mb-12 h-36 w-auto"
+              className="mx-auto h-auto w-full"
             />
           </Link>
 
           {/* Top Nav Links */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
             <Link
               to="/events"
-              activeProps={{
-                className:
-                  "flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-white/20 text-white",
-              }}
-              inactiveProps={{
-                className:
-                  "flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors text-white hover:bg-white/10",
-              }}
+              activeProps={{ className: sidebarActive }}
+              inactiveProps={{ className: sidebarInactive }}
             >
-              <FaCalendarAlt size={18} />
+              <LuCalendar size={17} aria-hidden="true" />
               <span>Events</span>
             </Link>
 
             <Link
               to="/my-items"
-              activeProps={{
-                className:
-                  "flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-white/20 text-white",
-              }}
-              inactiveProps={{
-                className:
-                  "flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors text-white hover:bg-white/10",
-              }}
+              activeProps={{ className: sidebarActive }}
+              inactiveProps={{ className: sidebarInactive }}
             >
-              <FaClipboardList size={18} />
+              <LuListChecks size={17} aria-hidden="true" />
               <span>My Items</span>
             </Link>
           </div>
@@ -64,59 +66,78 @@ export default function Navbar() {
         <div>
           <Link
             to="/profile"
-            activeProps={{
-              className:
-                "flex items-center justify-between gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors bg-white/20 text-white",
-            }}
-            inactiveProps={{
-              className:
-                "flex items-center justify-between gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors text-white hover:bg-white/10",
-            }}
+            activeProps={{ className: memberActive }}
+            inactiveProps={{ className: memberInactive }}
           >
-            {/* Left: avatar with initials fallback */}
-            <div className="flex items-center gap-3">
-              {currentUser?.uid && (
-                <AssigneeAvatar
-                  assigneeId={currentUser.uid}
-                  size={28}
-                  showName={false}
-                />
-              )}
-              <span className="text-white md:text-inherit">Profile</span>
-            </div>
+            {currentUser?.uid ? (
+              <AssigneeAvatar
+                assigneeId={currentUser.uid}
+                size={32}
+                showName={false}
+              />
+            ) : (
+              <LuUser size={17} aria-hidden="true" className="mx-1.5" />
+            )}
+            {memberName ? (
+              <span className="min-w-0 truncate">
+                <span className="sr-only">Profile, </span>
+                {memberName}
+              </span>
+            ) : (
+              <span>Profile</span>
+            )}
           </Link>
         </div>
       </nav>
 
-      {/* Mobile Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 flex h-16 items-center justify-around bg-primaryRed shadow md:hidden">
+      {/* Phone floating nav. Layout contract: the bottom-LEFT slot (left-4 bottom-4, 54x54px) is
+          reserved for each page's own circular "+" button; this pill starts at left 5.25rem. */}
+      <nav
+        aria-label="Primary"
+        className="fixed bottom-4 left-[5.25rem] right-4 z-20 flex h-[3.375rem] items-center justify-around rounded-full bg-accent px-2 shadow-raised md:hidden"
+      >
         <Link
           to="/events"
-          activeProps={{ className: navLinkStyles({ isActive: true }) }}
-          inactiveProps={{ className: navLinkStyles({ isActive: false }) }}
+          activeProps={{ className: barActive }}
+          inactiveProps={{ className: barInactive }}
         >
-          <FaCalendarAlt size={20} />
-          <span>Events</span>
+          {({ isActive }) => (
+            <>
+              <LuCalendar size={17} aria-hidden="true" />
+              <span className={isActive ? undefined : "sr-only"}>Events</span>
+            </>
+          )}
         </Link>
         <Link
           to="/my-items"
-          activeProps={{ className: navLinkStyles({ isActive: true }) }}
-          inactiveProps={{ className: navLinkStyles({ isActive: false }) }}
+          activeProps={{ className: barActive }}
+          inactiveProps={{ className: barInactive }}
         >
-          <FaClipboardList size={20} />
-          <span>My Items</span>
+          {({ isActive }) => (
+            <>
+              <LuListChecks size={17} aria-hidden="true" />
+              <span className={isActive ? undefined : "sr-only"}>My Items</span>
+            </>
+          )}
         </Link>
         <Link
           to="/profile"
-          activeProps={{ className: navLinkStyles({ isActive: true }) }}
-          inactiveProps={{ className: navLinkStyles({ isActive: false }) }}
+          activeProps={{ className: barActive }}
+          inactiveProps={{ className: barInactive }}
         >
-          {currentUser?.uid && (
-            <AssigneeAvatar
-              assigneeId={currentUser.uid}
-              size={34}
-              showName={false}
-            />
+          {({ isActive }) => (
+            <>
+              {currentUser?.uid ? (
+                <AssigneeAvatar
+                  assigneeId={currentUser.uid}
+                  size={isActive ? 24 : 34}
+                  showName={false}
+                />
+              ) : (
+                <LuUser size={17} aria-hidden="true" />
+              )}
+              <span className={isActive ? undefined : "sr-only"}>Profile</span>
+            </>
           )}
         </Link>
       </nav>

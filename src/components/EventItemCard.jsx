@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef, memo } from "react";
-import { FiChevronDown, FiChevronRight, FiEdit, FiSmile } from "react-icons/fi";
-import { MdDelete } from "react-icons/md";
+import {
+  LuChevronDown,
+  LuChevronRight,
+  LuPencil,
+  LuSmile,
+  LuTrash2,
+} from "react-icons/lu";
+import { Chip } from "./ui";
 import AssigneeAvatar from "./AssigneeAvatar";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
@@ -10,34 +16,8 @@ import ReactionTooltip from "./ReactionTooltip";
 import ReactionsModalMobile from "./ReactionsModal";
 import ReactionsModalDesktop from "./ReactionsModalDesktop";
 
-const CATEGORY_FOCUS_RING = {
-  Main: "focus-visible:ring-rose-300",
-  Side: "focus-visible:ring-yellow-300",
-  Dessert: "focus-visible:ring-purple-300",
-  Beverage: "focus-visible:ring-blue-300",
-  Miscellaneous: "focus-visible:ring-emerald-300",
-};
-
-const CATEGORY_CHEVRON_BG = {
-  Main: "bg-rose-100 hover:bg-rose-200",
-  Side: "bg-yellow-100 hover:bg-yellow-200",
-  Dessert: "bg-purple-100 hover:bg-purple-200",
-  Beverage: "bg-blue-100 hover:bg-blue-200",
-  Miscellaneous: "bg-emerald-100 hover:bg-emerald-200",
-};
-
-const CATEGORY_ACTION_GHOST = {
-  Main: "bg-rose-500/10 text-rose-700 hover:bg-rose-500/20",
-  Side: "bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20",
-  Dessert: "bg-purple-500/10 text-purple-700 hover:bg-purple-500/20",
-  Beverage: "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20",
-  Miscellaneous: "bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20",
-};
-
 function EventItemCard({
   item,
-  categoryName,
-  categoryBgClass,
   dietaryIcons = {},
   canManage,
   open,
@@ -249,189 +229,183 @@ function EventItemCard({
     };
   }, [showQuickBar]);
 
+  const actionBtn =
+    "flex h-8 w-8 items-center justify-center rounded-full bg-surface2 text-ink transition-colors hover:bg-surface3";
+  // Actions are always shown in the expanded card; collapsed cards reveal them on hover/focus.
+  const actionsVisible = open || showQuickBar;
+
   return (
     <div
-      className={`relative rounded-lg ${categoryBgClass} shadow-md group ${
+      className={`group relative rounded-2xl bg-raised p-3 shadow-soft ${
         hasManyReactions ? "mb-12" : hasReactions ? "mb-4" : ""
       }`}
     >
       {/* Header: title left, chevron right */}
-      <div className="flex items-start justify-between p-[16px_9px_0px_16px]">
-        <h4 className={`${open ? "" : "line-clamp-2"} font-semibold text-primaryDark`}>
+      <div className="flex items-start justify-between gap-2">
+        <h4
+          className={`${open ? "" : "line-clamp-2"} font-sans text-sm font-semibold normal-case leading-snug text-ink [font-stretch:100%]`}
+        >
           {item.title}
         </h4>
         <button
           type="button"
           onClick={handleChevronClick}
-          className={`rounded-full p-1 text-primaryDark shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 ${
-            CATEGORY_CHEVRON_BG[categoryName] ?? "bg-white/70 hover:bg-white"
-          } ${CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"}`}
+          className="-mr-1 -mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface2"
           aria-label={open ? "Collapse item" : "Expand item"}
         >
           {open ? (
-            <FiChevronDown className="text-primaryDark" />
+            <LuChevronDown aria-hidden="true" className="text-lg" />
           ) : (
-            <FiChevronRight className="text-primaryDark" />
+            <LuChevronRight aria-hidden="true" className="text-lg" />
           )}
         </button>
       </div>
 
-      {/* Assignee, actions, and dietary info */}
-      <div className="px-4 pb-4">
-        <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
-          {displayName && (
-            <AssigneeAvatar
-              assigneeId={assigneeIdForAvatar}
-              displayName={displayName}
-              size={24}
-            />
+      {/* Assignee */}
+      {displayName && (
+        <div className="mt-1.5 flex items-center gap-2 text-[13px] text-muted">
+          <AssigneeAvatar
+            assigneeId={assigneeIdForAvatar}
+            displayName={displayName}
+            size={22}
+          />
+        </div>
+      )}
+
+      {/* Dietary tags */}
+      {item.dietary && item.dietary.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {item.dietary.map((restriction, i) => {
+            const d = dietaryIcons[restriction?.toLowerCase?.()];
+            return d ? (
+              <Chip
+                key={i}
+                title={restriction}
+                role="img"
+                aria-label={restriction}
+                className="!gap-1 !px-2 !py-0.5"
+              >
+                <span className={`flex items-center text-sm ${d.color}`}>
+                  {d.icon}
+                </span>
+              </Chip>
+            ) : null;
+          })}
+        </div>
+      )}
+
+      {/* Expanded body */}
+      {open && (item.description || item.imageUrl || item.servings) && (
+        <div className="mt-3 border-t border-line pt-3">
+          {item.description && (
+            <div className="mb-3">
+              <h5 className="mb-1 font-sans text-xs font-semibold normal-case text-muted [font-stretch:100%]">
+                Description:
+              </h5>
+              <p className="text-[13px] leading-relaxed text-ink">
+                {item.description}
+              </p>
+            </div>
+          )}
+
+          {item.imageUrl && (
+            <div className="mb-3">
+              <h5 className="mb-1 font-sans text-xs font-semibold normal-case text-muted [font-stretch:100%]">
+                Photo:
+              </h5>
+              <img
+                src={item.imageUrl}
+                alt={item.title}
+                className="h-32 w-32 rounded-xl object-cover"
+              />
+            </div>
+          )}
+
+          {item.servings && (
+            <p className="text-[13px] text-muted">
+              <span className="font-semibold">Servings:</span> {item.servings}
+            </p>
           )}
         </div>
+      )}
 
-        <div className="mt-2 flex items-start justify-between gap-2">
-          <div className="flex flex-wrap gap-2">
-            {item.dietary &&
-              item.dietary.length > 0 &&
-              item.dietary.map((restriction, i) => {
-                const d = dietaryIcons[restriction?.toLowerCase?.()];
-                return d ? (
-                  <span
-                    key={i}
-                    className={`flex items-center text-lg ${d.color}`}
-                    title={restriction}
-                  >
-                    {d.icon}
-                  </span>
-                ) : null;
-              })}
-          </div>
-          <div className="relative flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            {/* Quick reactions bar */}
-            {showQuickBar && (
-              <div
-                ref={quickBarRef}
-                className="absolute -top-10 -right-12 z-30 flex items-center gap-1 rounded-full bg-[#202c33] px-3 py-1 text-white shadow-lg"
+      {/* Actions: reaction, edit, delete */}
+      <div
+        className={`relative mt-3 gap-2 ${
+          actionsVisible
+            ? "flex"
+            : "hidden group-focus-within:flex group-hover:flex"
+        }`}
+      >
+        {/* Quick reactions bar */}
+        {showQuickBar && (
+          <div
+            ref={quickBarRef}
+            className="absolute bottom-full left-0 right-0 z-30 mb-2 flex flex-wrap items-center justify-center gap-0.5 rounded-[18px] bg-ink px-2 py-1.5 text-white shadow-raised"
+          >
+            {quickEmojis.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleReaction(emoji);
+                  setShowQuickBar(false);
+                }}
+                className="rounded-full px-1 text-xl hover:bg-white/15"
               >
-                {quickEmojis.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggleReaction(emoji);
-                      setShowQuickBar(false);
-                    }}
-                    className={`rounded-full px-1 text-xl hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 ${
-                      CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"
-                    }`}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={handleOpenFullPicker}
-                  className={`ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-gray-800 text-gray-100 hover:bg-gray-700 focus-visible:outline-none focus-visible:ring-2 ${
-                    CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"
-                  }`}
-                >
-                  +
-                </button>
-              </div>
-            )}
+                {emoji}
+              </button>
+            ))}
 
             <button
               type="button"
-              onClick={handleOpenQuickBar}
-              ref={reactionButtonRef}
-              className={`flex h-7 w-7 items-center justify-center rounded-full ${
-                CATEGORY_ACTION_GHOST[categoryName] ??
-                "bg-black/10 text-black/70 hover:bg-black/20"
-              } focus-visible:outline-none focus-visible:ring-2 ${
-                CATEGORY_FOCUS_RING[categoryName] ?? "focus-visible:ring-white"
-              }`}
-              aria-label="Add reaction"
+              onClick={handleOpenFullPicker}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25"
             >
-              <FiSmile />
+              +
+            </button>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={handleOpenQuickBar}
+          ref={reactionButtonRef}
+          className={actionBtn}
+          aria-label="Add reaction"
+        >
+          <LuSmile aria-hidden="true" />
+        </button>
+
+        {canManage && (
+          <>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditItem?.(item);
+              }}
+              className={actionBtn}
+              aria-label="Edit item"
+            >
+              <LuPencil aria-hidden="true" />
             </button>
 
-            {canManage && (
-              <>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditItem?.(item);
-                  }}
-                  className={`flex h-7 w-7 items-center justify-center rounded-full ${
-                    CATEGORY_ACTION_GHOST[categoryName] ??
-                    "bg-black/10 text-black/70 hover:bg-black/20"
-                  } focus-visible:outline-none focus-visible:ring-2 ${
-                    CATEGORY_FOCUS_RING[categoryName] ??
-                    "focus-visible:ring-white"
-                  }`}
-                  aria-label="Edit item"
-                >
-                  <FiEdit />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteItem?.(item);
-                  }}
-                  className={`flex h-7 w-7 items-center justify-center rounded-full ${
-                    CATEGORY_ACTION_GHOST[categoryName] ??
-                    "bg-black/10 text-black/70 hover:bg-black/20"
-                  } focus-visible:outline-none focus-visible:ring-2 ${
-                    CATEGORY_FOCUS_RING[categoryName] ??
-                    "focus-visible:ring-white"
-                  }`}
-                  aria-label="Delete item"
-                >
-                  <MdDelete />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteItem?.(item);
+              }}
+              className={`${actionBtn} !text-danger`}
+              aria-label="Delete item"
+            >
+              <LuTrash2 aria-hidden="true" />
+            </button>
+          </>
+        )}
       </div>
-
-      {/* Expanded body */}
-      {open && (
-        <div className="border-t border-rose-200 px-4 pb-4">
-          <div className="mt-3 flex flex-col items-start justify-between">
-            <div className="flex-1">
-              {item.description && (
-                <div className="mb-3">
-                  <h5 className="mb-1 font-medium text-gray-700">Description:</h5>
-                  <p className="text-sm text-gray-600">{item.description}</p>
-                </div>
-              )}
-
-              {item.imageUrl && (
-                <div className="mb-3">
-                  <h5 className="mb-1 font-medium text-gray-700">Photo:</h5>
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="h-32 w-32 rounded-lg object-cover"
-                  />
-                </div>
-              )}
-
-              {item.servings && (
-                <p className="mb-2 text-sm text-gray-600">
-                  <span className="font-medium">Servings:</span>{" "}
-                  {item.servings}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {showAllReactions && (
         canHover ? (
@@ -527,6 +501,7 @@ function EventItemCard({
             const reactionsLabel =
               total === 1 ? "1 reaction" : `${total} reactions`;
             const isHovered = hoveredEmoji === emoji;
+            const isMine = !!currentUserId && userIds.includes(currentUserId);
 
             return (
               <div
@@ -566,13 +541,14 @@ function EventItemCard({
                     }
                     handleToggleReaction(emoji);
                   }}
-                  className={`flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-xs shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 ${
-                    CATEGORY_FOCUS_RING[categoryName] ??
-                    "focus-visible:ring-white"
+                  className={`flex h-[26px] items-center gap-1 rounded-full px-2 text-xs shadow-chip transition-colors ${
+                    isMine
+                      ? "bg-selected-soft ring-1 ring-inset ring-selected hover:bg-selected-soft"
+                      : "bg-raised hover:bg-surface2"
                   }`}
                 >
-                  <span className="text-base">{emoji}</span>
-                  <span className="text-gray-700">{info?.count ?? 0}</span>
+                  <span className="text-base leading-none">{emoji}</span>
+                  <span className="font-semibold text-ink">{info?.count ?? 0}</span>
                 </button>
 
                 {canHover && !isTouchInteractionRef.current && isHovered && (
@@ -601,12 +577,9 @@ function EventItemCard({
                   setInitialEmojiFilter(null);
                   setShowAllReactions(true);
                 }}
-                className={`flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-xs shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 ${
-                  CATEGORY_FOCUS_RING[categoryName] ??
-                  "focus-visible:ring-white"
-                }`}
+                className="flex h-[26px] items-center gap-1 rounded-full bg-raised px-2 text-xs shadow-chip transition-colors hover:bg-surface2"
               >
-                <span className="text-gray-700">
+                <span className="font-semibold text-ink">
                   {hiddenReactionsCount === 1
                     ? "1 more"
                     : `${hiddenReactionsCount} more`}
@@ -624,14 +597,14 @@ function EventItemCard({
             className="absolute inset-0 bg-black/40"
             onClick={handleCloseFullPicker}
           />
-          <div className="flex h-full items-end justify-center sm:items-center md:pl-56">
-            <div className="relative z-50 w-full max-w-lg mx-2 rounded-t-3xl bg-[#0b141a] px-4 pt-3 pb-5 shadow-2xl sm:w-auto sm:max-w-none sm:mx-0 sm:bg-transparent sm:p-0 sm:rounded-none sm:shadow-none">
+          <div className="flex h-full items-end justify-center sm:items-center md:pl-[16rem]">
+            <div className="relative z-50 w-full max-w-lg mx-2 rounded-t-[28px] bg-[#0b141a] px-4 pt-3 pb-5 shadow-2xl sm:w-auto sm:max-w-none sm:mx-0 sm:bg-transparent sm:p-0 sm:rounded-none sm:shadow-none">
               {/* Drag handle for mobile-style bottom sheet */}
               <div className="mb-3 flex justify-center sm:hidden">
                 <div className="h-1.5 w-10 rounded-full bg-gray-500/80" />
               </div>
 
-              <div className="max-h-[70vh] sm:max-h-[65vh] overflow-y-auto">
+              <div className="max-h-[28rem] overflow-y-auto">
                 <Picker
                   data={data}
                   theme="dark"

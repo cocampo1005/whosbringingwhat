@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { IoClose } from "react-icons/io5";
+import { SheetShell, Button } from "./ui";
 import Calendar from "react-calendar";
 import "../styles/Calendar.css";
 import { useAuth } from "../contexts/AuthContext";
 import ImageUpload from "./ImageUpload";
 import useEscapeKey from "../hooks/useEscapeKey";
 import UnsavedChangesPrompt from "./UnsavedChangesPrompt";
+
+const labelCls =
+  "mb-2 ml-3 block font-display text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted [font-stretch:125%]";
 
 export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   const { currentUser } = useAuth();
@@ -142,42 +145,40 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-stretch justify-center md:justify-end bg-gray-500 bg-opacity-50"
-      onClick={handleBackdropClick}
-    >
-      <div className="relative flex h-full w-full max-w-full md:max-w-md flex-col overflow-hidden bg-yellow-50 shadow-lg">
-        <div className="flex items-center justify-center bg-primaryRed px-4 py-3">
-          <h2 className="text-center text-lg font-semibold text-white">
-            {initialData.title ? "Edit Event" : "Add New Event"}
-          </h2>
-          <IoClose
-            className="absolute right-4 top-3 cursor-pointer text-2xl text-white"
-            onClick={requestClose}
-          />
-        </div>
-        <div className="flex-1 overflow-y-auto px-4 pb-4 pt-4">
-          <form onSubmit={handleSubmit} className="flex flex-col">
+    <>
+      <SheetShell
+        title={initialData.title ? "Edit Event" : "Add New Event"}
+        labelledById="event-modal-title"
+        onClose={requestClose}
+        onBackdropClick={handleBackdropClick}
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col">
           {/* Event Name */}
-          <label className="mb-2 block text-sm">Event Name</label>
+          <label htmlFor="event-title" className={labelCls}>
+            Event Name
+          </label>
           <input
+            id="event-title"
             type="text"
             name="title"
             value={eventData.title}
             onChange={handleChange}
             placeholder="Enter event name"
-            className="mb-4 min-h-9"
+            className="mb-4 block min-h-9 w-full"
             required
           />
 
           {/* Event Description */}
-          <label className="mb-2 block text-sm">Description</label>
+          <label htmlFor="event-description" className={labelCls}>
+            Description
+          </label>
           <textarea
+            id="event-description"
             name="description"
             value={eventData.description}
             onChange={handleChange}
             placeholder="Enter event description"
-            className="mb-4 block min-h-16 w-full rounded-lg border-gray-300 py-1.5 shadow-sm focus:border-primaryRed focus:ring-0"
+            className="mb-4 block min-h-16 w-full"
           />
 
           {/* Event Photo */}
@@ -198,7 +199,7 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           </div>
 
           {/* Event Date */}
-          <label className="mb-2 block text-sm">Date</label>
+          <label className={labelCls}>Date</label>
           <Calendar
             onChange={handleDateChange}
             value={eventData.date}
@@ -208,47 +209,49 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
             prev2Label={null}
           />
 
-          <label className="block text-sm/6 text-primaryDark">Time</label>
+          <label htmlFor="event-time" className={labelCls}>
+            Time
+          </label>
           <input
+            id="event-time"
             required
             type="time"
             name="time"
             value={eventData.time}
             onChange={handleChange}
-            className="mb-4 block min-h-9 w-full rounded-lg border-0 py-1.5 text-primaryDark shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-primaryRed"
+            className="mb-4 block h-11 w-full rounded-full border-0 bg-surface2 px-4 font-sans text-base text-ink focus:outline-none focus:ring-2 focus:ring-selected"
           />
 
           {/* Event Location */}
-          <label className="mb-2 block text-sm">Location</label>
+          <label htmlFor="event-location" className={labelCls}>
+            Location
+          </label>
           <input
+            id="event-location"
             required
             type="text"
             name="location"
             value={eventData.location}
             onChange={handleChange}
             placeholder="Enter location"
-            className="min-h-9"
+            className="block min-h-9 w-full"
           />
 
           {/* Submit Button */}
-          <button
+          <Button
             type="submit"
+            size="lg"
             disabled={!isFormValid || uploading}
-            className={`mt-4 w-full rounded-lg py-2 text-center text-sm font-semibold text-white ${
-              !isFormValid || uploading
-                ? "cursor-not-allowed bg-red-300"
-                : "bg-primaryRed hover:bg-secondaryRed"
-            }`}
+            className="mt-6 w-full"
           >
             {uploading
               ? "Uploading..."
               : initialData.title
                 ? "Save Changes"
                 : "Add Event"}
-          </button>
+          </Button>
         </form>
-        </div>
-      </div>
+      </SheetShell>
       <UnsavedChangesPrompt
         isOpen={showUnsavedPrompt}
         title="Discard changes?"
@@ -259,6 +262,6 @@ export default function EventModal({ closeModal, onSubmit, initialData = {} }) {
           closeModal();
         }}
       />
-    </div>
+    </>
   );
 }

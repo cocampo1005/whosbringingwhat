@@ -1,11 +1,11 @@
 import React, { useMemo, useState, memo } from "react";
-import { FiChevronDown, FiChevronRight } from "react-icons/fi";
+import { LuChevronDown, LuChevronRight } from "react-icons/lu";
+import { getCategoryTheme } from "../constants/categoryTheme";
 import EventItemCard from "./EventItemCard";
 
 function CategoryList({
   categoryName, // "Main" | "Side" | "Dessert" | "Beverage" | "Miscellaneous"
   items = [], // array of event items for this category
-  categoryColor = "text-gray-800",
   dietaryIcons = {}, // { vegan:{icon,color}, ... }
   onEditItem, // (item) => void
   onDeleteItem, // (item) => void
@@ -16,13 +16,7 @@ function CategoryList({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [expandedItems, setExpandedItems] = useState(() => new Set());
 
-  const CATEGORY_BG = {
-    Main: "bg-rose-50",
-    Side: "bg-yellow-50",
-    Dessert: "bg-purple-50",
-    Beverage: "bg-blue-50",
-    Miscellaneous: "bg-emerald-50",
-  };
+  const theme = getCategoryTheme(categoryName);
 
   const toggleItem = (id) =>
     setExpandedItems((prev) => {
@@ -41,25 +35,44 @@ function CategoryList({
     categoryName === "Miscellaneous" ? categoryName : `${categoryName}s`;
 
   return (
-    <div className="mb-6">
+    <section
+      className="rounded-card p-3 pb-4"
+      style={{ backgroundColor: theme.tint }}
+    >
       {/* Header */}
-      <div
-        className="mb-3 flex cursor-pointer items-center justify-between"
+      <h3 className="m-0">
+      <button
+        type="button"
+        aria-expanded={isExpanded}
+        className="flex w-full items-center gap-2.5 rounded-full text-left"
         onClick={() => setIsExpanded((v) => !v)}
       >
-        <h3 className={`text-lg font-bold ${categoryColor}`}>
-          {headerText} ({items.length})
-        </h3>
+        <span
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+          style={{ backgroundColor: theme.pastel }}
+        >
+          <img src={theme.icon} alt="" className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1 truncate font-display text-[0.8125rem] font-extrabold uppercase tracking-wider text-ink">
+          {headerText}
+        </span>
+        <span
+          className="font-display text-[0.8125rem] font-bold"
+          style={{ color: theme.accent }}
+        >
+          {items.length}
+        </span>
         {isExpanded ? (
-          <FiChevronDown size={24} className={categoryColor} />
+          <LuChevronDown aria-hidden="true" className="shrink-0 text-lg text-muted" />
         ) : (
-          <FiChevronRight size={24} className={categoryColor} />
+          <LuChevronRight aria-hidden="true" className="shrink-0 text-lg text-muted" />
         )}
-      </div>
+      </button>
+      </h3>
 
       {/* Items */}
       {isExpanded && sortedItems.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="mt-3 flex flex-col gap-2">
           {sortedItems.map((item) => {
             const open = expandedItems.has(item.id);
             const canManage =
@@ -72,7 +85,7 @@ function CategoryList({
                 key={item.id}
                 item={item}
                 categoryName={categoryName}
-                categoryBgClass={CATEGORY_BG[categoryName] ?? "bg-gray-50"}
+                categoryBgClass=""
                 dietaryIcons={dietaryIcons}
                 canManage={canManage}
                 open={open}
@@ -85,7 +98,7 @@ function CategoryList({
           })}
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

@@ -25,7 +25,7 @@ export default function Tooltip({
         onFocus={show}
         onBlur={hide}
         onClick={toggle}
-        className="ml-1 text-primaryRed hover:text-secondaryRed focus:outline-none"
+        className="ml-1 text-control hover:text-ink"
       >
         {children}
       </button>
@@ -37,10 +37,10 @@ export default function Tooltip({
             isBottom ? "top-full mt-2" : "bottom-full mb-2"
           }`}
         >
-          <div className="relative w-72 rounded-md border border-gray-300 bg-white px-3 py-2 text-xs text-black shadow-lg">
+          <div className="relative w-72 rounded-[14px] bg-raised px-3 py-2 text-xs text-ink shadow-raised">
             {content}
             <div
-              className={`absolute right-[4px] h-2 w-2 rotate-45 bg-white shadow-lg ${
+              className={`absolute right-[4px] h-2 w-2 rotate-45 bg-raised ${
                 isBottom
                   ? "bottom-full translate-y-1/2" // arrow on top edge (tooltip below trigger)
                   : "top-full -translate-y-1/2" // arrow on bottom edge (tooltip above trigger)

@@ -1,5 +1,6 @@
 import React, { useMemo } from "react"
 import { useUser } from "../contexts/UsersContext"
+import { avatarFill } from "../constants/categoryTheme"
 
 export default function AssigneeAvatar({ assigneeId, displayName, size=24, className = "", showName = true}) {
   const { user } = useUser(assigneeId);
@@ -32,8 +33,8 @@ export default function AssigneeAvatar({ assigneeId, displayName, size=24, class
   return (
     <>
       <div
-        className={`flex items-center justify-center rounded-full bg-primaryRed text-white text-[10px] font-medium overflow-hidden ${className}`}
-        style={{ width: size, height: size }}
+        className={`flex items-center justify-center rounded-full text-ink text-[10px] font-bold overflow-hidden ${className}`}
+        style={{ width: size, height: size, backgroundColor: avatarFill(assigneeId || displayName) }}
         title={name}
       >
         {initials}

@@ -1,6 +1,6 @@
 export default function CookingLoader() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-ground">
       <style>{`
         @keyframes cooking {
           0% {
@@ -64,28 +64,28 @@ export default function CookingLoader() {
               className="food absolute left-2.5 z-20 h-1.5 w-[40%] rounded-full"
               style={{
                 background:
-                  "linear-gradient(to bottom, rgb(82, 33, 33), rgb(200, 106, 106))",
+                  "linear-gradient(to bottom, #E0A92E, #FFC952)",
               }}
             ></div>
 
             {/* Pan Base */}
-            <div className="z-30 h-[22px] w-[100px] rounded-b-[40px] bg-[#f94a5a]"></div>
+            <div className="z-30 h-[22px] w-[100px] rounded-b-[40px] bg-accent"></div>
 
             {/* Pan Handle */}
             <div
               className="h-2.5 w-[80px] rounded-full"
               style={{
                 background:
-                  "linear-gradient(to bottom, rgb(18, 18, 18), rgb(74, 74, 74))",
+                  "linear-gradient(to bottom, #161616, #4A4A4A)",
               }}
             ></div>
           </div>
         </div>
 
         {/* Pan Shadow */}
-        <div className="panShadow ml-[15px] h-2 w-[70px] self-start rounded-full bg-black/20 blur-[5px]"></div>
+        <div className="panShadow ml-[15px] h-2 w-[70px] self-start rounded-full bg-selected/30 blur-[5px]"></div>
       </div>
-      <p className="mt-4 text-center text-lg font-medium text-gray-700">
+      <p className="mt-4 text-center font-display text-lg font-bold text-ink">
         Cooking up something delicious...
       </p>
     </div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { IoClose } from "react-icons/io5";
+import { DialogShell, Button } from "./ui";
 
 const ConfirmDeleteModal = ({
   isOpen,
@@ -29,66 +29,45 @@ const ConfirmDeleteModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50">
-      <div
-        className="mx-4 w-full max-w-md rounded-2xl bg-yellow-50 p-0 shadow-lg"
-        role="dialog"
-        aria-modal="true"
-        aria-busy={isDeleting ? "true" : "false"}
-      >
-        <div className="flex w-full items-center justify-center rounded-t-2xl bg-primaryRed px-4 py-2 relative">
-          <h2 className="text-center text-xl font-bold text-white">{title}</h2>
-          <IoClose
-            className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-2xl text-white"
-            onClick={closeModal}
-          />
-        </div>
-        <div className="px-6 pb-6 pt-4">
-          <p className="mt-0 text-center">
-            {description ? (
-              description
-            ) : (
-              <>
-                Are you sure you want to delete{" "}
-                <span className="text-red-600">{deleteItemName}</span>?
-              </>
-            )}
-          </p>
-
-        {error && (
-          <p className="mt-3 text-center text-sm font-semibold text-secondaryRed">
-            {error}
-          </p>
-        )}
-
-        <div className="mt-6 flex justify-center gap-3">
-          <button
-            onClick={closeModal}
-            className="rounded-lg border-2 border-primaryRed bg-white px-6 py-2 text-sm font-bold text-primaryRed transition hover:bg-gray-50"
-          >
+    <DialogShell
+      title={title}
+      labelledById="confirm-delete-title"
+      aria-busy={isDeleting ? "true" : "false"}
+      description={
+        <p className="mt-0">
+          {description ? (
+            description
+          ) : (
+            <>
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-danger">{deleteItemName}</span>?
+            </>
+          )}
+        </p>
+      }
+      actions={
+        <>
+          <Button variant="soft" onClick={closeModal}>
             Cancel
-          </button>
+          </Button>
 
-          <button
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className={`flex items-center rounded-lg bg-primaryRed px-6 py-2 text-sm font-bold text-white transition ${
-              isDeleting ? "cursor-not-allowed opacity-70" : "hover:bg-secondaryRed"
-            }`}
-          >
+          <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
             {isDeleting ? (
               <>
-                <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 Deleting…
               </>
             ) : (
               confirmLabel
             )}
-          </button>
-        </div>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </>
+      }
+    >
+      {error && (
+        <p className="mt-3 text-sm font-semibold text-danger">{error}</p>
+      )}
+    </DialogShell>
   );
 };
 

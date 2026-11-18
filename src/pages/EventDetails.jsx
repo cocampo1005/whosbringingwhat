@@ -1,4 +1,4 @@
-import { useNavigate, getRouteApi } from "@tanstack/react-router";
+import { useNavigate, getRouteApi, Link } from "@tanstack/react-router";
 import { useMemo, useEffect, useState } from "react";
 import {
   arrayRemove,
@@ -16,17 +16,21 @@ import { useAuth } from "../contexts/AuthContext";
 import { useRole } from "../hooks/useRole";
 import EventModal from "../components/EventModal";
 import ShareButton from "../components/ShareButton";
-import { FiEdit, FiLogOut } from "react-icons/fi";
-import { BsPeople, BsLightbulb } from "react-icons/bs";
-import { MdOutlineAccessTimeFilled } from "react-icons/md";
-import { FaCalendarAlt } from "react-icons/fa";
-import { TiLocation } from "react-icons/ti";
-import { FaPlus } from "react-icons/fa6";
+import {
+  LuChevronLeft,
+  LuClock,
+  LuLightbulb,
+  LuLogOut,
+  LuMapPin,
+  LuPencil,
+  LuPlus,
+  LuTrash2,
+  LuUsers,
+} from "react-icons/lu";
 import { GiChickenOven } from "react-icons/gi";
 import { FaBowlFood } from "react-icons/fa6";
 import { GiCakeSlice } from "react-icons/gi";
 import { FaWineGlassAlt } from "react-icons/fa";
-import { MdDelete } from "react-icons/md";
 import { BsThreeDots } from "react-icons/bs";
 // Dietary restriction icons
 import { LuVegan } from "react-icons/lu";
@@ -44,10 +48,25 @@ import CategoryList from "../components/CategoryList";
 import JoinEventPromptModal from "../components/JoinEventPromptModal";
 import { deleteAllEventItemImages } from "../utils/storageCleanup";
 import CookingLoader from "../components/CookingLoader";
+import { Button, IconButton } from "../components/ui";
+import {
+  CATEGORY_ORDER,
+  CATEGORY_THEME,
+  eventBannerPastel,
+} from "../constants/categoryTheme";
 
 // This route hangs off the pathless "home" layout route (see homeRoute's explicit id: "home"
 // in router.jsx), so its composed route id is "/home/events/$eventId", not "/events/$eventId".
 const eventDetailsRouteApi = getRouteApi("/home/events/$eventId");
+
+// Short captions for the category strip (display only).
+const STRIP_CAPTIONS = {
+  Main: "MAINS",
+  Side: "SIDES",
+  Dessert: "DESSERTS",
+  Beverage: "BEVERAGES",
+  Miscellaneous: "MISC",
+};
 
 function EventDetails() {
   const { eventId } = eventDetailsRouteApi.useParams();
@@ -87,12 +106,6 @@ function EventDetails() {
       isHost ||
       (Array.isArray(event.members) &&
         event.members.includes(currentUser.uid)));
-
-  const isSidePanelOpen =
-    isItemModalOpen ||
-    isParticipantModalOpen ||
-    editingEvent ||
-    isSuggestionsModalOpen;
 
   const memberIds = useMemo(() => {
     if (!event) return [];
@@ -389,35 +402,35 @@ function EventDetails() {
       {
         name: "Main",
         count: counts.Main,
-        color: "#dc2626",
+        color: CATEGORY_THEME.Main.pastel,
         textColor: "text-red-600",
         icon: GiChickenOven,
       },
       {
         name: "Side",
         count: counts.Side,
-        color: "#eab308",
+        color: CATEGORY_THEME.Side.pastel,
         textColor: "text-yellow-500",
         icon: FaBowlFood,
       },
       {
         name: "Dessert",
         count: counts.Dessert,
-        color: "#ad46ff",
+        color: CATEGORY_THEME.Dessert.pastel,
         textColor: "text-purple-600",
         icon: GiCakeSlice,
       },
       {
         name: "Beverage",
         count: counts.Beverage,
-        color: "#2563eb",
+        color: CATEGORY_THEME.Beverage.pastel,
         textColor: "text-blue-600",
         icon: FaWineGlassAlt,
       },
       {
         name: "Miscellaneous",
         count: counts.Miscellaneous,
-        color: "#009689",
+        color: CATEGORY_THEME.Miscellaneous.pastel,
         textColor: "text-teal-600",
         icon: BsThreeDots,
       },
@@ -857,515 +870,289 @@ function EventDetails() {
     );
   }
 
-  const bannerColor = event.bannerColor || "#f94a5a";
+  // Presentational values derived from data the page already holds.
+  const hasImage = !!event.imageUrl;
+  const totalItems = event.items?.length ?? 0;
+  const openSuggestionsCount = (event.suggestedItems || []).filter(
+    (s) => s && !s.claimed,
+  ).length;
+  const heroText = hasImage ? "text-white" : "text-ink";
+  const stripCategories = CATEGORY_ORDER.filter(
+    (name) => categoryCounts[name] > 0,
+  );
+
+  const actionButtons = (
+    <>
+          <Button
+            variant="neutral"
+            onClick={handleParticipantsModal}
+            leftIcon={<LuUsers aria-hidden="true" className="text-base" />}
+          >
+            Participants
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleSuggestionsModal}
+            aria-label="View suggestions"
+            leftIcon={<LuLightbulb aria-hidden="true" className="text-base" />}
+          >
+            Suggestions
+            {openSuggestionsCount > 0 && (
+              <span
+                aria-hidden="true"
+                className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-selected px-1 text-[11px] font-bold text-white"
+              >
+                {openSuggestionsCount}
+              </span>
+            )}
+          </Button>
+          <ShareButton eventId={eventId} eventTitle={event.title} />
+          {canManageEvent && (
+            <>
+              <IconButton
+                aria-label="Edit event"
+                title="Edit event"
+                onClick={() => setEditingEvent(true)}
+              >
+                <LuPencil aria-hidden="true" className="text-base" />
+              </IconButton>
+              <IconButton
+                variant="danger"
+                aria-label="Delete event"
+                title="Delete event"
+                onClick={openDeleteModalForEvent}
+              >
+                <LuTrash2 aria-hidden="true" className="text-base" />
+              </IconButton>
+            </>
+          )}
+          {showSelfRemoveButton && currentUser && (
+            <IconButton
+              aria-label="Leave event"
+              title="Leave event"
+              onClick={() =>
+                openParticipantRemovalConfirm(
+                  currentUser.uid,
+                  currentUser.displayName ||
+                    currentUser.name ||
+                    currentUser.email ||
+                    "You",
+                  true,
+                )
+              }
+            >
+              <LuLogOut aria-hidden="true" className="text-base" />
+            </IconButton>
+          )}
+    </>
+  );
 
   return (
-    <div
-      className={`relative mb-10 mt-8 max-w-7xl rounded-2xl bg-white shadow-md transition-all duration-200 ease-out ${
-        isSidePanelOpen ? "md:mr-[12rem] lg:mr-[14rem]" : ""
-      }`}
-    >
-      {/* Hero header: event image or colored banner */}
-      <div className="relative w-full overflow-hidden rounded-tl-2xl rounded-tr-2xl">
-        {event.imageUrl ? (
-          <img
-            src={event.imageUrl}
-            alt={event.title || "Event image"}
-            className="h-48 w-full object-cover"
-          />
-        ) : (
-          <div
-            className="h-48 w-full"
-            style={{ backgroundColor: bannerColor }}
-          />
-        )}
-
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-
-        <div className="absolute inset-x-0 bottom-0 px-4 py-3">
-          <h1 className="text-lg font-bold text-white md:text-xl">
-            {event.title}
-          </h1>
-        </div>
-      </div>
-
-      <div className="p-4 md:p-6">
-        {/* Mobile layout */}
-        <div className="md:hidden">
-          <div className="mb-6">
-            <div className="relative">
-              {/* Action buttons - vertical on mobile */}
-              <div className="absolute right-0 top-0">
-                <div className="flex flex-col gap-2">
-                  {canManageEvent && (
-                    <>
-                      <button
-                        onClick={openDeleteModalForEvent}
-                        className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                      >
-                        <MdDelete className="text-lg text-white" />
-                      </button>
-                      <button
-                        onClick={() => setEditingEvent(true)}
-                        className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                      >
-                        <FiEdit className="text-lg text-white" />
-                      </button>
-                    </>
-                  )}
-                  <button
-                    onClick={handleSuggestionsModal}
-                    className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                    aria-label="View suggestions"
-                  >
-                    <BsLightbulb className="text-lg text-white" />
-                  </button>
-                  <button
-                    onClick={handleParticipantsModal}
-                    className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                  >
-                    <BsPeople className="text-lg text-white" />
-                  </button>
-                  <ShareButton eventId={eventId} eventTitle={event.title} />
-                  {showSelfRemoveButton && currentUser && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openParticipantRemovalConfirm(
-                          currentUser.uid,
-                          currentUser.displayName ||
-                            currentUser.name ||
-                            currentUser.email ||
-                            "You",
-                          true,
-                        )
-                      }
-                      className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                      aria-label="Leave event"
-                    >
-                      <FiLogOut className="text-lg text-white" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Event info */}
-              <div className="pr-20">
-                <div className="mb-4 space-y-2">
-                  <div className="flex items-center">
-                    <FaCalendarAlt className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
-                    <p className="font-bold">{formatDisplayDate(event.date)}</p>
-                  </div>
-                  <div className="flex items-center">
-                    <MdOutlineAccessTimeFilled className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
-                    <p className="font-bold">{formatTime(event.time)}</p>
-                  </div>
-                  <div className="flex items-center">
-                    <TiLocation className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
-                    <p className="font-bold">{event.location}</p>
-                  </div>
-                </div>
-                <p className="text-gray-700">{event.description}</p>
-              </div>
-            </div>
-
-            {/* Pie chart for mobile */}
-            <div className="mt-6">
-              <h3 className="font-bold text-primaryDark">
-                Item Distribution ({event.items.length})
-              </h3>
-              {pieData.length > 0 ? (
-                <div className="flex items-center gap-4">
-                  <div className="shrink-0">
-                    <div className="origin-center scale-90">
-                      <PieChart
-                        data={pieData}
-                        size={160}
-                        animate
-                        duration={700}
-                        delayStep={140}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Legend (right) */}
-                  <ul className="flex-1 space-y-2">
-                    {pieData.map((cat) => {
-                      const IconComponent = cat.icon;
-                      return (
-                        <li key={cat.name} className="flex items-center">
-                          <IconComponent
-                            className={`mr-2 text-xl ${cat.textColor}`}
-                          />
-                          <span className="text-sm font-bold">
-                            {cat.name}: {cat.count}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">No items added yet</p>
-              )}
-            </div>
-          </div>
-
-          {/* Mobile items layout */}
-          <div>
-            {groupedItems.Main?.length > 0 && (
-              <CategoryList
-                categoryName="Main"
-                items={groupedItems.Main || []}
-                categoryColor={getCategoryTextColor("Main")}
-                dietaryIcons={dietaryIcons}
-                onEditItem={handleEditItem}
-                onDeleteItem={openDeleteModalForItem}
-                onToggleReaction={handleToggleReaction}
-                canManageItem={canUserManageItem}
-                defaultExpanded
-              />
-            )}
-            {groupedItems.Side?.length > 0 && (
-              <CategoryList
-                categoryName="Side"
-                items={groupedItems.Side || []}
-                categoryColor={getCategoryTextColor("Side")}
-                dietaryIcons={dietaryIcons}
-                onEditItem={handleEditItem}
-                onDeleteItem={openDeleteModalForItem}
-                onToggleReaction={handleToggleReaction}
-                canManageItem={canUserManageItem}
-                defaultExpanded
-              />
-            )}
-            {groupedItems.Dessert?.length > 0 && (
-              <CategoryList
-                categoryName="Dessert"
-                items={groupedItems.Dessert || []}
-                categoryColor={getCategoryTextColor("Dessert")}
-                dietaryIcons={dietaryIcons}
-                onEditItem={handleEditItem}
-                onDeleteItem={openDeleteModalForItem}
-                onToggleReaction={handleToggleReaction}
-                canManageItem={canUserManageItem}
-                defaultExpanded
-              />
-            )}
-            {groupedItems.Beverage?.length > 0 && (
-              <CategoryList
-                categoryName="Beverage"
-                items={groupedItems.Beverage || []}
-                categoryColor={getCategoryTextColor("Beverage")}
-                dietaryIcons={dietaryIcons}
-                onEditItem={handleEditItem}
-                onDeleteItem={openDeleteModalForItem}
-                onToggleReaction={handleToggleReaction}
-                canManageItem={canUserManageItem}
-                defaultExpanded
-              />
-            )}
-            {groupedItems.Miscellaneous?.length > 0 && (
-              <CategoryList
-                categoryName="Miscellaneous"
-                items={groupedItems.Miscellaneous || []}
-                categoryColor={getCategoryTextColor("Miscellaneous")}
-                dietaryIcons={dietaryIcons}
-                onEditItem={handleEditItem}
-                onDeleteItem={openDeleteModalForItem}
-                onToggleReaction={handleToggleReaction}
-                canManageItem={canUserManageItem}
-                defaultExpanded
-              />
-            )}
-
-            {/* Empty state */}
-            {(!event.items || event.items.length === 0) && (
-              <div className="py-12 text-center">
-                <div className="mb-4 text-3xl">
-                  <span
-                    className="mx-1 inline-block animate-bounce"
-                    style={{ animationDelay: "0s" }}
-                  >
-                    🍗
-                  </span>
-                  <span
-                    className="mx-1 inline-block animate-bounce"
-                    style={{ animationDelay: "0.1s" }}
-                  >
-                    🍛
-                  </span>
-                  <span
-                    className="mx-1 inline-block animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  >
-                    🥧
-                  </span>
-                  <span
-                    className="mx-1 inline-block animate-bounce"
-                    style={{ animationDelay: "0.3s" }}
-                  >
-                    🥗
-                  </span>
-                  <span
-                    className="mx-1 inline-block animate-bounce"
-                    style={{ animationDelay: "0.4s" }}
-                  >
-                    🍷
-                  </span>
-                </div>
-                <p className="mb-4 text-lg text-gray-500">No items added yet</p>
-                <p className="text-gray-400">
-                  Click the + button to add your first item!
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Desktop layout */}
-        <div className="hidden md:block">
-          <div className="mb-8 flex items-start justify-between gap-6">
-            {/* Event details section - flexible width */}
-            <div className="min-w-0 flex-1">
-              <div className="mb-4 space-y-2">
-                <div className="flex items-center">
-                  <FaCalendarAlt className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
-                  <p className="font-bold">{formatDisplayDate(event.date)}</p>
-                </div>
-                <div className="flex items-center">
-                  <MdOutlineAccessTimeFilled className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
-                  <p className="font-bold">{formatTime(event.time)}</p>
-                </div>
-                <div className="flex items-center">
-                  <TiLocation className="mr-2 h-4 w-4 shrink-0 text-primaryRed" />
-                  <p className="font-bold">{event.location}</p>
-                </div>
-              </div>
-              <p className="text-gray-700">{event.description}</p>
-            </div>
-
-            {/* Pie chart section - auto width based on content */}
-            <div className="shrink-0">
-              <h3 className="mb-3 text-center font-bold text-primaryDark">
-                Item Distribution ({event.items.length})
-              </h3>
-              {pieData.length > 0 ? (
-                <div className="flex items-center gap-8">
-                  <PieChart
-                    data={pieData}
-                    size={170}
-                    animate
-                    duration={700}
-                    delayStep={140}
-                  />
-
-                  {/* Legend */}
-                  <div className="grid grid-cols-1 gap-3">
-                    {pieData.map((cat) => {
-                      const IconComponent = cat.icon;
-                      return (
-                        <div key={cat.name} className="flex items-center">
-                          <IconComponent
-                            className={`mr-3 text-xl ${cat.textColor}`}
-                          />
-                          <span className="whitespace-nowrap font-bold">
-                            {cat.name}: {cat.count}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-center text-sm text-gray-500">
-                  No items added yet
-                </p>
-              )}
-            </div>
-
-            {/* Action buttons - auto width, aligned top and bottom */}
-            <div className="flex shrink-0 flex-col items-end justify-between self-stretch">
-              <div className="flex gap-2">
-                {canManageEvent && (
-                  <>
-                    <button
-                      onClick={openDeleteModalForEvent}
-                      className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                    >
-                      <MdDelete className="text-lg text-white" />
-                    </button>
-                    <button
-                      onClick={() => setEditingEvent(true)}
-                      className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                    >
-                      <FiEdit className="text-lg text-white" />
-                    </button>
-                  </>
-                )}
-                <button
-                  onClick={handleSuggestionsModal}
-                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                  aria-label="View suggestions"
-                >
-                  <BsLightbulb className="text-lg text-white" />
-                </button>
-                <button
-                  onClick={handleParticipantsModal}
-                  className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                >
-                  <BsPeople className="text-lg text-white" />
-                </button>
-                <ShareButton eventId={eventId} eventTitle={event.title} />
-                {showSelfRemoveButton && currentUser && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openParticipantRemovalConfirm(
-                        currentUser.uid,
-                        currentUser.displayName ||
-                          currentUser.name ||
-                          currentUser.email ||
-                          "You",
-                        true,
-                      )
-                    }
-                    className="flex rounded-full bg-primaryRed p-2 hover:bg-secondaryRed"
-                    aria-label="Leave event"
-                  >
-                    <FiLogOut className="text-lg text-white" />
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={handleAddItem}
-                className="flex shrink-0 items-center gap-2 rounded-xl bg-primaryRed px-4 py-3 text-sm font-semibold text-white hover:bg-secondaryRed"
-              >
-                <FaPlus />
-                <span>Add / Suggest Item</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Five column layout for categories on desktop (slightly wider cards) */}
-          <div className="grid grid-cols-5 gap-3">
-            {groupedItems.Main?.length > 0 && (
-              <CategoryList
-                categoryName="Main"
-                items={groupedItems.Main || []}
-                categoryColor={getCategoryTextColor("Main")}
-                dietaryIcons={dietaryIcons}
-                onEditItem={handleEditItem}
-                onDeleteItem={openDeleteModalForItem}
-                onToggleReaction={handleToggleReaction}
-                canManageItem={canUserManageItem}
-                defaultExpanded
-              />
-            )}
-            {groupedItems.Side?.length > 0 && (
-              <CategoryList
-                categoryName="Side"
-                items={groupedItems.Side || []}
-                categoryColor={getCategoryTextColor("Side")}
-                dietaryIcons={dietaryIcons}
-                onEditItem={handleEditItem}
-                onDeleteItem={openDeleteModalForItem}
-                onToggleReaction={handleToggleReaction}
-                canManageItem={canUserManageItem}
-                defaultExpanded
-              />
-            )}
-            {groupedItems.Dessert?.length > 0 && (
-              <CategoryList
-                categoryName="Dessert"
-                items={groupedItems.Dessert || []}
-                categoryColor={getCategoryTextColor("Dessert")}
-                dietaryIcons={dietaryIcons}
-                onEditItem={handleEditItem}
-                onDeleteItem={openDeleteModalForItem}
-                onToggleReaction={handleToggleReaction}
-                canManageItem={canUserManageItem}
-                defaultExpanded
-              />
-            )}
-            {groupedItems.Beverage?.length > 0 && (
-              <CategoryList
-                categoryName="Beverage"
-                items={groupedItems.Beverage || []}
-                categoryColor={getCategoryTextColor("Beverage")}
-                dietaryIcons={dietaryIcons}
-                onEditItem={handleEditItem}
-                onDeleteItem={openDeleteModalForItem}
-                onToggleReaction={handleToggleReaction}
-                canManageItem={canUserManageItem}
-                defaultExpanded
-              />
-            )}
-            {groupedItems.Miscellaneous?.length > 0 && (
-              <CategoryList
-                categoryName="Miscellaneous"
-                items={groupedItems.Miscellaneous || []}
-                categoryColor={getCategoryTextColor("Miscellaneous")}
-                dietaryIcons={dietaryIcons}
-                onEditItem={handleEditItem}
-                onDeleteItem={openDeleteModalForItem}
-                onToggleReaction={handleToggleReaction}
-                canManageItem={canUserManageItem}
-                defaultExpanded
-              />
-            )}
-          </div>
-
-          {/* Empty state for desktop */}
-          {(!event.items || event.items.length === 0) && (
-            <div className="py-12 text-center">
-              <div className="mb-4 text-3xl">
-                <span
-                  className="mx-1 inline-block animate-bounce"
-                  style={{ animationDelay: "0s" }}
-                >
-                  🍗
-                </span>
-                <span
-                  className="mx-1 inline-block animate-bounce"
-                  style={{ animationDelay: "0.1s" }}
-                >
-                  🍛
-                </span>
-                <span
-                  className="mx-1 inline-block animate-bounce"
-                  style={{ animationDelay: "0.2s" }}
-                >
-                  🥧
-                </span>
-                <span
-                  className="mx-1 inline-block animate-bounce"
-                  style={{ animationDelay: "0.3s" }}
-                >
-                  🥗
-                </span>
-                <span
-                  className="mx-1 inline-block animate-bounce"
-                  style={{ animationDelay: "0.4s" }}
-                >
-                  🍷
-                </span>
-              </div>
-              <p className="mb-2 text-lg text-gray-500">No items added yet</p>
-              <p className="text-gray-400">
-                Click the + button to add your first item!
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Add item button */}
-      <button
-        onClick={handleAddItem}
-        className="fixed bottom-24 right-4 rounded-full bg-primaryRed p-4 text-white shadow-lg transition-colors hover:bg-secondaryRed md:hidden"
+    <div className="relative mb-10">
+      {/* Back link (desktop: text link) */}
+      <Link
+        to="/events"
+        className="mb-3 hidden items-center gap-1 text-sm text-muted hover:text-ink md:inline-flex"
       >
-        <FaPlus />
+        <LuChevronLeft aria-hidden="true" className="text-base" />
+        <span>Events</span>
+      </Link>
+
+      <div className="relative">
+        {/* Back link (phone: round button over the hero) */}
+        <Link
+          to="/events"
+          aria-label="Back to Events"
+          className="absolute left-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-raised text-ink shadow-chip hover:bg-surface2 md:hidden"
+        >
+          <LuChevronLeft aria-hidden="true" className="text-lg" />
+        </Link>
+
+        {/* Hero: event image under a dark scrim, or a pastel block */}
+        <div
+          className={`relative isolate min-h-[24rem] overflow-hidden rounded-card lg:min-h-[22rem] ${heroText}`}
+          style={
+            hasImage ? undefined : { backgroundColor: eventBannerPastel(event) }
+          }
+        >
+          {hasImage && (
+            <>
+              <img
+                src={event.imageUrl}
+                alt={event.title || "Event image"}
+                className="absolute inset-0 -z-10 h-full w-full object-cover"
+              />
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 -z-10"
+                style={{
+                  background:
+                    "linear-gradient(to top, rgba(22,22,22,0.86), rgba(22,22,22,0.12))",
+                }}
+              />
+            </>
+          )}
+
+          <div className="flex min-h-[24rem] flex-col justify-end gap-3 p-5 pt-16 md:p-8 md:pt-16 lg:min-h-[22rem] lg:pb-8 lg:pr-[18rem] lg:pt-8">
+            {event.date && (
+              <div>
+                <span className="inline-flex rounded-full bg-raised px-3 py-1 font-display text-[11px] font-bold uppercase tracking-wider text-ink shadow-chip">
+                  {formatDisplayDate(event.date)}
+                </span>
+              </div>
+            )}
+            <h1 className="break-words font-display text-3xl md:text-4xl lg:text-5xl font-extrabold uppercase leading-[1.02] [font-stretch:125%]">
+              {event.title}
+            </h1>
+            {(event.time || event.location) && (
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm font-semibold">
+                {event.time && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <LuClock aria-hidden="true" className="shrink-0" />
+                    {formatTime(event.time)}
+                  </span>
+                )}
+                {event.location && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <LuMapPin aria-hidden="true" className="shrink-0" />
+                    {event.location}
+                  </span>
+                )}
+              </div>
+            )}
+            {event.description && (
+              <p className="max-w-xl text-[0.9375rem] leading-relaxed">
+                {event.description}
+              </p>
+            )}
+            <div className="mt-6 hidden flex-wrap items-center gap-2 lg:flex">
+              {actionButtons}
+            </div>
+          </div>
+        </div>
+
+        {/* Action rail: under the hero on phone/tablet (inside the hero's text column from lg) */}
+        <div className="mt-3 flex flex-wrap items-center gap-2 lg:hidden">
+          {actionButtons}
+        </div>
+
+        {/* Distribution wheel: right side of the hero on desktop, under the rail on phone */}
+        <section
+          aria-labelledby="event-distribution-heading"
+          className="mt-6 flex justify-center lg:absolute lg:right-8 lg:top-1/2 lg:mt-0 lg:-translate-y-1/2"
+        >
+          <h2 id="event-distribution-heading" className="sr-only">
+            Item Distribution ({totalItems})
+          </h2>
+          {pieData.length > 0 ? (
+            <div className="rounded-full lg:bg-white/75 lg:p-3 lg:shadow-soft">
+              <PieChart
+                data={pieData}
+                size={220}
+                animate
+                duration={700}
+                delayStep={140}
+                variant="donut"
+                centerLabel="ITEMS"
+              />
+            </div>
+          ) : (
+            <p className="rounded-full bg-raised px-4 py-2 text-sm text-muted shadow-chip">
+              No items added yet
+            </p>
+          )}
+        </section>
+      </div>
+
+      {/* Items header: label, proportional category strip, add button */}
+      <div className="mt-8 hidden items-center gap-x-6 gap-y-3 md:flex">
+        <div className="flex shrink-0 items-baseline gap-2">
+          <span className="font-display text-sm font-extrabold uppercase tracking-wider text-ink">
+            ITEMS
+          </span>
+          <span className="text-sm text-muted">{totalItems}</span>
+        </div>
+        <div className="flex min-w-0 flex-1 gap-1.5" aria-hidden="true">
+          {stripCategories.map((name) => {
+            const theme = CATEGORY_THEME[name];
+            return (
+              <div
+                key={name}
+                className="min-w-[3.5rem]"
+                style={{ flex: `${categoryCounts[name]} 1 0%` }}
+              >
+                <div
+                  className="flex h-6 items-center rounded-full px-1"
+                  style={{ backgroundColor: theme.bar }}
+                >
+                  <img src={theme.icon} alt="" className="h-4 w-4" />
+                </div>
+                <p className="mt-1 whitespace-nowrap font-display text-[11px] font-bold uppercase tracking-wider text-muted">
+                  {STRIP_CAPTIONS[name]}{" "}
+                  <span className="font-semibold">{categoryCounts[name]}</span>
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        <Button
+          onClick={handleAddItem}
+          size="lg"
+          className="shrink-0"
+          leftIcon={<LuPlus aria-hidden="true" className="text-lg" />}
+        >
+          Add / Suggest Item
+        </Button>
+      </div>
+
+      {/* Categories: stacked collapsible sections on phone, columns from md */}
+      <div className="mt-6 grid grid-cols-1 items-start gap-3 md:mt-5 md:grid-cols-3 lg:grid-cols-5">
+        {CATEGORY_ORDER.map(
+          (name) =>
+            groupedItems[name]?.length > 0 && (
+              <CategoryList
+                key={name}
+                categoryName={name}
+                items={groupedItems[name] || []}
+                categoryColor={getCategoryTextColor(name)}
+                dietaryIcons={dietaryIcons}
+                onEditItem={handleEditItem}
+                onDeleteItem={openDeleteModalForItem}
+                onToggleReaction={handleToggleReaction}
+                canManageItem={canUserManageItem}
+                defaultExpanded
+              />
+            ),
+        )}
+      </div>
+
+      {/* Empty state */}
+      {(!event.items || event.items.length === 0) && (
+        <div className="py-12 text-center">
+          <div className="mb-4 text-3xl">
+            {["🍗", "🍛", "🥧", "🥗", "🍷"].map((emoji, i) => (
+              <span
+                key={emoji}
+                className="mx-1 inline-block animate-bounce"
+                style={{ animationDelay: `${i * 0.1}s` }}
+              >
+                {emoji}
+              </span>
+            ))}
+          </div>
+          <p className="mb-4 text-lg text-muted">No items added yet</p>
+          <p className="text-muted">Click the + button to add your first item!</p>
+        </div>
+      )}
+
+      {/* Add item button (phone: sits in the slot reserved beside the nav pill) */}
+      <button
+        type="button"
+        onClick={handleAddItem}
+        aria-label="Add / Suggest Item"
+        className="fixed bottom-4 left-4 z-30 flex h-[54px] w-[54px] items-center justify-center rounded-full bg-accent text-white shadow-action ring-4 ring-white transition-colors hover:bg-accent-hover md:hidden"
+      >
+        <LuPlus aria-hidden="true" className="text-2xl" />
       </button>
 
       {/* Modals */}

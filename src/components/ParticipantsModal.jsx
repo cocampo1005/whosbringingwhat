@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
-import { IoClose } from "react-icons/io5";
-import { FiChevronDown, FiChevronRight } from "react-icons/fi";
+import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { useUsers } from "../contexts/UsersContext";
 import AssigneeAvatar from "./AssigneeAvatar";
 import useEscapeKey from "../hooks/useEscapeKey";
+import { Button, Chip, SheetShell } from "./ui";
+import { getCategoryTheme } from "../constants/categoryTheme";
 
 import { LuVegan } from "react-icons/lu";
 import { FaLeaf, FaPepperHot, FaGlideG } from "react-icons/fa";
@@ -65,14 +66,6 @@ const DIETARY_RESTRICTIONS_META = {
   },
 };
 
-const CATEGORY_BADGES = {
-  Main: "bg-rose-100 text-rose-800",
-  Side: "bg-yellow-100 text-yellow-800",
-  Dessert: "bg-purple-100 text-purple-800",
-  Beverage: "bg-blue-100 text-blue-800",
-  Miscellaneous: "bg-emerald-100 text-emerald-800",
-};
-
 export default function ParticipantsModal({
   isOpen,
   onClose,
@@ -114,13 +107,13 @@ export default function ParticipantsModal({
     return byUser;
   }, [ids, userList, items]);
 
-  if (!isOpen) return null;
-
-  const isLoading = status === "loading";
-
   useEscapeKey(() => {
     onClose();
   }, isOpen);
+
+  if (!isOpen) return null;
+
+  const isLoading = status === "loading";
 
   const handleBackdropClick = (e) => {
     if (e.target !== e.currentTarget) return;
@@ -128,216 +121,207 @@ export default function ParticipantsModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-stretch justify-center bg-gray-500 bg-opacity-50 md:justify-end"
-      onClick={handleBackdropClick}
+    <SheetShell
+      onBackdropClick={handleBackdropClick}
+      title={`Event participants (${ids.length})`}
+      onClose={onClose}
+      labelledById="participants-sheet-title"
     >
-      <div className="relative flex h-full w-full max-w-full flex-col overflow-hidden bg-yellow-50 shadow-lg md:max-w-md">
-        <div className="flex items-center justify-center bg-primaryRed px-4 py-3">
-          <h2 className="text-center text-lg font-semibold text-white">
-            Event participants {`(${ids.length})`}
-          </h2>
-          <IoClose
-            className="absolute right-4 top-3 cursor-pointer text-2xl text-white"
-            onClick={onClose}
-          />
-        </div>
-        <div className="mt-2 flex-1 overflow-y-auto px-6 pb-6 pt-4">
-          {isLoading ? (
-            <p className="text-sm text-gray-500">Loading participants...</p>
-          ) : ids.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              No participants have joined this event yet.
-            </p>
-          ) : (
-            <ul className="space-y-4">
-              {ids.map((id) => {
-                const entry = contributions.get(id);
-                const user = entry?.user || userList[ids.indexOf(id)];
+      {isLoading ? (
+        <p className="text-sm text-muted">Loading participants...</p>
+      ) : ids.length === 0 ? (
+        <p className="text-sm text-muted">
+          No participants have joined this event yet.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {ids.map((id) => {
+            const entry = contributions.get(id);
+            const user = entry?.user || userList[ids.indexOf(id)];
 
-                const isCurrentUser = currentUserId === id;
-                const isHostUser = hostId && hostId === id;
-                const canRemoveAny = canManageEvent;
-                const showRemoveButton =
-                  (canRemoveAny && !isHostUser) ||
-                  (!canRemoveAny && isCurrentUser);
-                const removeLabel =
-                  !canRemoveAny && isCurrentUser ? "Leave" : "Remove";
+            const isCurrentUser = currentUserId === id;
+            const isHostUser = hostId && hostId === id;
+            const canRemoveAny = canManageEvent;
+            const showRemoveButton =
+              (canRemoveAny && !isHostUser) || (!canRemoveAny && isCurrentUser);
+            const removeLabel =
+              !canRemoveAny && isCurrentUser ? "Leave" : "Remove";
 
-                if (!user) {
-                  return (
-                    <li
-                      key={id}
-                      className="mx-auto flex w-full max-w-[34rem] items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 text-sm text-gray-500 shadow-sm transition hover:bg-gray-50 hover:shadow-md"
+            if (!user) {
+              return (
+                <li
+                  key={id}
+                  className="flex w-full items-center justify-between rounded-2xl bg-surface2 px-4 py-3 text-sm text-muted"
+                >
+                  <div className="flex items-center gap-3">
+                    <AssigneeAvatar
+                      assigneeId={id}
+                      displayName="Unknown"
+                      size={36}
+                      showName={false}
+                    />
+                    <span>Unknown participant</span>
+                  </div>
+                  {showRemoveButton && onRemoveParticipant && (
+                    <Button
+                      size="sm"
+                      variant={removeLabel === "Leave" ? "soft" : "danger"}
+                      className="ml-3"
+                      onClick={() =>
+                        onRemoveParticipant(
+                          id,
+                          "this participant",
+                          !canRemoveAny && isCurrentUser,
+                        )
+                      }
                     >
-                      <div className="flex items-center gap-3">
-                        <AssigneeAvatar
-                          assigneeId={id}
-                          displayName="Unknown"
-                          size={32}
-                        />
-                        <span>Unknown participant</span>
-                      </div>
-                      {showRemoveButton && onRemoveParticipant && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onRemoveParticipant(
-                              id,
-                              "this participant",
-                              !canRemoveAny && isCurrentUser,
-                            )
-                          }
-                          className={
-                            removeLabel === "Leave"
-                              ? "ml-3 rounded-full bg-primaryRed px-3 py-1 text-xs font-semibold text-white hover:bg-secondaryRed"
-                              : "ml-3 rounded-full border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
-                          }
-                        >
-                          {removeLabel}
-                        </button>
-                      )}
-                    </li>
-                  );
-                }
+                      {removeLabel}
+                    </Button>
+                  )}
+                </li>
+              );
+            }
 
-                const dietary = user.dietaryRestrictions || [];
-                const categoryCounts = entry?.categoryCounts || {};
-                const totalItems = entry?.total || 0;
+            const dietary = user.dietaryRestrictions || [];
+            const categoryCounts = entry?.categoryCounts || {};
+            const totalItems = entry?.total || 0;
 
-                return (
-                  <li
-                    key={id}
-                    className="mx-auto flex w-full max-w-[34rem] items-stretch justify-between gap-2 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm transition hover:bg-gray-50 hover:shadow-md"
-                  >
-                    {/* Left: avatar, name, dietary row under name */}
-                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <div className="flex min-w-0 items-center gap-2">
-                        {/* Avatar should never squish */}
-                        <div className="flex-shrink-0">
-                          <AssigneeAvatar
-                            assigneeId={id}
-                            displayName={user.name}
-                            size={36}
-                            showName={false}
-                          />
-                        </div>
-
-                        {/* Name: wraps, but clamps for extreme cases like emails */}
-                        <span className="line-clamp-2 min-w-0 flex-1 break-words text-lg font-medium text-gray-900">
-                          {user.name}
-                        </span>
-                      </div>
-
-                      {/* Dietary info directly under name */}
-                      <div className="mt-0.5">
-                        {dietary.length === 0 ? (
-                          <span className="text-[11px] text-gray-400">
-                            No dietary restrictions set
-                          </span>
-                        ) : (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setOpenDietaryByUser((prev) => ({
-                                  ...prev,
-                                  [id]: !prev[id],
-                                }))
-                              }
-                              className="flex items-center text-[11px] text-gray-500 hover:text-gray-700"
-                            >
-                              <span>Dietary restrictions</span>
-                              {openDietaryByUser[id] ? (
-                                <FiChevronDown className="ml-2 h-4 w-4" />
-                              ) : (
-                                <FiChevronRight className="ml-2 h-4 w-4" />
-                              )}
-                            </button>
-                            {openDietaryByUser[id] && (
-                              <div className="mt-1 flex flex-wrap gap-1.5">
-                                {dietary.map((key) => {
-                                  const meta = DIETARY_RESTRICTIONS_META[key];
-                                  if (!meta) return null;
-                                  return (
-                                    <span
-                                      key={key}
-                                      className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[11px] text-gray-700 shadow-sm"
-                                    >
-                                      <span className={meta.color}>
-                                        {meta.icon}
-                                      </span>
-                                      <span>{meta.label}</span>
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
+            return (
+              <li
+                key={id}
+                className="flex w-full items-stretch justify-between gap-3 rounded-2xl bg-surface2 px-4 py-3"
+              >
+                {/* Left: avatar, name, dietary row under name */}
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {/* Avatar should never squish */}
+                    <div className="flex-shrink-0">
+                      <AssigneeAvatar
+                        assigneeId={id}
+                        displayName={user.name}
+                        size={36}
+                        showName={false}
+                      />
                     </div>
 
-                    {/* Right: item count, category chips, and remove button, right aligned */}
-                    <div className="flex flex-shrink-0 flex-col items-end justify-between text-xs text-gray-600">
-                      {/* Top: item count + category chips */}
-                      <div className="max-w-[7rem]">
-                        <div className="mb-[17px] mt-3 flex justify-end">
-                          <span>
-                            {totalItems > 0
-                              ? `${totalItems} item${totalItems === 1 ? "" : "s"}`
-                              : "No items yet"}
-                          </span>
-                        </div>
+                    {/* Name: wraps, but clamps for extreme cases like emails */}
+                    <span className="line-clamp-2 min-w-0 flex-1 break-words text-base font-semibold text-ink">
+                      {user.name}
+                    </span>
+                  </div>
 
-                        <div className="mt-1 flex flex-wrap justify-end gap-1.5">
-                          {Object.keys(categoryCounts).length > 0 ? (
-                            Object.entries(categoryCounts).map(
-                              ([category, count]) => (
-                                <span
-                                  key={`cat-${category}`}
-                                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                                    CATEGORY_BADGES[category] ||
-                                    "bg-gray-100 text-gray-700"
-                                  }`}
-                                >
-                                  <span>{category}</span>
-                                  <span>· {count}</span>
-                                </span>
-                              ),
-                            )
+                  {/* Dietary info directly under name */}
+                  <div className="mt-0.5">
+                    {dietary.length === 0 ? (
+                      <span className="text-[11px] text-muted">
+                        No dietary restrictions set
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          aria-expanded={!!openDietaryByUser[id]}
+                          onClick={() =>
+                            setOpenDietaryByUser((prev) => ({
+                              ...prev,
+                              [id]: !prev[id],
+                            }))
+                          }
+                          className="flex items-center text-[11px] font-semibold text-muted hover:text-ink"
+                        >
+                          <span>Dietary restrictions</span>
+                          {openDietaryByUser[id] ? (
+                            <LuChevronDown className="ml-1.5 h-4 w-4" />
                           ) : (
-                            <span className="text-[11px] text-gray-400">
-                              No contributions yet
-                            </span>
+                            <LuChevronRight className="ml-1.5 h-4 w-4" />
                           )}
-                        </div>
-                      </div>
-
-                      {/* Bottom: fixed Leave/Remove button */}
-                      {showRemoveButton && onRemoveParticipant && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onRemoveParticipant(
-                              id,
-                              user.name,
-                              !canRemoveAny && isCurrentUser,
-                            )
-                          }
-                          className="mt-2 rounded-full bg-primaryRed px-3 py-1 text-xs font-semibold text-white hover:bg-secondaryRed"
-                        >
-                          {removeLabel}
                         </button>
+                        {openDietaryByUser[id] && (
+                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {dietary.map((key) => {
+                              const meta = DIETARY_RESTRICTIONS_META[key];
+                              if (!meta) return null;
+                              return (
+                                <Chip
+                                  key={key}
+                                  className="bg-raised text-[11px] shadow-chip"
+                                >
+                                  <span className={meta.color}>{meta.icon}</span>
+                                  <span>{meta.label}</span>
+                                </Chip>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: item count, category chips, and remove button, right aligned */}
+                <div className="flex flex-shrink-0 flex-col items-end justify-between gap-2 text-xs text-muted">
+                  <div className="flex max-w-[9rem] flex-col items-end gap-1.5">
+                    <span className="font-semibold">
+                      {totalItems > 0
+                        ? `${totalItems} item${totalItems === 1 ? "" : "s"}`
+                        : "No items yet"}
+                    </span>
+
+                    <div className="flex flex-wrap justify-end gap-1.5">
+                      {Object.keys(categoryCounts).length > 0 ? (
+                        Object.entries(categoryCounts).map(
+                          ([category, count]) => {
+                            const theme = getCategoryTheme(category);
+                            return (
+                              <Chip
+                                key={`cat-${category}`}
+                                className="text-[11px]"
+                                tone={{
+                                  background: theme.tint,
+                                  color: theme.accent,
+                                }}
+                              >
+                                <span
+                                  aria-hidden="true"
+                                  className="h-2 w-2 rounded-full"
+                                  style={{ backgroundColor: theme.bold }}
+                                />
+                                <span>{category}</span>
+                                <span>· {count}</span>
+                              </Chip>
+                            );
+                          },
+                        )
+                      ) : (
+                        <span className="text-[11px] text-muted">
+                          No contributions yet
+                        </span>
                       )}
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      </div>
-    </div>
+                  </div>
+
+                  {/* Bottom: Leave/Remove button */}
+                  {showRemoveButton && onRemoveParticipant && (
+                    <Button
+                      size="sm"
+                      variant={removeLabel === "Leave" ? "soft" : "danger"}
+                      onClick={() =>
+                        onRemoveParticipant(
+                          id,
+                          user.name,
+                          !canRemoveAny && isCurrentUser,
+                        )
+                      }
+                    >
+                      {removeLabel}
+                    </Button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </SheetShell>
   );
 }

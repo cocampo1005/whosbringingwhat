@@ -17,17 +17,56 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import ChangePasswordModal from "../components/ChangePasswordModal";
 import imageCompression from "browser-image-compression";
-import { BsPersonFill } from "react-icons/bs";
-import { IoMail, IoLogOut, IoChevronDown, IoChevronUp } from "react-icons/io5";
-import { MdEdit, MdSecurity, MdDelete } from "react-icons/md";
-import { FiEdit } from "react-icons/fi";
-import { LuVegan } from "react-icons/lu";
-import { FaLeaf, FaFish, FaUnlockKeyhole } from "react-icons/fa6";
+import {
+  LuVegan,
+  LuPencil,
+  LuCamera,
+  LuLeaf,
+  LuShield,
+  LuMail,
+  LuKeyRound,
+  LuLogOut,
+  LuTrash2,
+  LuChevronDown,
+  LuChevronUp,
+} from "react-icons/lu";
+import { FaLeaf, FaFish } from "react-icons/fa6";
 import { FaPepperHot, FaGlideG } from "react-icons/fa";
 import { GiChicken, GiPeanut, GiMilkCarton, GiShrimp } from "react-icons/gi";
 import { PiCowFill } from "react-icons/pi";
 import { FcGoogle } from "react-icons/fc";
 import { PorkIconComponent } from "../styles/svgs";
+import useEscapeKey from "../hooks/useEscapeKey";
+import { avatarFill } from "../constants/categoryTheme";
+import { Button, IconButton, Chip, DialogShell } from "../components/ui";
+import charPurple from "../assets/brand/characters/char-purple.svg";
+import charRed from "../assets/brand/characters/char-red.svg";
+import charYellow from "../assets/brand/characters/char-yellow.svg";
+import charGreen from "../assets/brand/characters/char-green.svg";
+import charPink from "../assets/brand/characters/char-pink.svg";
+import charBlue from "../assets/brand/characters/char-blue.svg";
+
+const COVERS = [
+  { tint: "#F1E9FE", character: charPurple },
+  { tint: "#FFE9E6", character: charRed },
+  { tint: "#FEF6E2", character: charYellow },
+  { tint: "#E6F8EE", character: charGreen },
+  { tint: "#FFEAF5", character: charPink },
+  { tint: "#D6EBFA", character: charBlue },
+];
+
+// Display-only: a stable cover for each user, picked from their uid.
+function coverFor(seed) {
+  let h = 0;
+  const str = `profile-cover:${seed ?? ""}`;
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(h, 31) + str.charCodeAt(i)) | 0;
+  }
+  return COVERS[Math.abs(h) % COVERS.length];
+}
+
+const ROW_CLASS =
+  "flex w-full items-center gap-3 border-b border-line py-3 text-left transition hover:bg-surface2/60";
 
 const dietaryRestrictions = {
   vegan: { icon: <LuVegan />, color: "text-green-600", label: "Vegan" },
@@ -95,6 +134,47 @@ export default function Profile() {
   const [selectedRestrictions, setSelectedRestrictions] = useState([]);
   const [isGoogleUser, setIsGoogleUser] = useState(false);
 
+  // Styled replacements for window.prompt / window.confirm / alert.
+  // dialog: null | { kind: "message" | "confirm" | "input", title, ... }
+  const [dialog, setDialog] = useState(null);
+  const [dialogValue, setDialogValue] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const closeDialog = () => setDialog(null);
+  // Dialog titles are whole sentences: show them at body size, not as a display heading.
+  const dialogTitleNode = (text) => (
+    <span className="font-sans text-base font-semibold normal-case leading-snug tracking-normal [font-stretch:100%]">
+      {text}
+    </span>
+  );
+  const showMessage = (text) => setDialog({ kind: "message", title: text });
+  const showConfirm = (title, onConfirm) =>
+    setDialog({ kind: "confirm", title, onConfirm });
+  const showInput = (
+    title,
+    inputType,
+    autoComplete,
+    initial,
+    onSubmit,
+    onCancel,
+  ) => {
+    setDialogValue(initial || "");
+    setDialog({
+      kind: "input",
+      title,
+      inputType,
+      autoComplete,
+      onSubmit,
+      onCancel,
+    });
+  };
+  const cancelDialog = () => {
+    if (busy || !dialog) return;
+    if (dialog.kind === "input" && dialog.onCancel) dialog.onCancel();
+    else closeDialog();
+  };
+  useEscapeKey(cancelDialog, dialog !== null);
+
   // Real-time listener for user profile changes
   useEffect(() => {
     if (!currentUser?.uid) return;
@@ -128,37 +208,57 @@ export default function Profile() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    const confirmation = window.confirm(
+  // Step 1: was window.confirm(...). Cancel does nothing, as before.
+  const handleDeleteAccount = () => {
+    showConfirm(
       "Are you sure you want to delete your account? This action cannot be undone.",
+      () => handleDeleteAccountConfirmed(),
     );
+  };
 
-    if (!confirmation) return;
-
-    let password = null;
-
+  // Step 2: was the prompt(s) after the confirm. Same early exits as before.
+  const handleDeleteAccountConfirmed = () => {
     if (isGoogleUser) {
       // Google-linked accounts: confirm by typing "delete" instead of password
-      const typed = prompt(
+      const rejectTyped = () => showMessage("Account deletion cancelled.");
+      showInput(
         'To confirm account deletion, please type "delete" (without quotes):',
+        "text",
+        "off",
+        "",
+        (typed) => {
+          if (!typed || typed.trim().toLowerCase() !== "delete") {
+            rejectTyped();
+            return;
+          }
+          return runDeleteAccount(null);
+        },
+        rejectTyped,
       );
-
-      if (!typed || typed.trim().toLowerCase() !== "delete") {
-        alert("Account deletion cancelled.");
-        return;
-      }
     } else {
       // Email/password accounts: require current password
-      password = prompt(
+      showInput(
         "Please enter your current password to confirm account deletion:",
+        "password",
+        "current-password",
+        "",
+        (password) => {
+          if (!password) {
+            closeDialog();
+            return;
+          }
+          return runDeleteAccount(password);
+        },
       );
-      if (!password) return;
     }
+  };
 
+  // The original body after the prompts; only alert -> showMessage changed.
+  const runDeleteAccount = async (password) => {
     try {
       const user = auth.currentUser;
       if (!user) {
-        alert("No user is currently signed in.");
+        showMessage("No user is currently signed in.");
         return;
       }
 
@@ -175,46 +275,71 @@ export default function Profile() {
       await deleteUser(user);
 
       console.log("Account deleted successfully");
+      // Native alert on purpose: deleting the user signs them out and unmounts this page, so an in-page dialog would never be seen.
       alert("Your account has been deleted.");
     } catch (error) {
       console.error("Error deleting account: ", error);
 
       // Password-specific errors only apply to non-Google users
       if (!isGoogleUser && error.code === "auth/wrong-password") {
-        alert("Incorrect password. Please try again.");
+        showMessage("Incorrect password. Please try again.");
       } else if (error.code === "auth/too-many-requests") {
-        alert("Too many failed attempts. Please try again later.");
+        showMessage("Too many failed attempts. Please try again later.");
       } else if (error.code === "auth/requires-recent-login") {
-        alert(
+        showMessage(
           "For security reasons, please log out and log back in before deleting your account.",
         );
       } else {
-        alert("Error deleting account. Please try again or contact support.");
+        showMessage(
+          "Error deleting account. Please try again or contact support.",
+        );
       }
     }
   };
 
-  const handleEmailUpdate = async () => {
+  // Step 1: was the two prompts (new email, then password).
+  const handleEmailUpdate = () => {
     if (isGoogleUser) {
-      alert(
+      showMessage(
         "To change your email, please visit your Google account settings at myaccount.google.com",
       );
       return;
     }
 
-    const newEmail = prompt("Enter new email:", currentUser.email);
-    if (!newEmail || newEmail === currentUser.email) return;
-
-    const password = prompt(
-      "Please enter your current password to confirm email change:",
+    showInput(
+      "Enter new email:",
+      "email",
+      "email",
+      currentUser.email,
+      (newEmail) => {
+        if (!newEmail || newEmail === currentUser.email) {
+          closeDialog();
+          return;
+        }
+        showInput(
+          "Please enter your current password to confirm email change:",
+          "password",
+          "current-password",
+          "",
+          (password) => {
+            if (!password) {
+              closeDialog();
+              return;
+            }
+            return runEmailUpdate(newEmail, password);
+          },
+        );
+      },
     );
-    if (!password) return;
+  };
 
+  // The original body after the prompts; only alert -> showMessage changed.
+  const runEmailUpdate = async (newEmail, password) => {
     try {
       // Get the current user from auth
       const user = auth.currentUser;
       if (!user) {
-        alert("No user is currently signed in.");
+        showMessage("No user is currently signed in.");
         return;
       }
 
@@ -232,23 +357,25 @@ export default function Profile() {
       await updateDoc(userDocRef, { email: newEmail });
 
       console.log("Email updated successfully");
-      alert("Email updated successfully!");
+      showMessage("Email updated successfully!");
     } catch (error) {
       console.error("Error updating email: ", error);
 
       // Provide more specific error messages
       if (error.code === "auth/wrong-password") {
-        alert("Incorrect password. Please try again.");
+        showMessage("Incorrect password. Please try again.");
       } else if (error.code === "auth/email-already-in-use") {
-        alert("This email is already in use by another account.");
+        showMessage("This email is already in use by another account.");
       } else if (error.code === "auth/invalid-email") {
-        alert("Invalid email format. Please enter a valid email.");
+        showMessage("Invalid email format. Please enter a valid email.");
       } else if (error.code === "auth/requires-recent-login") {
-        alert(
+        showMessage(
           "For security reasons, please log out and log back in before changing your email.",
         );
       } else {
-        alert("Error updating email. Please try again or contact support.");
+        showMessage(
+          "Error updating email. Please try again or contact support.",
+        );
       }
     }
   };
@@ -338,252 +465,386 @@ export default function Profile() {
     );
   };
 
+  // Was prompt("Enter new name:", name); Cancel/empty does nothing, as before.
+  const startNameEdit = () => {
+    showInput(
+      "Enter new name:",
+      "text",
+      "name",
+      realTimeUser?.name,
+      async (newName) => {
+        closeDialog();
+        await handleNameUpdate(newName);
+      },
+    );
+  };
+
+  const submitDialog = async (e) => {
+    e.preventDefault();
+    if (busy || !dialog || dialog.kind !== "input") return;
+    setBusy(true);
+    try {
+      await dialog.onSubmit(dialogValue);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmDialog = async () => {
+    if (busy || !dialog || dialog.kind !== "confirm") return;
+    const proceed = dialog.onConfirm;
+    closeDialog();
+    await proceed();
+  };
+
+  const displayName = realTimeUser?.name || "User Name";
+  const avatarSrc = realTimeUser?.avatar || realTimeUser?.photoURL;
+  const cover = coverFor(currentUser?.uid);
+  const initials =
+    String(realTimeUser?.name || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0].toUpperCase())
+      .join("") || "?";
+
   return (
-    <div className="flex flex-col items-center space-y-6 py-8 md:p-12">
-      <div className="w-full max-w-2xl space-y-8 md:flex md:flex-col md:justify-between">
-        {/* Profile Avatar and Name */}
-        <div className="flex flex-col items-center md:flex-row md:items-center">
-          <div className="relative mb-4">
-            {realTimeUser?.avatar || realTimeUser?.photoURL ? (
+    <div className="mx-auto w-full max-w-4xl pb-4">
+      {/* Cover band */}
+      <div
+        className="relative h-40 overflow-hidden rounded-card md:h-44"
+        style={{ backgroundColor: cover.tint }}
+      >
+        <img
+          src={cover.character}
+          alt=""
+          aria-hidden="true"
+          className="absolute -bottom-6 right-6 h-44 w-44 md:right-12 md:h-52 md:w-52"
+        />
+      </div>
+
+      {/* Avatar + name */}
+      <div className="-mt-12 px-4 md:px-8">
+        <div className="relative inline-block">
+          <div
+            className={`flex h-24 w-24 items-center justify-center overflow-hidden rounded-full ring-4 ring-raised ${
+              uploading ? "opacity-60" : ""
+            }`}
+            style={{ backgroundColor: avatarFill(currentUser?.uid) }}
+          >
+            {avatarSrc ? (
               <img
-                src={realTimeUser.avatar || realTimeUser.photoURL}
+                src={avatarSrc}
                 alt="Profile"
-                className="h-24 w-24 rounded-full border-4 border-primaryRed object-cover"
+                className="h-full w-full object-cover"
               />
             ) : (
-              <BsPersonFill className="h-24 w-24 text-primaryRed" />
-            )}
-            {/* Edit Avatar Button */}
-            <label
-              htmlFor="avatar-upload"
-              className="absolute bottom-0 right-0 flex cursor-pointer items-center justify-center rounded-full bg-primaryRed p-2"
-            >
-              <FiEdit className="text-xs text-white" />
-            </label>
-
-            {/* Hidden File Input */}
-            <input
-              type="file"
-              id="avatar-upload"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              disabled={uploading}
-              className="hidden"
-            />
-          </div>
-
-          <div className="md:ml-8">
-            <div className="relative flex items-center justify-center px-5 md:justify-start md:p-0">
-              <h2 className="text-xl font-semibold">
-                {realTimeUser?.name || "User Name"}{" "}
-              </h2>
-              <MdEdit
-                onClick={() =>
-                  handleNameUpdate(
-                    prompt("Enter new name:", realTimeUser?.name),
-                  )
-                }
-                className="text-md absolute right-0 cursor-pointer text-primaryRed md:right-[-10px]"
-              />
-            </div>
-            {realTimeUser?.createdAt && (
-              <p className="text-center text-xs text-gray-400 md:text-start">
-                Member since{" "}
-                {(
-                  realTimeUser.createdAt?.toDate?.() ||
-                  (realTimeUser.createdAt?.seconds &&
-                    new Date(realTimeUser.createdAt.seconds * 1000)) ||
-                  new Date(realTimeUser.createdAt)
-                ).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
+              <span className="font-display text-3xl font-extrabold text-ink">
+                {initials}
+              </span>
             )}
           </div>
+          {/* Hidden File Input */}
+          <input
+            type="file"
+            id="avatar-upload"
+            accept="image/*"
+            onChange={handleAvatarUpload}
+            disabled={uploading}
+            className="peer sr-only"
+          />
+          {/* Edit Avatar Button */}
+          <label
+            htmlFor="avatar-upload"
+            className="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-ink text-white ring-2 ring-raised peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-selected-text"
+          >
+            <span className="sr-only">Change profile photo</span>
+            <LuCamera aria-hidden="true" className="text-sm" />
+          </label>
         </div>
 
-        <div className="flex flex-col gap-6 md:flex-row md:items-start">
-          {/* Dietary Restrictions Section */}
-          <div className="w-full rounded-2xl bg-white px-4 shadow-md">
-            <div className="flex items-center justify-between py-4">
-              <div className="flex items-center">
-                <FaLeaf className="mr-4 text-xl text-primaryRed" />
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Dietary Restrictions
-                </h3>
-              </div>
-              <MdEdit
-                onClick={() => setIsEditingDietary(!isEditingDietary)}
-                className="cursor-pointer text-lg text-primaryRed"
+        <div className="mt-3 flex items-center gap-2">
+          <h1 className="min-w-0 break-words text-[1.875rem] leading-none md:text-[2.5rem]">
+            {displayName}
+          </h1>
+          <IconButton
+            aria-label="Edit name"
+            variant="soft"
+            onClick={startNameEdit}
+          >
+            <LuPencil aria-hidden="true" />
+          </IconButton>
+        </div>
+        {realTimeUser?.createdAt && (
+          <p className="mt-2 text-[0.8125rem] text-muted">
+            Member since{" "}
+            {(
+              realTimeUser.createdAt?.toDate?.() ||
+              (realTimeUser.createdAt?.seconds &&
+                new Date(realTimeUser.createdAt.seconds * 1000)) ||
+              new Date(realTimeUser.createdAt)
+            ).toLocaleDateString(undefined, {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </p>
+        )}
+      </div>
+
+      <div className="mt-6 grid items-start gap-4 md:grid-cols-2">
+        {/* Dietary Restrictions Section */}
+        <section className="rounded-card bg-raised p-5 shadow-soft">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <LuLeaf
+                aria-hidden="true"
+                className="text-xl text-selected-text"
               />
+              <h2 className="text-lg">Dietary Restrictions</h2>
             </div>
+            <IconButton
+              aria-label="Edit dietary restrictions"
+              variant="soft"
+              onClick={() => setIsEditingDietary(!isEditingDietary)}
+            >
+              <LuPencil aria-hidden="true" />
+            </IconButton>
+          </div>
 
-            <div className="pb-4">
-              {isEditingDietary ? (
-                <div>
-                  <div className="mb-6 space-y-3">
-                    {Object.entries(dietaryRestrictions).map(
-                      ([key, { icon, color, label }]) => (
-                        <label
+          <div className="mt-4">
+            {isEditingDietary ? (
+              <div>
+                <div className="mb-6 flex flex-wrap gap-2">
+                  {Object.entries(dietaryRestrictions).map(
+                    ([key, { icon, color, label }]) => {
+                      const selected = selectedRestrictions.includes(key);
+                      return (
+                        <button
                           key={key}
-                          className="flex cursor-pointer items-center space-x-3"
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() => toggleRestriction(key)}
+                          className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                            selected
+                              ? "bg-selected-soft text-selected-text"
+                              : "bg-surface2 text-ink hover:bg-surface3"
+                          }`}
                         >
-                          <input
-                            type="checkbox"
-                            checked={selectedRestrictions.includes(key)}
-                            onChange={() => toggleRestriction(key)}
-                            className="rounded border-gray-300 text-primaryRed focus:ring-primaryRed"
-                          />
-                          <div className={`text-lg ${color}`}>{icon}</div>
-                          <span className="text-sm text-gray-700">{label}</span>
-                        </label>
-                      ),
-                    )}
-                  </div>
-
-                  <div className="flex justify-center space-x-4">
-                    <button
-                      onClick={handleDietaryRestrictionsUpdate}
-                      className="flex items-center rounded-lg bg-primaryRed px-6 py-2 text-white transition active:bg-rose-500"
-                    >
-                      Save
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setIsEditingDietary(false);
-                        setSelectedRestrictions(
-                          realTimeUser?.dietaryRestrictions || [],
-                        );
-                      }}
-                      className="rounded-lg border-2 border-primaryRed bg-white px-6 py-2 font-bold text-primaryRed transition hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {(realTimeUser?.dietaryRestrictions || []).length > 0 ? (
-                    (realTimeUser.dietaryRestrictions || []).map(
-                      (restriction) => {
-                        const restrictionData =
-                          dietaryRestrictions[restriction];
-                        return restrictionData ? (
-                          <div
-                            key={restriction}
-                            className="flex items-center space-x-2 rounded-full bg-gray-100 px-3 py-1"
-                          >
-                            <div className={`text-sm ${restrictionData.color}`}>
-                              {restrictionData.icon}
-                            </div>
-                            <span className="text-sm text-gray-700">
-                              {restrictionData.label}
-                            </span>
-                          </div>
-                        ) : null;
-                      },
-                    )
-                  ) : (
-                    <p className="text-sm text-gray-500">
-                      No dietary restrictions set
-                    </p>
+                          <span className={`text-base ${color}`}>{icon}</span>
+                          {label}
+                        </button>
+                      );
+                    },
                   )}
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Security Section */}
-          <div className="w-full rounded-2xl bg-white px-4 shadow-md">
-            <div
-              onClick={() => setIsSecurityExpanded(!isSecurityExpanded)}
-              className="flex cursor-pointer items-center justify-between py-4"
-            >
-              <div className="flex items-center">
-                <MdSecurity className="mr-4 text-xl text-primaryRed" />
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Security
-                </h3>
-              </div>
-              {isSecurityExpanded ? <IoChevronUp /> : <IoChevronDown />}
-            </div>
-
-            {isSecurityExpanded && (
-              <div className="pb-4">
-                {isGoogleUser && (
-                  <div className="mb-2 flex items-center justify-center rounded-md bg-rose-50 p-3">
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <FcGoogle size={20} />
-                      Logged in with Google
-                    </div>
-                  </div>
-                )}
-
-                {/* Change Email Section */}
-                <div
-                  onClick={handleEmailUpdate}
-                  className="flex cursor-pointer items-center border-b border-b-gray-200 py-3 hover:bg-gray-50"
-                >
-                  <IoMail className="mr-4 text-lg text-primaryRed" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-700">
-                      Change Email
-                    </p>
-                    <p className="text-xs text-gray-500">{currentUser.email}</p>
-                  </div>
-                </div>
-
-                {/* Change Password Section */}
-                <div
-                  onClick={() => {
-                    if (isGoogleUser) {
-                      alert(
-                        "To change your password, please visit your Google account settings at myaccount.google.com",
+                <div className="flex justify-end gap-3">
+                  <Button
+                    variant="soft"
+                    onClick={() => {
+                      setIsEditingDietary(false);
+                      setSelectedRestrictions(
+                        realTimeUser?.dietaryRestrictions || [],
                       );
-                    } else {
-                      setIsChangePasswordModalOpen(true);
-                    }
-                  }}
-                  className="flex cursor-pointer items-center border-b border-b-gray-200 py-3 hover:bg-gray-50"
-                >
-                  <FaUnlockKeyhole className="mr-4 text-lg text-primaryRed" />
-                  <p className="text-sm font-medium text-gray-700">
-                    Change Password
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleDietaryRestrictionsUpdate}>Save</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {(realTimeUser?.dietaryRestrictions || []).length > 0 ? (
+                  (realTimeUser.dietaryRestrictions || []).map(
+                    (restriction) => {
+                      const restrictionData = dietaryRestrictions[restriction];
+                      return restrictionData ? (
+                        <Chip
+                          key={restriction}
+                          className="gap-2 bg-selected-soft px-3 py-1 text-selected-text"
+                        >
+                          <span className={`text-sm ${restrictionData.color}`}>
+                            {restrictionData.icon}
+                          </span>
+                          {restrictionData.label}
+                        </Chip>
+                      ) : null;
+                    },
+                  )
+                ) : (
+                  <p className="text-sm text-muted">
+                    No dietary restrictions set
                   </p>
-                </div>
-
-                {/* Log Out Section */}
-                <div
-                  onClick={handleLogout}
-                  className="flex cursor-pointer items-center border-b border-b-gray-200 py-3 hover:bg-gray-50"
-                >
-                  <IoLogOut className="mr-4 text-lg text-primaryRed" />
-                  <p className="text-sm font-medium text-gray-700">Log Out</p>
-                </div>
-
-                {/* Delete Account Section */}
-                <div
-                  onClick={handleDeleteAccount}
-                  className="flex cursor-pointer items-center py-3 hover:bg-red-50"
-                >
-                  <MdDelete className="mr-4 text-lg text-red-600" />
-                  <p className="text-sm font-medium text-red-600">
-                    Delete Account
-                  </p>
-                </div>
+                )}
               </div>
             )}
           </div>
-        </div>
+        </section>
+
+        {/* Security Section */}
+        <section className="rounded-card bg-raised p-5 shadow-soft">
+          <button
+            type="button"
+            onClick={() => setIsSecurityExpanded(!isSecurityExpanded)}
+            aria-expanded={isSecurityExpanded}
+            className="flex w-full items-center justify-between text-left"
+          >
+            <span className="flex items-center gap-3">
+              <LuShield
+                aria-hidden="true"
+                className="text-xl text-selected-text"
+              />
+              <h2 className="text-lg">Security</h2>
+            </span>
+            {isSecurityExpanded ? (
+              <LuChevronUp aria-hidden="true" />
+            ) : (
+              <LuChevronDown aria-hidden="true" />
+            )}
+          </button>
+
+          {isSecurityExpanded && (
+            <div className="mt-4">
+              {isGoogleUser && (
+                <div className="mb-2 flex items-center justify-center rounded-[14px] bg-surface2 p-3">
+                  <div className="flex items-center gap-3 text-sm text-muted">
+                    <FcGoogle size={20} />
+                    Logged in with Google
+                  </div>
+                </div>
+              )}
+
+              {/* Change Email Section */}
+              <button
+                type="button"
+                onClick={handleEmailUpdate}
+                className={ROW_CLASS}
+              >
+                <LuMail
+                  aria-hidden="true"
+                  className="text-lg text-selected-text"
+                />
+                <span className="flex-1">
+                  <span className="block text-sm font-semibold text-ink">
+                    Change Email
+                  </span>
+                  <span className="block text-xs text-muted">
+                    {currentUser.email}
+                  </span>
+                </span>
+              </button>
+
+              {/* Change Password Section */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (isGoogleUser) {
+                    showMessage(
+                      "To change your password, please visit your Google account settings at myaccount.google.com",
+                    );
+                  } else {
+                    setIsChangePasswordModalOpen(true);
+                  }
+                }}
+                className={ROW_CLASS}
+              >
+                <LuKeyRound
+                  aria-hidden="true"
+                  className="text-lg text-selected-text"
+                />
+                <span className="text-sm font-semibold text-ink">
+                  Change Password
+                </span>
+              </button>
+
+              {/* Log Out Section */}
+              <button type="button" onClick={handleLogout} className={ROW_CLASS}>
+                <LuLogOut
+                  aria-hidden="true"
+                  className="text-lg text-selected-text"
+                />
+                <span className="text-sm font-semibold text-ink">Log Out</span>
+              </button>
+
+              {/* Delete Account Section */}
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                className="flex w-full items-center gap-3 py-3 text-left transition hover:bg-accent-soft"
+              >
+                <LuTrash2 aria-hidden="true" className="text-lg text-danger" />
+                <span className="text-sm font-semibold text-danger">
+                  Delete Account
+                </span>
+              </button>
+            </div>
+          )}
+        </section>
       </div>
 
       {isChangePasswordModalOpen && (
         <ChangePasswordModal
           onClose={() => setIsChangePasswordModalOpen(false)}
         />
+      )}
+
+      {dialog && dialog.kind === "message" && (
+        <DialogShell
+          title={dialogTitleNode(dialog.title)}
+          labelledById="profile-dialog-title"
+          zIndexClass="z-[60]"
+          actions={<Button onClick={closeDialog}>OK</Button>}
+        />
+      )}
+
+      {dialog && dialog.kind === "confirm" && (
+        <DialogShell
+          title={dialogTitleNode(dialog.title)}
+          labelledById="profile-dialog-title"
+          zIndexClass="z-[60]"
+          actions={
+            <>
+              <Button variant="soft" onClick={closeDialog}>
+                Cancel
+              </Button>
+              <Button variant="danger" onClick={confirmDialog}>
+                Delete Account
+              </Button>
+            </>
+          }
+        />
+      )}
+
+      {dialog && dialog.kind === "input" && (
+        <DialogShell
+          title={dialogTitleNode(dialog.title)}
+          labelledById="profile-dialog-title"
+          zIndexClass="z-[60]"
+          aria-busy={busy ? "true" : "false"}
+        >
+          <form onSubmit={submitDialog} noValidate>
+            <input
+              type={dialog.inputType}
+              autoComplete={dialog.autoComplete}
+              autoFocus
+              aria-labelledby="profile-dialog-title"
+              value={dialogValue}
+              onChange={(e) => setDialogValue(e.target.value)}
+              className="mt-4 block w-full rounded-full border border-transparent bg-surface2 px-4 py-2.5 text-sm text-ink focus:border-transparent focus:outline-none focus:ring-2 focus:ring-selected-text"
+            />
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <Button variant="soft" onClick={cancelDialog} disabled={busy}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={busy}>
+                OK
+              </Button>
+            </div>
+          </form>
+        </DialogShell>
       )}
     </div>
   );

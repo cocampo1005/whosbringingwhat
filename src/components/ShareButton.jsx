@@ -1,12 +1,12 @@
 import React from "react";
 import { useRouter } from "@tanstack/react-router";
-import { MdOutlineIosShare } from "react-icons/md";
+import { LuShare } from "react-icons/lu";
 
 function ShareButton({
   eventId,
   eventTitle,
-  className = "flex items-center rounded-full bg-primaryRed p-2 text-white hover:bg-secondaryRed",
-  iconClassName = "text-lg",
+  className = "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink shadow-chip transition duration-150 ease-wbw hover:bg-surface2",
+  iconClassName = "text-base",
 }) {
   const router = useRouter();
 
@@ -42,8 +42,13 @@ function ShareButton({
   };
 
   return (
-    <button onClick={handleShare} className={className}>
-      <MdOutlineIosShare className={iconClassName} />
+    <button
+      type="button"
+      onClick={handleShare}
+      aria-label="Share event"
+      className={className}
+    >
+      <LuShare className={iconClassName} />
     </button>
   );
 }

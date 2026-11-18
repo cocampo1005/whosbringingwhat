@@ -1,3 +1,9 @@
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource/open-sans/400.css";
+@import "@fontsource/open-sans/500.css";
+@import "@fontsource/open-sans/600.css";
+@import "@fontsource/open-sans/700.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -19,12 +25,12 @@
 
 @layer base {
   html {
-    font-family: "Inter", sans-serif;
+    font-family: "Open Sans", system-ui, sans-serif;
   }
 
   body {
-    @apply text-primaryDark;
-    background-color: #fefce8;
+    @apply text-ink;
+    background-color: #F9F6EF;
     line-height: 1.5;
   }
 
@@ -33,19 +39,80 @@
   h3,
   h4,
   h5,
-  h6,
+  h6 {
+    @apply font-display text-ink;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-stretch: 125%;
+    line-height: 1.1;
+  }
   label {
-    @apply font-bold text-primaryDark;
+    @apply font-semibold text-ink;
   }
-  /* apply to all text inputs/textarea ... EXCEPT ones marked .combo-input */
-  input[type="text"]:not(.combo-input),
-  textarea:not(.combo-input) {
-    @apply block w-full rounded-lg border-gray-300 py-1.5 shadow-sm ring-0 placeholder:text-gray-400 focus:border-primaryRed focus:ring-0;
+  /*
+   * Default look for text inputs/textarea ... EXCEPT ones marked .combo-input. `:where()` keeps
+   * the specificity level with the forms plugin's own element rules (which this follows in the
+   * base layer, so it wins) and below any utility class, so `bg-white` etc. on a field apply.
+   */
+  [type="text"]:where(:not(.combo-input)),
+  textarea:where(:not(.combo-input)) {
+    @apply block w-full rounded-full border border-transparent bg-surface2 px-4 py-2.5 shadow-none placeholder:text-muted focus:border-transparent focus:ring-2 focus:ring-selected-text;
   }
-  .event-details {
-    display: flex;
-    flex-direction: column;
-    width: 600px;
-    margin: auto;
+  textarea:where(:not(.combo-input)) {
+    border-radius: 18px;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid #7B3FD4;
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    a,
+    button,
+    div,
+    span,
+    svg,
+    path,
+    circle,
+    img,
+    nav,
+    section {
+      transition-duration: 0ms !important;
+      animation-duration: 0ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Enter transitions for SheetShell / DialogShell (reduced motion: see the base layer rule). */
+  @keyframes wbw-sheet-in-bottom {
+    from { transform: translateY(24px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes wbw-sheet-in-right {
+    from { transform: translateX(32px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes wbw-dialog-in {
+    from { transform: scale(0.97); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .wbw-sheet-in {
+    animation: wbw-sheet-in-bottom 200ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  @media (min-width: 768px) {
+    .wbw-sheet-in {
+      animation-name: wbw-sheet-in-right;
+    }
+  }
+  .wbw-dialog-in {
+    animation: wbw-dialog-in 160ms cubic-bezier(0.2, 0, 0, 1);
   }
 }
