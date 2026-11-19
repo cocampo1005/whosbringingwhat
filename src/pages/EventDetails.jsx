@@ -982,12 +982,22 @@ function EventDetails() {
                 alt={event.title || "Event image"}
                 className="absolute inset-0 -z-10 h-full w-full object-cover"
               />
+              {/* Scrims from the v3 mock. Stacked layout: dark from the lower edge, where the text sits. */}
               <div
                 aria-hidden="true"
-                className="absolute inset-0 -z-10"
+                className="absolute inset-0 -z-10 lg:hidden"
                 style={{
                   background:
-                    "linear-gradient(to top, rgba(22,22,22,0.86), rgba(22,22,22,0.12))",
+                    "linear-gradient(to top, rgba(22,22,22,0.9) 0%, rgba(22,22,22,0.6) 45%, rgba(22,22,22,0.05) 80%)",
+                }}
+              />
+              {/* Wide layout: dark from the left, where the text sits, clearing towards the wheel. */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 -z-10 hidden lg:block"
+                style={{
+                  background:
+                    "linear-gradient(90deg, rgba(22,22,22,0.86) 0%, rgba(22,22,22,0.62) 42%, rgba(22,22,22,0.12) 100%), linear-gradient(to top, rgba(22,22,22,0.45) 0%, rgba(22,22,22,0) 55%)",
                 }}
               />
             </>
