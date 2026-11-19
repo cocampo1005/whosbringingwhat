@@ -4,6 +4,7 @@ import { useUsers } from "../contexts/UsersContext";
 import AssigneeAvatar from "./AssigneeAvatar";
 import useEscapeKey from "../hooks/useEscapeKey";
 import { Button, Chip, SheetShell } from "./ui";
+import { ParticipantsSkeleton } from "./Skeletons";
 import { getCategoryTheme } from "../constants/categoryTheme";
 
 import { LuVegan } from "react-icons/lu";
@@ -128,7 +129,7 @@ export default function ParticipantsModal({
       labelledById="participants-sheet-title"
     >
       {isLoading ? (
-        <p className="text-sm text-muted">Loading participants...</p>
+        <ParticipantsSkeleton />
       ) : ids.length === 0 ? (
         <p className="text-sm text-muted">
           No participants have joined this event yet.

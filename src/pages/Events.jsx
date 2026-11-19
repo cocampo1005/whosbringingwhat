@@ -29,7 +29,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useRole } from "../hooks/useRole";
 import { pickRandomEventBannerColor } from "../constants/eventBannerColors";
 import { RANDOM_POTLUCK_IMAGE_URL } from "../constants/api";
-import CookingLoader from "../components/CookingLoader";
+import { EventGridSkeleton } from "../components/Skeletons";
 
 export default function Events() {
   const { currentUser } = useAuth();
@@ -337,9 +337,7 @@ export default function Events() {
 
       {/* Content under the tabs */}
       {loadingEvents ? (
-        <div className="flex justify-center py-8">
-          <CookingLoader />
-        </div>
+        <EventGridSkeleton />
       ) : events.length > 0 ? (
         <>
           <EventCard events={events} />

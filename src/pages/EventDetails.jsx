@@ -47,7 +47,7 @@ import PieChart from "../components/PieChart";
 import CategoryList from "../components/CategoryList";
 import JoinEventPromptModal from "../components/JoinEventPromptModal";
 import { deleteAllEventItemImages } from "../utils/storageCleanup";
-import CookingLoader from "../components/CookingLoader";
+import { EventDetailsSkeleton } from "../components/Skeletons";
 import { Button, IconButton } from "../components/ui";
 import {
   CATEGORY_ORDER,
@@ -863,11 +863,7 @@ function EventDetails() {
   };
 
   if (!event) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center text-center">
-        <CookingLoader />
-      </div>
-    );
+    return <EventDetailsSkeleton />;
   }
 
   // Presentational values derived from data the page already holds.

@@ -7,6 +7,7 @@ import { LuMapPin } from "react-icons/lu";
 import { formatTime } from "../utils/formatters";
 import { getCategoryTheme } from "../constants/categoryTheme";
 import { PageTitle, SegmentedTabs } from "../components/ui";
+import { MyItemsSkeleton } from "../components/Skeletons";
 import charYellow from "../assets/brand/characters/char-yellow.svg";
 
 const TABS = [
@@ -88,8 +89,11 @@ export default function MyItems() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <div className="h-12 w-12 animate-spin rounded-full border-t-4 border-selected-text" />
+      <div className="pb-4">
+        <PageTitle title="My Items" />
+        <div className="mt-6">
+          <MyItemsSkeleton />
+        </div>
       </div>
     );
   }
